@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import PickNote from '@/components/PickNote'
 import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
+import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
-import { getHallOfFame, getLibrary, type RankedWork } from '@/mocks/api'
+import { addWork, getHallOfFame, getLibrary, type LibraryEntry, type RankedWork } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
-import { WorkStatus } from '@/types'
+import { WorkKind, WorkStatus } from '@/types'
 
 type Filter = 'ALL' | 'BOOK' | 'MOVIE'
 
@@ -19,9 +20,17 @@ const filters: Array<{ key: Filter; label: string }> = [
   { key: 'MOVIE', label: '영화' },
 ]
 
+const statusPriority: Record<string, number> = {
+  [WorkStatus.READING]: 0,
+  [WorkStatus.CANDIDATE]: 1,
+}
+
 export default function HallOfFamePage() {
+  const { user } = useCurrentUser()
   const { study, members } = useStudy()
+  const qc = useQueryClient()
   const [filter, setFilter] = useState<Filter>('ALL')
+  const [adding, setAdding] = useState(false)
 
   const { data: works = [], isPending } = useQuery({
     queryKey: ['hall', study?.id],
@@ -34,27 +43,39 @@ export default function HallOfFamePage() {
     enabled: !!study,
   })
 
-  if (!study) return null
+  const create = useMutation({ mutationFn: addWork, onSuccess: () => qc.invalidateQueries() })
+
+  if (!study || !user) return null
 
   const shown = works.filter((w) => filter === 'ALL' || w.kind === filter)
   const [first, second, third] = shown
-  // 1~3위는 카드로만 보여준다 — 책장에는 4위 이하부터. 일단은 완료된 작품만 책장에 보여준다.
+  // 1~3위는 카드로만 보여준다 — 책장에는 4위 이하부터. 나머지는 상태 상관없이 전부 책장에 둔다.
   const podiumIds = new Set([first, second, third].filter(Boolean).map((w) => w!.id))
-  // 위 명예의 전당 필터(전체 · 책 · 영화)를 책장에도 그대로 적용한다.
-  const shelfWorks = allWorks.filter(
-    (work) =>
-      (filter === 'ALL' || work.kind === filter) &&
-      !podiumIds.has(work.id) &&
-      work.status === WorkStatus.DONE,
-  )
+  const byFilter = (work: LibraryEntry) => filter === 'ALL' || work.kind === filter
 
-  const bookcaseItems: BookcaseItem[] = shelfWorks.map((work) => ({
+  const toItem = (work: LibraryEntry): BookcaseItem => ({
     id: work.id,
     title: work.title,
     author: work.author,
+    year: work.year,
+    kind: work.kind,
     status: work.status,
     href: `/${study.slug}/books/${work.id}`,
-  }))
+    average: work.average,
+    voterCount: work.voterCount,
+    addedBy: work.addedBy,
+    reason: work.reason,
+  })
+
+  // 완료작은 위 칸에 별점순으로, 읽는 중·후보는 아래 칸에 — 책장 칸 자체를 나눈다.
+  const completedItems = allWorks
+    .filter((w) => byFilter(w) && !podiumIds.has(w.id) && w.status === WorkStatus.DONE)
+    .sort((a, b) => b.average - a.average)
+    .map(toItem)
+  const otherItems = allWorks
+    .filter((w) => byFilter(w) && w.status !== WorkStatus.DONE)
+    .sort((a, b) => statusPriority[a.status] - statusPriority[b.status])
+    .map(toItem)
 
   return (
     <div className="flex flex-col gap-10">
@@ -102,7 +123,22 @@ export default function HallOfFamePage() {
       </section>
 
       <section className="flex flex-col gap-6">
-        <Bookcase items={bookcaseItems} />
+        <Bookcase
+          completed={completedItems}
+          others={otherItems}
+          users={members}
+          onAdd={() => setAdding(true)}
+        />
+        {adding && (
+          <AddDialog
+            initialKind={filter === 'ALL' ? undefined : filter}
+            onClose={() => setAdding(false)}
+            onSubmit={(input) => {
+              create.mutate({ ...input, studyId: study.id, addedBy: user.id })
+              setAdding(false)
+            }}
+          />
+        )}
       </section>
     </div>
   )
@@ -217,5 +253,93 @@ function RankSticker({ rank }: { rank: 1 | 2 | 3 }) {
         {rank}
       </span>
     </span>
+  )
+}
+
+function AddDialog({
+  initialKind,
+  onSubmit,
+  onClose,
+}: {
+  initialKind?: WorkKind
+  onSubmit: (input: { kind: WorkKind; title: string; author: string; reason: string }) => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    ref.current?.showModal()
+  }, [])
+
+  const [kind, setKind] = useState<WorkKind>(initialKind ?? WorkKind.BOOK)
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [reason, setReason] = useState('')
+
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === ref.current) ref.current?.close()
+      }}
+      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!title.trim()) return
+          onSubmit({ kind, title: title.trim(), author: author.trim(), reason: reason.trim() })
+        }}
+        className="flex flex-col gap-3 p-5"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-base font-semibold">읽고 싶은 것 추가</h2>
+          <button
+            type="button"
+            onClick={() => ref.current?.close()}
+            className="app-button app-button-ghost app-icon-button"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as WorkKind)}
+            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
+          >
+            <option value={WorkKind.BOOK}>책</option>
+            <option value={WorkKind.MOVIE}>영화</option>
+          </select>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="제목"
+            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
+          <input
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
+            className="min-w-32 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="왜 고르셨나요 — 작품 기록에 함께 남습니다"
+            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
+          <button type="submit" className="app-button app-button-primary">
+            후보로 담기
+          </button>
+        </div>
+        <p className="text-xs text-neutral-500">
+          나중에는 제목만 치면 알라딘 · TMDB 에서 표지와 저자가 따라옵니다.
+        </p>
+      </form>
+    </dialog>
   )
 }

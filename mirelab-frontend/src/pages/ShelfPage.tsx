@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bookcase, BookcaseStatusFilters, type BookcaseFilter } from '@/components/Bookcase'
+import {
+  Bookcase,
+  BookcaseStatusFilters,
+  type BookcaseFilter,
+  type BookcaseItem,
+} from '@/components/Bookcase'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import { useCurrentUser } from '@/hooks/currentUser'
@@ -68,6 +73,29 @@ export default function ShelfPage() {
     filter === 'ALL'
       ? displayEntries
       : displayEntries.filter((item) => item.entry.work.status === filter)
+
+  const toItem = (item: DisplayEntry): BookcaseItem => ({
+    id: item.entry.work.id,
+    title: item.entry.work.title,
+    author: item.entry.work.author,
+    year: item.entry.work.year,
+    kind: item.entry.work.kind,
+    status: item.entry.work.status,
+    href: entryHref(item.entry, study.slug),
+    source: item.entry.study?.name ?? null,
+    average: item.rating ?? undefined,
+    voterCount: item.rating !== null ? 1 : 0,
+    addedBy: item.entry.work.addedBy,
+    reason: item.entry.work.reason,
+  })
+  // 완료작은 위 칸에, 읽는 중·후보는 아래 칸에 — 정렬은 위에서 이미 정한 내 평점순을 그대로 따른다.
+  const completedItems = filteredEntries
+    .filter((item) => item.entry.work.status === WorkStatus.DONE)
+    .map(toItem)
+  const otherItems = filteredEntries
+    .filter((item) => item.entry.work.status !== WorkStatus.DONE)
+    .map(toItem)
+
   const rated = entries.filter((e) => myRating(e) !== null)
   const average = rated.length
     ? rated.reduce((sum, e) => sum + (myRating(e) ?? 0), 0) / rated.length
@@ -113,17 +141,7 @@ export default function ShelfPage() {
               onChange={setFilter}
             />
           )}
-          <Bookcase
-            items={filteredEntries.map(({ entry }) => ({
-              id: entry.work.id,
-              title: entry.work.title,
-              author: entry.work.author,
-              status: entry.work.status,
-              href: entryHref(entry, study.slug),
-              source: entry.study?.name ?? null,
-            }))}
-            onAdd={() => setAdding(true)}
-          />
+          <Bookcase completed={completedItems} others={otherItems} onAdd={() => setAdding(true)} />
         </>
       ) : (
         <ShelfBoard items={displayEntries} slug={study.slug} />
