@@ -8,15 +8,19 @@ import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
 import {
+  addWorkBlock,
   getWork,
+  getWorkBlocks,
   getWorkSlots,
   removeWork,
+  removeWorkBlock,
   saveValue,
   setWorkStatus,
+  updateWorkBlock,
   updateWorkReason,
 } from '@/mocks/api'
-import { formatMeetAt, formatRating } from '@/lib/format'
-import type { SlotDef, SlotValue, User } from '@/types'
+import { formatDate, formatMeetAt, formatRating } from '@/lib/format'
+import type { SlotDef, SlotValue, User, WorkBlock } from '@/types'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -39,12 +43,18 @@ export default function WorkPage() {
   const navigate = useNavigate()
   const [manageOpen, setManageOpen] = useState(false)
   const [ratingOpen, setRatingOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [creatingBlock, setCreatingBlock] = useState(false)
 
   const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
   const { data: workSlots } = useQuery({
     queryKey: ['workSlots', study?.id, workId],
     queryFn: () => getWorkSlots(study!.id, workId),
     enabled: !!study,
+  })
+  const { data: blocks = [] } = useQuery({
+    queryKey: ['workBlocks', workId],
+    queryFn: () => getWorkBlocks(workId),
   })
 
   const refresh = () => qc.invalidateQueries()
@@ -64,6 +74,15 @@ export default function WorkPage() {
       navigate(`/${study?.slug}`)
     },
   })
+  const addBlock = useMutation({
+    mutationFn: addWorkBlock,
+    onSuccess: () => {
+      refresh()
+      setCreatingBlock(false)
+    },
+  })
+  const editBlock = useMutation({ mutationFn: updateWorkBlock, onSuccess: refresh })
+  const deleteBlock = useMutation({ mutationFn: removeWorkBlock, onSuccess: refresh })
 
   if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
 
@@ -263,70 +282,74 @@ export default function WorkPage() {
         />
       )}
 
-      <section
-        id="my-record"
-        className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
-      >
-        <div>
-          <h2 className="text-xl font-semibold">내 기록</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            작품 전체에 대한 기록입니다. 모임별 준비는 각 모임에서 작성합니다.
-          </p>
+      <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              이 작품에 대해 다같이 자유롭게 남겨보세요.
+            </p>
+          </div>
+          {!creatingBlock && (
+            <button
+              type="button"
+              onClick={() => setCreatingBlock(true)}
+              className="app-button app-button-secondary flex-none"
+            >
+              + 새 블록
+            </button>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {summarySlot && (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-semibold">
-                {summarySlot.name}
-                {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
-              </span>
-              <div className="flex flex-1 flex-col [&>textarea]:h-full [&>textarea]:flex-1">
-                <SlotField
-                  slot={summarySlot}
-                  value={myValueOf(summarySlot.id)?.value}
-                  onSave={(value) =>
-                    save.mutate({
-                      targetId: work.id,
-                      slotDefId: summarySlot.id,
-                      userId: user.id,
-                      value,
-                      draft: false,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          )}
+        {creatingBlock && (
+          <BlockForm
+            onSave={(title, body) =>
+              addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
+            }
+            onCancel={() => setCreatingBlock(false)}
+          />
+        )}
 
-          <div className="flex flex-col gap-6">
-            {otherPersonalSlots.map((slot) => (
-              <div
-                key={slot.id}
-                className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
-              >
-                <span className="text-sm font-semibold">
-                  {slot.name}
-                  {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
-                </span>
-                <SlotField
-                  slot={slot}
-                  value={myValueOf(slot.id)?.value}
-                  onSave={(value) =>
-                    save.mutate({
-                      targetId: work.id,
-                      slotDefId: slot.id,
-                      userId: user.id,
-                      value,
-                      draft: false,
-                    })
-                  }
-                />
-              </div>
-            ))}
-          </div>
+        <div className="flex flex-col gap-4">
+          {blocks.map((block) => (
+            <WorkBlockCard
+              key={block.id}
+              block={block}
+              author={members.find((m) => m.id === block.authorId)}
+              canEdit={block.authorId === user.id}
+              onSave={(title, body) => editBlock.mutate({ id: block.id, title, body })}
+              onDelete={() => deleteBlock.mutate(block.id)}
+            />
+          ))}
+          {blocks.length === 0 && !creatingBlock && (
+            <p className="text-sm text-neutral-400">
+              아직 아무도 쓰지 않았습니다. 먼저 남겨보세요.
+            </p>
+          )}
         </div>
       </section>
+
+      <button
+        type="button"
+        onClick={() => setDrawerOpen((open) => !open)}
+        aria-label={drawerOpen ? '내 기록 닫기' : '내 기록 열기'}
+        className={`fixed top-[11vh] bottom-[5vh] z-40 flex w-6 cursor-pointer items-center justify-center rounded-r-2xl border border-l-0 border-neutral-200 bg-white text-neutral-400 shadow-lg transition-[left,background-color,color] duration-150 ease-out hover:bg-emerald-50 hover:text-emerald-700 ${
+          drawerOpen ? 'left-[min(24rem,100vw)]' : 'left-0'
+        }`}
+      >
+        <span aria-hidden>{drawerOpen ? '‹' : '›'}</span>
+      </button>
+
+      <MyRecordDrawer
+        open={drawerOpen}
+        summarySlot={summarySlot}
+        otherSlots={otherPersonalSlots}
+        myValueOf={myValueOf}
+        onSaveSlot={(slotDefId, value) =>
+          save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
+        }
+        onClose={() => setDrawerOpen(false)}
+      />
 
       <section className="flex flex-col gap-2">
         <div>
@@ -601,5 +624,202 @@ function ManageDialog({
         </div>
       </div>
     </dialog>
+  )
+}
+
+/** 새 블록 작성 폼 — 카드 수정 폼과 모양을 맞춘다 */
+function BlockForm({
+  initialTitle = '',
+  initialBody = '',
+  onSave,
+  onCancel,
+}: {
+  initialTitle?: string
+  initialBody?: string
+  onSave: (title: string, body: string) => void
+  onCancel: () => void
+}) {
+  const [title, setTitle] = useState(initialTitle)
+  const [body, setBody] = useState(initialBody)
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!title.trim() || !body.trim()) return
+        onSave(title.trim(), body.trim())
+      }}
+      className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4"
+    >
+      <input
+        autoFocus
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="제목"
+        className="rounded-sm border border-neutral-200 px-3 py-1.5 text-sm font-medium outline-none focus:border-neutral-400"
+      />
+      <textarea
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+        rows={4}
+        placeholder="내용을 자유롭게 적어보세요"
+        className="rounded-sm border border-neutral-200 px-3 py-2 text-sm leading-relaxed outline-none focus:border-neutral-400"
+      />
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onCancel} className="app-button app-button-ghost">
+          취소
+        </button>
+        <button type="submit" className="app-button app-button-primary">
+          저장
+        </button>
+      </div>
+    </form>
+  )
+}
+
+/** 함께 쓰는 블록 하나. 쓴 사람만 고치거나 지울 수 있다 */
+function WorkBlockCard({
+  block,
+  author,
+  canEdit,
+  onSave,
+  onDelete,
+}: {
+  block: WorkBlock
+  author?: User
+  canEdit: boolean
+  onSave: (title: string, body: string) => void
+  onDelete: () => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+
+  if (editing) {
+    return (
+      <BlockForm
+        initialTitle={block.title}
+        initialBody={block.body}
+        onSave={(title, body) => {
+          onSave(title, body)
+          setEditing(false)
+        }}
+        onCancel={() => setEditing(false)}
+      />
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4">
+      <div className="flex items-start justify-between gap-4">
+        <h3 className="text-sm font-semibold">{block.title}</h3>
+        {canEdit &&
+          (confirming ? (
+            <div className="flex flex-none items-center gap-2 text-xs">
+              <span className="text-neutral-500">정말 지울까요?</span>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="app-button app-button-secondary"
+              >
+                취소
+              </button>
+              <button type="button" onClick={onDelete} className="app-button app-button-danger">
+                지우기
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-none gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="text-neutral-400 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-neutral-600 hover:decoration-neutral-500"
+              >
+                수정
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="text-neutral-400 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-rose-600 hover:decoration-rose-400"
+              >
+                삭제
+              </button>
+            </div>
+          ))}
+      </div>
+      <p className="whitespace-pre-wrap text-sm text-neutral-600">{block.body}</p>
+      <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+        {author && <span className={`size-1.5 rounded-full ${author.color}`} aria-hidden />}
+        <span>{author?.name ?? '알 수 없음'}</span>
+        <span aria-hidden>·</span>
+        <span>{formatDate(block.createdAt)}</span>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * 내 기록을 좌측 드로어에 담는다 — 내 서재와 값이 같은 편집 공간이라
+ * 이 페이지에서는 큰 자리를 차지하지 않고 필요할 때만 펼쳐 본다.
+ */
+function MyRecordDrawer({
+  open,
+  summarySlot,
+  otherSlots,
+  myValueOf,
+  onSaveSlot,
+  onClose,
+}: {
+  open: boolean
+  summarySlot?: SlotDef
+  otherSlots: SlotDef[]
+  myValueOf: (slotId: string) => SlotValue | undefined
+  onSaveSlot: (slotDefId: string, value: SlotValue['value']) => void
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (open && e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  const allSlots = summarySlot ? [summarySlot, ...otherSlots] : otherSlots
+
+  return (
+    <aside
+      className={`fixed top-[11vh] bottom-[5vh] left-0 z-40 flex w-[min(24rem,100vw)] flex-col overflow-y-auto border border-l-0 border-neutral-200 bg-white shadow-xl transition-transform duration-150 ease-out motion-reduce:transition-none ${
+        open ? 'translate-x-0' : 'pointer-events-none -translate-x-full'
+      }`}
+    >
+      <div className="sticky top-0 flex flex-col border-b border-neutral-200 bg-white px-5 py-3">
+        <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
+          나만
+        </span>
+        <span className="text-sm font-medium">내 기록</span>
+      </div>
+
+      <div className="flex flex-col gap-6 p-5">
+        {allSlots.map((slot) => (
+          <div
+            key={slot.id}
+            className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
+          >
+            <span className="text-sm font-semibold">
+              {slot.name}
+              {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+            </span>
+            <SlotField
+              slot={slot}
+              value={myValueOf(slot.id)?.value}
+              onSave={(value) => onSaveSlot(slot.id, value)}
+            />
+          </div>
+        ))}
+        {allSlots.length === 0 && (
+          <p className="text-sm text-neutral-400">아직 작성할 수 있는 기록 항목이 없습니다.</p>
+        )}
+      </div>
+    </aside>
   )
 }

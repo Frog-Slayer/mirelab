@@ -116,6 +116,16 @@ export interface SharedItem {
   text: string
 }
 
+/** 작품에 다 같이 남기는 자유 형식 기록. 게시판처럼 계속 쌓인다 */
+export interface WorkBlock {
+  id: string
+  workId: string
+  authorId: string
+  title: string
+  body: string
+  createdAt: string
+}
+
 export interface Memo {
   id: string
   targetId: string

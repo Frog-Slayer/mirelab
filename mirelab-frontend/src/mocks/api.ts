@@ -10,6 +10,7 @@ import type {
   User,
   Session,
   Work,
+  WorkBlock,
 } from '@/types'
 import { SlotOwner, SlotScope, SlotType, Visibility, WorkStatus } from '@/types'
 import * as seed from './data'
@@ -27,6 +28,7 @@ const db = {
   polls: structuredClone(seed.meetingPolls),
   votes: structuredClone(seed.pollVotes),
   events: structuredClone(seed.studyEvents),
+  workBlocks: structuredClone(seed.workBlocks),
 }
 
 let seq = 100
@@ -354,6 +356,44 @@ export function getWorkSlots(studyId: string, workId: string): Promise<WorkSlots
     slots,
     values: db.slotValues.filter((v) => v.targetId === workId),
   })
+}
+
+// ─── 함께 쓰는 기록 ─────────────────────────────────────────
+
+export function getWorkBlocks(workId: string): Promise<WorkBlock[]> {
+  return delay(
+    db.workBlocks
+      .filter((b) => b.workId === workId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  )
+}
+
+export function addWorkBlock(input: {
+  workId: string
+  authorId: string
+  title: string
+  body: string
+}): Promise<WorkBlock> {
+  const created: WorkBlock = { ...input, id: nextId('blk'), createdAt: new Date().toISOString() }
+  db.workBlocks.push(created)
+  return delay(created)
+}
+
+export function updateWorkBlock(input: {
+  id: string
+  title: string
+  body: string
+}): Promise<WorkBlock | null> {
+  const block = db.workBlocks.find((b) => b.id === input.id)
+  if (!block) return delay(null)
+  block.title = input.title
+  block.body = input.body
+  return delay(block)
+}
+
+export function removeWorkBlock(id: string): Promise<void> {
+  db.workBlocks = db.workBlocks.filter((b) => b.id !== id)
+  return delay(undefined)
 }
 
 // ─── 칸 관리 ───────────────────────────────────────────────

@@ -9,6 +9,7 @@ import type {
   User,
   Session,
   Work,
+  WorkBlock,
 } from '@/types'
 import { Availability, SlotOwner, SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
@@ -662,5 +663,26 @@ export const studyEvents: StudyEvent[] = [
     at: '2026-08-24T19:00',
     title: '뒤풀이',
     note: '사피엔스 완독 기념',
+  },
+]
+
+// ─── 함께 쓰는 기록 ───────────────────────────────────────
+
+export const workBlocks: WorkBlock[] = [
+  {
+    id: 'blk1',
+    workId: 'w6',
+    authorId: 'u2',
+    title: '농업혁명 파트, 다들 어떻게 읽었나요',
+    body: '저자가 농업혁명을 "역사상 최대의 사기"라고 부르는 대목이 계속 걸려요. 다음 모임에서 이 부분 좀 더 얘기해보고 싶습니다.',
+    createdAt: '2026-08-10T21:14:00',
+  },
+  {
+    id: 'blk2',
+    workId: 'w6',
+    authorId: 'u3',
+    title: '참고할 만한 글',
+    body: '수렵채집 사회 관련해서 최근에 나온 반박 논문 하나 찾았어요 — 모임 채팅방에 링크 올려둘게요.',
+    createdAt: '2026-08-11T09:40:00',
   },
 ]
