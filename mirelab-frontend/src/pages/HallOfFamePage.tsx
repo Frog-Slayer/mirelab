@@ -251,7 +251,7 @@ function RankSticker({ rank }: { rank: 1 | 2 | 3 }) {
   return (
     <span
       aria-hidden
-      className={`absolute -top-2 -left-2 z-10 ${sizeCls} -rotate-6`}
+      className={`absolute -top-2 -left-2 ${sizeCls} -rotate-6`}
       style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.4))' }}
     >
       {/* 바깥 링 */}
