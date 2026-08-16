@@ -450,6 +450,12 @@ const ratingValues: SlotValue[] = Object.entries(workRatings).flatMap(([workId, 
   })),
 )
 
+// 사피엔스(w6)는 아직 읽는 중이라 다 안 매겼다 — 토론은 완료 전에도 하니 평점도 미리 매길 수 있다.
+const inProgressRatingValues: SlotValue[] = [
+  { targetId: 'w6', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
+  { targetId: 'w6', slotDefId: 's1', userId: 'u3', value: { n: 4 }, draft: false },
+]
+
 const blurbValues: SlotValue[] = [
   {
     targetId: 'w2',
@@ -540,6 +546,7 @@ const shelfRatingValues: SlotValue[] = [
 export const slotValues: SlotValue[] = [
   ...prepValues,
   ...ratingValues,
+  ...inProgressRatingValues,
   ...blurbValues,
   ...shelfRatingValues,
 

@@ -15,14 +15,9 @@ export default function PickNote({ addedBy, reason, users, size = 'sm' }: Props)
   const text = size === 'sm' ? 'text-xs' : 'text-sm'
 
   return (
-    <div className={`flex flex-col gap-0.5 ${text}`}>
-      {who && (
-        <span className="flex items-center gap-1.5 text-neutral-500">
-          <span className={`size-1.5 rounded-full ${who.color}`} aria-hidden />
-          {who.name} 선정
-        </span>
-      )}
-      {reason && <p className="text-neutral-600">{reason}</p>}
+    <div className={`flex min-w-0 items-baseline gap-1.5 ${text}`}>
+      {who && <span className="flex-none font-semibold text-neutral-600">{who.name} 선정</span>}
+      {reason && <p className="min-w-0 truncate text-neutral-500">{reason}</p>}
     </div>
   )
 }

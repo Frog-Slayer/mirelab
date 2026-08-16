@@ -46,7 +46,7 @@ export default function ShelfWorkPage() {
   const valueOf = (slot: SlotDef) => values.find((v) => v.slotDefId === slot.id)
 
   return (
-    <div className="flex max-w-3xl flex-col gap-8">
+    <div className="flex flex-col gap-10">
       <Link
         to={`/${currentStudy.slug}/shelf`}
         className="text-sm text-neutral-500 hover:text-neutral-900"
@@ -54,16 +54,22 @@ export default function ShelfWorkPage() {
         ← 내 서재
       </Link>
 
-      <header className="flex flex-wrap items-center gap-6 border-b border-neutral-200 pb-7">
+      <header className="flex gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
         <div className="w-40 flex-none sm:w-44">
           <Cover work={work} size="lg" />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5 pt-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs font-medium text-neutral-400">
               {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
             </span>
-            <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-600">
+            <span
+              className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                work.status === WorkStatus.READING
+                  ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                  : 'border-neutral-200 text-neutral-500'
+              }`}
+            >
               {statusLabel[work.status]}
             </span>
           </div>
@@ -75,7 +81,9 @@ export default function ShelfWorkPage() {
             <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
           )}
           {work.description && (
-            <p className="max-w-xl text-sm text-neutral-600">{work.description}</p>
+            <p className="max-w-xl text-sm leading-relaxed text-neutral-600">
+              {work.description}
+            </p>
           )}
           <span className="text-xs text-neutral-400">
             {study ? `${study.name} · 개인 기록은 스터디와 별개` : '혼자 읽은 책'}

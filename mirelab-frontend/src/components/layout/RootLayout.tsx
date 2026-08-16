@@ -63,7 +63,7 @@ export default function RootLayout() {
         {current && <StudyNav study={current} />}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:py-16">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-6 sm:py-8">
         <Outlet />
       </main>
 

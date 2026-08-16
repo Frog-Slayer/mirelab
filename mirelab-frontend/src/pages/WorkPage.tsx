@@ -16,7 +16,7 @@ import {
   updateWorkReason,
 } from '@/mocks/api'
 import { formatMeetAt, formatRating } from '@/lib/format'
-import type { User } from '@/types'
+import type { SlotDef, SlotValue, User } from '@/types'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -38,6 +38,7 @@ export default function WorkPage() {
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [manageOpen, setManageOpen] = useState(false)
+  const [ratingOpen, setRatingOpen] = useState(false)
 
   const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
   const { data: workSlots } = useQuery({
@@ -69,7 +70,6 @@ export default function WorkPage() {
   const { work, sessions } = data
   const slots = workSlots?.slots ?? []
   const values = workSlots?.values ?? []
-  const personalSlots = slots.filter((slot) => slot.scope === SlotScope.PERSONAL)
   const myValueOf = (slotId: string) =>
     values.find((value) => value.slotDefId === slotId && value.userId === user.id)
   const step = nextStep[work.status]
@@ -83,8 +83,16 @@ export default function WorkPage() {
         ? `모임 ${sessions.length}개가 걸려 있습니다`
         : '별점 기록이 남아 있습니다'
 
+  // 평점·한줄평은 "내 기록" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
+  const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
   const blurbSlot = slots.find(
     (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
+  )
+  const consolidatedIds = new Set(
+    [ratingSlot?.id, blurbSlot?.id].filter((id): id is string => !!id),
+  )
+  const personalSlots = slots.filter(
+    (slot) => slot.scope === SlotScope.PERSONAL && !consolidatedIds.has(slot.id),
   )
   const blurbOf = (userId: string) => {
     const v = values.find((x) => x.slotDefId === blurbSlot?.id && x.userId === userId)
@@ -94,6 +102,27 @@ export default function WorkPage() {
   return (
     <div className="flex flex-col gap-10">
       <header className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex items-center justify-end gap-2">
+          {step && (
+            <button
+              type="button"
+              onClick={() => changeStatus.mutate(step.to)}
+              disabled={changeStatus.isPending}
+              className="app-button app-button-primary"
+            >
+              {step.label}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setManageOpen(true)}
+            className="app-button app-button-secondary app-icon-button"
+            aria-label="상태 바꾸기 · 삭제"
+          >
+            …
+          </button>
+        </div>
+
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex gap-6">
             <div className="w-40 flex-none sm:w-48">
@@ -124,82 +153,99 @@ export default function WorkPage() {
                 <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
               )}
               {work.description && (
-                <p className="max-w-xl text-sm leading-relaxed text-neutral-600">
+                <p className="min-h-[3.75rem] max-w-xl text-sm leading-relaxed text-neutral-600">
                   {work.description}
                 </p>
               )}
-              <PickBlock
-                addedBy={work.addedBy}
-                reason={work.reason}
-                users={members}
-                canEdit={work.addedBy === user.id}
-                onSave={(next) => editReason.mutate(next)}
-              />
-              {work.voterCount > 0 && (
-                <div className="mt-1 flex items-center gap-2.5">
-                  <span className="font-serif text-3xl leading-none tabular-nums">
-                    {formatRating(work.average)}
-                  </span>
-                  <Stars value={work.average} />
-                  <span className="text-xs text-neutral-500">{work.voterCount}명 평가</span>
-                </div>
-              )}
+              <div className="mt-auto pt-2">
+                <PickBlock
+                  addedBy={work.addedBy}
+                  reason={work.reason}
+                  users={members}
+                  canEdit={work.addedBy === user.id}
+                  onSave={(next) => editReason.mutate(next)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {step && (
-              <button
-                type="button"
-                onClick={() => changeStatus.mutate(step.to)}
-                disabled={changeStatus.isPending}
-                className="app-button app-button-primary"
-              >
-                {step.label}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setManageOpen(true)}
-              className="app-button app-button-secondary app-icon-button"
-              aria-label="상태 바꾸기 · 삭제"
-            >
-              …
-            </button>
-          </div>
+          {work.voterCount > 0 && (
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-3">
+                <span className="font-serif text-4xl font-semibold tabular-nums">
+                  {formatRating(work.average)}
+                </span>
+                <Stars value={work.average} />
+              </div>
+              <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
+            </div>
+          )}
         </div>
 
-        {work.voterCount > 0 && (
+        {work.status !== WorkStatus.CANDIDATE && (
           <div className="border-t border-neutral-100 pt-5">
             <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
               멤버별 평점
             </span>
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="mt-3 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {members.map((m) => {
                 const score = work.ratings[m.id]
-                if (score === undefined) return null
-                return (
-                  <div
-                    key={m.id}
-                    className="relative flex flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white p-3"
-                  >
+                const mine = m.id === user.id
+                const content = (
+                  <>
                     <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
-                      <span aria-hidden>★</span>
-                      <span className="font-mono tabular-nums">{score.toFixed(1)}</span>
+                      {score === undefined ? (
+                        <span className="text-neutral-300">아직</span>
+                      ) : (
+                        <>
+                          <span aria-hidden>★</span>
+                          <span className="font-mono tabular-nums">{score.toFixed(1)}</span>
+                        </>
+                      )}
                     </span>
                     <div className="flex items-center gap-1.5 pr-10">
                       <span className="truncate text-sm font-medium text-neutral-800">
                         {m.name}
                       </span>
                     </div>
-                    {blurbOf(m.id) && (
-                      <p className="line-clamp-2 text-xs text-neutral-600">{blurbOf(m.id)}</p>
+                    {score !== undefined && blurbOf(m.id) && (
+                      <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>
                     )}
+                  </>
+                )
+                return mine ? (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setRatingOpen(true)}
+                    className="relative flex h-full cursor-pointer flex-col gap-1.5 rounded-lg border border-emerald-300 bg-white p-3 text-left transition-colors hover:border-emerald-500"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div
+                    key={m.id}
+                    className="relative flex h-full flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white p-3"
+                  >
+                    {content}
                   </div>
                 )
               })}
             </div>
           </div>
+        )}
+
+        {ratingOpen && ratingSlot && (
+          <RateDialog
+            ratingSlot={ratingSlot}
+            blurbSlot={blurbSlot}
+            ratingValue={myValueOf(ratingSlot.id)?.value}
+            blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
+            onSaveSlot={(slotDefId, value) =>
+              save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
+            }
+            onClose={() => setRatingOpen(false)}
+          />
         )}
       </header>
 
@@ -343,6 +389,73 @@ function PickBlock({
         </button>
       )}
     </div>
+  )
+}
+
+/** 멤버별 평점의 내 카드를 누르면 뜬다 — 평점·한줄평을 한 곳에서 입력한다 */
+function RateDialog({
+  ratingSlot,
+  blurbSlot,
+  ratingValue,
+  blurbValue,
+  onSaveSlot,
+  onClose,
+}: {
+  ratingSlot: SlotDef
+  blurbSlot?: SlotDef
+  ratingValue?: SlotValue['value']
+  blurbValue?: SlotValue['value']
+  onSaveSlot: (slotDefId: string, value: SlotValue['value']) => void
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    ref.current?.showModal()
+  }, [])
+
+  return (
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === ref.current) ref.current?.close()
+      }}
+      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+    >
+      <div className="flex flex-col gap-5 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-base font-semibold">내 평가</h2>
+          <button
+            type="button"
+            onClick={() => ref.current?.close()}
+            className="app-button app-button-ghost app-icon-button"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm font-semibold">{ratingSlot.name}</span>
+          <SlotField
+            slot={ratingSlot}
+            value={ratingValue}
+            onSave={(value) => onSaveSlot(ratingSlot.id, value)}
+          />
+        </div>
+
+        {blurbSlot && (
+          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-4">
+            <span className="text-sm font-semibold">{blurbSlot.name}</span>
+            <SlotField
+              slot={blurbSlot}
+              value={blurbValue}
+              onSave={(value) => onSaveSlot(blurbSlot.id, value)}
+            />
+          </div>
+        )}
+      </div>
+    </dialog>
   )
 }
 
