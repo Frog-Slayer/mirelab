@@ -4,11 +4,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import PickNote from '@/components/PickNote'
+import RankSticker, { type Rank } from '@/components/RankSticker'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
 import {
   addWorkBlock,
+  getHallOfFame,
   getWork,
   getWorkBlocks,
   getWorkSlots,
@@ -56,6 +58,12 @@ export default function WorkPage() {
     queryKey: ['workBlocks', workId],
     queryFn: () => getWorkBlocks(workId),
   })
+  // 명예의 전당과 같은 기준(장르 구분 없는 전체 순위)으로 계산해 어긋나지 않게 한다.
+  const { data: hallOfFame } = useQuery({
+    queryKey: ['hallOfFame', study?.id],
+    queryFn: () => getHallOfFame(study!.id),
+    enabled: !!study,
+  })
 
   const refresh = () => qc.invalidateQueries()
   const changeStatus = useMutation({
@@ -93,6 +101,9 @@ export default function WorkPage() {
     values.find((value) => value.slotDefId === slotId && value.userId === user.id)
   const step = nextStep[work.status]
 
+  const hallIndex = hallOfFame?.findIndex((w) => w.id === work.id) ?? -1
+  const hallRank = hallIndex >= 0 && hallIndex < 9 ? ((hallIndex + 1) as Rank) : null
+
   const hasRecords = sessions.length > 0 || work.voterCount > 0
   const deletable = work.status === WorkStatus.CANDIDATE && !hasRecords
   const lockReason =
@@ -122,7 +133,9 @@ export default function WorkPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <header className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+      <header className="relative flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+        {hallRank && <RankSticker rank={hallRank} className="-top-2 -left-2 -rotate-6" />}
+
         <div className="flex items-center justify-end gap-2">
           {step && (
             <button

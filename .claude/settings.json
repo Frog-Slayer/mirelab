@@ -25,7 +25,8 @@
       "Bash(python3 -c \"import playwright\")",
       "Bash(grep -rn \"'/shelf\\\\|\\\\\"/shelf\\\\|/shelf\\\\`\\\\|to=\\\\\"/shelf\\\\|to={\\\\`/shelf\" /home/yeongseo/mirelab/mirelab-frontend/src --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(grep -rn \"m\\\\.color\\\\|member\\\\.color\\\\|\\\\.color}\\\\`\" /home/yeongseo/mirelab/mirelab-frontend/src --include=\"*.tsx\")",
-      "Bash(npx prettier *)"
+      "Bash(npx prettier *)",
+      "Bash(grep -n \"const { work, sessions }\\\\|const blurbOf\" /home/yeongseo/mirelab/mirelab-frontend/src/pages/WorkPage.tsx)"
     ]
   }
 }
