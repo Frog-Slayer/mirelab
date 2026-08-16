@@ -65,6 +65,8 @@ export default function HallOfFamePage() {
     voterCount: work.voterCount,
     addedBy: work.addedBy,
     reason: work.reason,
+    description: work.description,
+    actors: work.actors,
   })
 
   // 완료작은 위 칸에 별점순으로, 읽는 중·후보는 아래 칸에 — 책장 칸 자체를 나눈다.
@@ -110,7 +112,7 @@ export default function HallOfFamePage() {
         {isPending && <p className="text-sm text-neutral-400">불러오는 중…</p>}
 
         {first ? (
-          <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+          <div className="grid gap-4 lg:grid-cols-[6.5fr_3.5fr]">
             <Podium work={first} rank={1} slug={study.slug} users={members} featured />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2">
               {second && <Podium work={second} rank={2} slug={study.slug} users={members} />}
@@ -161,30 +163,52 @@ function Podium({
     <Link
       to={`/${slug}/books/${work.id}`}
       className={`group relative flex h-full rounded-xl border border-neutral-200 bg-white shadow-sm transition-colors hover:border-emerald-300 ${
-        featured ? 'min-h-72 items-center gap-7 p-7 sm:p-8' : 'min-h-36 gap-4 p-5'
+        featured ? 'min-h-72 items-start gap-7 p-7 sm:p-8' : 'min-h-36 gap-4 p-5'
       }`}
     >
-      <div className={`relative ${featured ? 'w-32 flex-none sm:w-40' : 'w-16 flex-none self-start'}`}>
+      <div
+        className={`relative flex-none self-center ${featured ? 'w-32 sm:w-40' : 'w-16'}`}
+      >
         <Cover work={work} size="lg" />
         <RankSticker rank={rank as 1 | 2 | 3} />
       </div>
-      <div className="flex min-w-0 flex-col gap-1.5">
-        <span className={`pr-6 leading-tight font-semibold ${featured ? 'text-2xl' : 'text-base'}`}>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 self-stretch">
+        <span
+          className={`leading-tight font-semibold ${featured ? 'pr-20 text-2xl sm:pr-24' : 'pr-20 text-base'}`}
+        >
           {work.title}
         </span>
         <span className={featured ? 'text-sm text-neutral-500' : 'text-xs text-neutral-500'}>
           {work.author} · {work.year}
         </span>
-        <div className="flex items-center gap-3 pt-1">
-          <span className={`font-semibold tabular-nums ${featured ? 'text-3xl' : 'text-xl'}`}>
-            {formatRating(work.average)}
+        {work.actors && work.actors.length > 0 && (
+          <span className={`truncate text-neutral-400 ${featured ? 'text-xs' : 'text-[11px]'}`}>
+            출연 {work.actors.join(' · ')}
           </span>
-          <Stars value={work.average} size="sm" />
-        </div>
+        )}
+        {/* 길이가 들쭉날쭉해도 항상 같은 높이만큼 차지해서, 아래 선정 이유 위치가 안 흔들리게 한다 */}
+        <p
+          className={`text-neutral-600 ${featured ? 'line-clamp-3 min-h-[3.75rem] text-sm' : 'line-clamp-1 min-h-4 text-xs'}`}
+        >
+          {work.description}
+        </p>
         <div className="mt-auto pt-2">
           <PickNote addedBy={work.addedBy} reason={work.reason} users={users} />
         </div>
       </div>
+
+      {/* 평점은 본문 흐름과 무관하게 카드 우상단에 고정한다 — 1위는 두 줄, 2·3위는 한 줄 */}
+      {featured ? (
+        <div className="absolute top-7 right-7 flex flex-col items-end gap-1 sm:top-8 sm:right-8">
+          <span className="text-3xl font-semibold tabular-nums">{formatRating(work.average)}</span>
+          <Stars value={work.average} size="sm" />
+        </div>
+      ) : (
+        <div className="absolute top-5 right-5 flex items-center gap-1.5">
+          <span className="text-xl font-semibold tabular-nums">{formatRating(work.average)}</span>
+          <Stars value={work.average} size="sm" />
+        </div>
+      )}
     </Link>
   )
 }

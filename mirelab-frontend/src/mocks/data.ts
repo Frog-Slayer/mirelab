@@ -40,6 +40,8 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u3',
     reason: '다 같이 극장에서 본 뒤로 계속 얘기가 나와서',
+    description: '지구가 황폐해진 미래, 인류의 새 터전을 찾아 웜홀 너머로 떠난 탐사대의 이야기.',
+    actors: ['매튜 맥커너히', '앤 해서웨이', '제시카 차스테인'],
   },
   {
     id: 'w2',
@@ -51,6 +53,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u1',
     reason: '문명사를 한 번은 정리하고 넘어가고 싶었다',
+    description: '왜 어떤 문명은 정복하고 어떤 문명은 정복당했는가 — 지리와 환경으로 읽는 인류사.',
   },
   {
     id: 'w3',
@@ -62,6 +65,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u4',
     reason: '노벨상 받은 김에 제대로 읽어보자고',
+    description: '1980년 광주, 죽은 자와 산 자의 목소리로 번갈아 증언하는 소설.',
   },
   {
     id: 'w4',
@@ -73,6 +77,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u2',
     reason: '진화 얘기가 나올 때마다 인용되는 책이라',
+    description: '진화의 주인공은 개체가 아니라 유전자다 — 이기적 유전자 관점에서 본 생명 이야기.',
   },
   {
     id: 'w5',
@@ -84,6 +89,8 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u2',
     reason: '개봉 때 놓친 사람이 많아서',
+    description: '원자폭탄을 만든 물리학자 오펜하이머의 성공과 그 이후의 청문회를 그린 전기 영화.',
+    actors: ['킬리언 머피', '에밀리 블런트', '로버트 다우니 주니어'],
   },
   {
     id: 'w6',
@@ -95,6 +102,7 @@ export const works: Work[] = [
     status: WorkStatus.READING,
     addedBy: 'u1',
     reason: '총, 균, 쇠 다음으로 자연스럽게 이어져서',
+    description: '인지혁명부터 농업혁명, 과학혁명까지 — 호모 사피엔스가 세상을 지배하게 된 과정.',
   },
   {
     id: 'w7',
@@ -106,6 +114,8 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u4',
     reason: '1편만 보고 멈춘 사람이 셋이나 있어서',
+    description: '폴 아트레이데스가 프레멘과 함께 하코넨에 맞서 복수를 완성해가는 이야기.',
+    actors: ['티모시 샬라메', '젠데이아', '레베카 퍼거슨'],
   },
   {
     id: 'w8',
@@ -117,6 +127,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u3',
     reason: '과학책도 한 권쯤 섞고 싶었다',
+    description: '우주의 기원부터 생명의 진화까지, 과학의 눈으로 훑는 거대한 시공간 여행.',
   },
   {
     id: 'w9',
@@ -128,6 +139,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u3',
     reason: 'SF 고전을 하나는 짚고 가자는 얘기가 있었다',
+    description: '은하 제국의 몰락을 예견한 심리역사학자 셀던이 남긴 파운데이션 계획.',
   },
   {
     id: 'w10',
@@ -139,6 +151,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u2',
     reason: '가벼운 소설로 쉬어가는 회차',
+    description: '와타나베가 두 여인 사이에서 상실과 사랑을 배워가는 청춘의 기억.',
   },
   // 읽고 싶은 것들
   {
@@ -151,6 +164,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u1',
     reason: '사피엔스 마무리하면 바로 이어가자고',
+    description: '기아·질병·전쟁을 넘어선 인류가 다음으로 좇을 신이 되려는 욕망을 그린다.',
   },
   {
     id: 'w12',
@@ -162,6 +176,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u3',
     reason: '통계로 세상 보는 감각을 키우고 싶어서',
+    description: '우리가 세상을 실제보다 더 나쁘게 보는 열 가지 본능과, 데이터로 고치는 법.',
   },
   {
     id: 'w13',
@@ -173,6 +188,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u4',
     reason: '드라마 보고 원작이 궁금해졌다',
+    description: '일제강점기부터 현대까지, 이역만리 일본에서 뿌리내린 한 가족 4대의 이야기.',
   },
   {
     id: 'w14',
@@ -184,6 +200,8 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u2',
     reason: '영화도 한 편씩 섞어보자',
+    description: '반지하 가족이 부잣집에 하나둘 얹혀살게 되며 벌어지는 계급의 블랙코미디.',
+    actors: ['송강호', '이선균', '조여정', '최우식'],
   },
   {
     id: 'w15',
@@ -195,6 +213,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u1',
     reason: '토론 붙기 좋은 주제라',
+    description: '공리주의부터 자유지상주의까지, 정의를 둘러싼 철학적 딜레마를 사례로 풀어낸다.',
   },
   // 스터디와 무관한 개인 책 — 내 서재에만 있다
   {
@@ -205,6 +224,7 @@ export const works: Work[] = [
     author: '김교석',
     year: 2019,
     status: WorkStatus.DONE,
+    description: '좋아하는 걸 계속하는 삶에 대한 담담하고 다정한 에세이.',
   },
   {
     id: 'p2',
@@ -214,6 +234,7 @@ export const works: Work[] = [
     author: '제럴드 와인버그',
     year: 2004,
     status: WorkStatus.READING,
+    description: '문제 해결과 컨설팅 현장에서 통하는 원칙을 짧은 법칙들로 정리한 책.',
   },
 ]
 

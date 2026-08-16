@@ -70,6 +70,8 @@ export default function ShelfPage() {
     voterCount: item.rating !== null ? 1 : 0,
     addedBy: item.entry.work.addedBy,
     reason: item.entry.work.reason,
+    description: item.entry.work.description,
+    actors: item.entry.work.actors,
   })
   // 완료작은 위 칸에, 읽는 중·후보는 아래 칸에 — 완료작 정렬은 내 평점순을 그대로 따른다.
   const completedItems = displayEntries

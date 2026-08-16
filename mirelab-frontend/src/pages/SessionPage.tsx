@@ -33,7 +33,7 @@ export default function SessionPage() {
       </Link>
 
       <header className="flex flex-wrap items-start justify-between gap-6 border-b border-neutral-200 pb-7">
-        <div className="flex gap-5">
+        <div className="flex items-center gap-5">
           {work && <Cover work={work} />}
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-neutral-500">{formatMeetAt(session.meetAt)}</span>

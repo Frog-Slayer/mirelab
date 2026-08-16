@@ -94,7 +94,7 @@ export default function WorkPage() {
   return (
     <div className="flex flex-col gap-10">
       <header className="flex flex-wrap items-start justify-between gap-8 border-b border-neutral-200 pb-8">
-        <div className="flex gap-6">
+        <div className="flex items-center gap-6">
           <div className="w-32">
             <Cover work={work} size="lg" />
           </div>
@@ -119,6 +119,12 @@ export default function WorkPage() {
             <p className="text-base text-neutral-500">
               {work.author} · {work.year}
             </p>
+            {work.actors && work.actors.length > 0 && (
+              <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
+            )}
+            {work.description && (
+              <p className="max-w-xl text-sm text-neutral-600">{work.description}</p>
+            )}
             <div className="mt-1">
               <PickBlock
                 addedBy={work.addedBy}

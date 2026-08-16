@@ -26,6 +26,8 @@ export interface BookcaseItem {
   voterCount?: number
   addedBy?: string
   reason?: string
+  description?: string
+  actors?: string[]
 }
 
 const statusLabel: Record<WorkStatus, string> = {
@@ -270,12 +272,12 @@ function BookSpine({
       </Link>
 
       {/* 호버 미리보기 — 위쪽 순위 카드와 같은 내용(스티커만 뺌) */}
-      <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover/spine:visible group-hover/spine:opacity-100 group-focus-within/spine:visible group-focus-within/spine:opacity-100">
-        <div className="flex gap-3 rounded-lg border border-neutral-200 bg-white p-3 text-left shadow-lg">
+      <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover/spine:visible group-hover/spine:opacity-100 group-focus-within/spine:visible group-focus-within/spine:opacity-100">
+        <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
           <div className="w-10 flex-none">
             <Cover work={item} size="sm" />
           </div>
-          <div className="flex min-w-0 flex-col gap-1">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <span className="truncate text-sm font-semibold text-neutral-900">{item.title}</span>
             <span className="truncate text-xs text-neutral-500">
               {item.author} · {item.year}
@@ -287,6 +289,9 @@ function BookSpine({
                 </span>
                 <Stars value={item.average ?? 0} size="sm" />
               </div>
+            )}
+            {item.description && (
+              <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>
             )}
             <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />
           </div>

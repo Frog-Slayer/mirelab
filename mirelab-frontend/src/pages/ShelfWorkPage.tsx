@@ -54,7 +54,7 @@ export default function ShelfWorkPage() {
         ← 내 서재
       </Link>
 
-      <header className="flex flex-wrap gap-6 border-b border-neutral-200 pb-7">
+      <header className="flex flex-wrap items-center gap-6 border-b border-neutral-200 pb-7">
         <div className="w-28">
           <Cover work={work} size="lg" />
         </div>
@@ -71,6 +71,12 @@ export default function ShelfWorkPage() {
           <p className="text-sm text-neutral-500">
             {work.author} · {work.year}
           </p>
+          {work.actors && work.actors.length > 0 && (
+            <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
+          )}
+          {work.description && (
+            <p className="max-w-xl text-sm text-neutral-600">{work.description}</p>
+          )}
           <span className="text-xs text-neutral-400">
             {study ? `${study.name} · 개인 기록은 스터디와 별개` : '혼자 읽은 책'}
           </span>
