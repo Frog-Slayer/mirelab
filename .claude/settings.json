@@ -26,7 +26,12 @@
       "Bash(grep -rn \"'/shelf\\\\|\\\\\"/shelf\\\\|/shelf\\\\`\\\\|to=\\\\\"/shelf\\\\|to={\\\\`/shelf\" /home/yeongseo/mirelab/mirelab-frontend/src --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(grep -rn \"m\\\\.color\\\\|member\\\\.color\\\\|\\\\.color}\\\\`\" /home/yeongseo/mirelab/mirelab-frontend/src --include=\"*.tsx\")",
       "Bash(npx prettier *)",
-      "Bash(grep -n \"const { work, sessions }\\\\|const blurbOf\" /home/yeongseo/mirelab/mirelab-frontend/src/pages/WorkPage.tsx)"
+      "Bash(grep -n \"const { work, sessions }\\\\|const blurbOf\" /home/yeongseo/mirelab/mirelab-frontend/src/pages/WorkPage.tsx)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(cd /home/yeongseo/mirelab/mirelab-frontend/src && echo \"=== routes/index.tsx ===\"; cat -n routes/index.tsx; echo; echo \"=== main entry \\(App/main.tsx\\) ===\"; find .. -maxdepth 1 -iname \"main.tsx\" -o -iname \"App.tsx\" 2>/dev/null; find . -iname \"App.tsx\" -o -iname \"main.tsx\")",
+      "Read(//home/yeongseo/**)",
+      "Bash(cd /home/yeongseo/mirelab/mirelab-frontend/src && echo \"=== main.tsx ===\"; cat -n main.tsx; echo; echo \"=== search for CurrentUserProvider ===\"; grep -rn \"CurrentUserProvider\\\\|Provider\" --include=\"*.tsx\" --include=\"*.ts\" . ; echo; echo \"=== search for zustand ===\"; grep -rn \"zustand\" -i ../package.json; echo; echo \"=== search for createContext across repo ===\"; grep -rln \"createContext\" .)",
+      "Bash(grep -n \"const { open, setOpen, slot }\\\\|if \\(!slot\\) return null\\\\|slot,\\\\n  \\)\" /home/yeongseo/mirelab/mirelab-frontend/src/pages/WorkPage.tsx)"
     ]
   }
 }

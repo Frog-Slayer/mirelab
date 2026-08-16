@@ -7,6 +7,7 @@ import PickNote from '@/components/PickNote'
 import RankSticker, { type Rank } from '@/components/RankSticker'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import {
   addWorkBlock,
@@ -45,7 +46,7 @@ export default function WorkPage() {
   const navigate = useNavigate()
   const [manageOpen, setManageOpen] = useState(false)
   const [ratingOpen, setRatingOpen] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const { open: drawerOpen, setOpen: setDrawerOpen } = useRecordDrawer()
   const [creatingBlock, setCreatingBlock] = useState(false)
 
   const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
@@ -132,220 +133,7 @@ export default function WorkPage() {
   }
 
   return (
-    <div className="flex flex-col gap-10">
-      <header className="relative flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-        {hallRank && <RankSticker rank={hallRank} className="-top-2 -left-2 -rotate-6" />}
-
-        <div className="flex items-center justify-end gap-2">
-          {step && (
-            <button
-              type="button"
-              onClick={() => changeStatus.mutate(step.to)}
-              disabled={changeStatus.isPending}
-              className="app-button app-button-primary"
-            >
-              {step.label}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setManageOpen(true)}
-            className="app-button app-button-secondary app-icon-button"
-            aria-label="상태 바꾸기 · 삭제"
-          >
-            …
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="flex gap-6">
-            <div className="w-40 flex-none sm:w-48">
-              <Cover work={work} size="lg" />
-            </div>
-            <div className="flex flex-col gap-2.5 pt-0.5">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-neutral-400">
-                  {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
-                </span>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
-                    work.status === WorkStatus.READING
-                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                      : 'border-neutral-200 text-neutral-500'
-                  }`}
-                >
-                  {statusLabel[work.status]}
-                </span>
-              </div>
-              <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
-                {work.title}
-              </h1>
-              <p className="text-base text-neutral-500">
-                {work.author} · {work.year}
-              </p>
-              {work.actors && work.actors.length > 0 && (
-                <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
-              )}
-              {work.description && (
-                <p className="min-h-[3.75rem] max-w-xl text-sm leading-relaxed text-neutral-600">
-                  {work.description}
-                </p>
-              )}
-              <div className="mt-auto pt-2">
-                <PickBlock
-                  addedBy={work.addedBy}
-                  reason={work.reason}
-                  users={members}
-                  canEdit={work.addedBy === user.id}
-                  onSave={(next) => editReason.mutate(next)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {work.voterCount > 0 && (
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex items-center gap-3">
-                <span className="font-serif text-4xl font-semibold tabular-nums">
-                  {formatRating(work.average)}
-                </span>
-                <Stars value={work.average} />
-              </div>
-              <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
-            </div>
-          )}
-        </div>
-
-        {work.status !== WorkStatus.CANDIDATE && (
-          <div className="border-t border-neutral-100 pt-5">
-            <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
-              멤버별 평점
-            </span>
-            <div className="mt-3 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {members.map((m) => {
-                const score = work.ratings[m.id]
-                const mine = m.id === user.id
-                const content = (
-                  <>
-                    <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
-                      {score === undefined ? (
-                        <span className="text-neutral-300">아직</span>
-                      ) : (
-                        <>
-                          <span aria-hidden>★</span>
-                          <span className="font-mono tabular-nums">{score.toFixed(1)}</span>
-                        </>
-                      )}
-                    </span>
-                    <div className="flex items-center gap-1.5 pr-10">
-                      <span className="truncate text-sm font-medium text-neutral-800">
-                        {m.name}
-                      </span>
-                    </div>
-                    {score !== undefined && blurbOf(m.id) && (
-                      <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>
-                    )}
-                  </>
-                )
-                return mine ? (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setRatingOpen(true)}
-                    className="relative flex h-full cursor-pointer flex-col gap-1.5 rounded-lg border border-emerald-300 bg-white p-3 text-left transition-colors hover:border-emerald-500"
-                  >
-                    {content}
-                  </button>
-                ) : (
-                  <div
-                    key={m.id}
-                    className="relative flex h-full flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white p-3"
-                  >
-                    {content}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {ratingOpen && ratingSlot && (
-          <RateDialog
-            ratingSlot={ratingSlot}
-            blurbSlot={blurbSlot}
-            ratingValue={myValueOf(ratingSlot.id)?.value}
-            blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
-            onSaveSlot={(slotDefId, value) =>
-              save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
-            }
-            onClose={() => setRatingOpen(false)}
-          />
-        )}
-      </header>
-
-      {manageOpen && (
-        <ManageDialog
-          title={work.title}
-          status={work.status}
-          deletable={deletable}
-          lockReason={lockReason}
-          onChangeStatus={(next) => changeStatus.mutate(next)}
-          onDelete={() => drop.mutate()}
-          onClose={() => setManageOpen(false)}
-        />
-      )}
-
-      <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <div>
-          <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            이 작품에 대해 다같이 자유롭게 남겨보세요.
-          </p>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {blocks.map((block) => (
-            <WorkBlockCard
-              key={block.id}
-              block={block}
-              author={members.find((m) => m.id === block.authorId)}
-              canEdit={block.authorId === user.id}
-              onSave={(title, body) => editBlock.mutate({ id: block.id, title, body })}
-              onDelete={() => deleteBlock.mutate(block.id)}
-            />
-          ))}
-
-          {creatingBlock ? (
-            <BlockForm
-              onSave={(title, body) =>
-                addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
-              }
-              onCancel={() => setCreatingBlock(false)}
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setCreatingBlock(true)}
-              className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-4 text-lg text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
-              aria-label="새 블록 추가"
-            >
-              +
-            </button>
-          )}
-        </div>
-      </section>
-
-      <button
-        type="button"
-        onClick={() => setDrawerOpen((open) => !open)}
-        aria-label={drawerOpen ? '내 기록 닫기' : '내 기록 열기'}
-        className={`fixed top-[11vh] bottom-[5vh] z-40 flex w-6 cursor-pointer items-center justify-center rounded-r-2xl border border-l-0 border-neutral-200 bg-white text-neutral-400 shadow-lg transition-[left,background-color,color] duration-150 ease-out hover:bg-emerald-50 hover:text-emerald-700 ${
-          drawerOpen ? 'left-[min(24rem,100vw)]' : 'left-0'
-        }`}
-      >
-        <span aria-hidden>{drawerOpen ? '‹' : '›'}</span>
-      </button>
-
+    <>
       <MyRecordDrawer
         open={drawerOpen}
         summarySlot={summarySlot}
@@ -354,9 +142,213 @@ export default function WorkPage() {
         onSaveSlot={(slotDefId, value) =>
           save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
         }
-        onClose={() => setDrawerOpen(false)}
+        onToggle={() => setDrawerOpen((v) => !v)}
       />
-    </div>
+
+      <div className="flex flex-col gap-10">
+        <header className="relative flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+          {hallRank && <RankSticker rank={hallRank} className="-top-2 -left-2 -rotate-6" />}
+
+          <div className="flex items-center justify-end gap-2">
+            {step && (
+              <button
+                type="button"
+                onClick={() => changeStatus.mutate(step.to)}
+                disabled={changeStatus.isPending}
+                className="app-button app-button-primary"
+              >
+                {step.label}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setManageOpen(true)}
+              className="app-button app-button-secondary app-icon-button"
+              aria-label="상태 바꾸기 · 삭제"
+            >
+              …
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="flex gap-6">
+              <div className="w-40 flex-none sm:w-48">
+                <Cover work={work} size="lg" />
+              </div>
+              <div className="flex flex-col gap-2.5 pt-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-neutral-400">
+                    {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
+                  </span>
+                  <span
+                    className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                      work.status === WorkStatus.READING
+                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                        : 'border-neutral-200 text-neutral-500'
+                    }`}
+                  >
+                    {statusLabel[work.status]}
+                  </span>
+                </div>
+                <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
+                  {work.title}
+                </h1>
+                <p className="text-base text-neutral-500">
+                  {work.author} · {work.year}
+                </p>
+                {work.actors && work.actors.length > 0 && (
+                  <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
+                )}
+                {work.description && (
+                  <p className="min-h-[3.75rem] max-w-xl text-sm leading-relaxed text-neutral-600">
+                    {work.description}
+                  </p>
+                )}
+                <div className="mt-auto pt-2">
+                  <PickBlock
+                    addedBy={work.addedBy}
+                    reason={work.reason}
+                    users={members}
+                    canEdit={work.addedBy === user.id}
+                    onSave={(next) => editReason.mutate(next)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {work.voterCount > 0 && (
+              <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-3">
+                  <span className="font-serif text-4xl font-semibold tabular-nums">
+                    {formatRating(work.average)}
+                  </span>
+                  <Stars value={work.average} />
+                </div>
+                <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
+              </div>
+            )}
+          </div>
+
+          {work.status !== WorkStatus.CANDIDATE && (
+            <div className="border-t border-neutral-100 pt-5">
+              <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
+                멤버별 평점
+              </span>
+              <div className="mt-3 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {members.map((m) => {
+                  const score = work.ratings[m.id]
+                  const mine = m.id === user.id
+                  const content = (
+                    <>
+                      <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
+                        {score === undefined ? (
+                          <span className="text-neutral-300">아직</span>
+                        ) : (
+                          <>
+                            <span aria-hidden>★</span>
+                            <span className="font-mono tabular-nums">{score.toFixed(1)}</span>
+                          </>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-1.5 pr-10">
+                        <span className="truncate text-sm font-medium text-neutral-800">
+                          {m.name}
+                        </span>
+                      </div>
+                      {score !== undefined && blurbOf(m.id) && (
+                        <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>
+                      )}
+                    </>
+                  )
+                  return mine ? (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setRatingOpen(true)}
+                      className="relative flex h-full cursor-pointer flex-col gap-1.5 rounded-lg border border-emerald-300 bg-white p-3 text-left transition-colors hover:border-emerald-500"
+                    >
+                      {content}
+                    </button>
+                  ) : (
+                    <div
+                      key={m.id}
+                      className="relative flex h-full flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white p-3"
+                    >
+                      {content}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {ratingOpen && ratingSlot && (
+            <RateDialog
+              ratingSlot={ratingSlot}
+              blurbSlot={blurbSlot}
+              ratingValue={myValueOf(ratingSlot.id)?.value}
+              blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
+              onSaveSlot={(slotDefId, value) =>
+                save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
+              }
+              onClose={() => setRatingOpen(false)}
+            />
+          )}
+        </header>
+
+        {manageOpen && (
+          <ManageDialog
+            title={work.title}
+            status={work.status}
+            deletable={deletable}
+            lockReason={lockReason}
+            onChangeStatus={(next) => changeStatus.mutate(next)}
+            onDelete={() => drop.mutate()}
+            onClose={() => setManageOpen(false)}
+          />
+        )}
+
+        <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <div>
+            <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              이 작품에 대해 다같이 자유롭게 남겨보세요.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {blocks.map((block) => (
+              <WorkBlockCard
+                key={block.id}
+                block={block}
+                author={members.find((m) => m.id === block.authorId)}
+                canEdit={block.authorId === user.id}
+                onSave={(title, body) => editBlock.mutate({ id: block.id, title, body })}
+                onDelete={() => deleteBlock.mutate(block.id)}
+              />
+            ))}
+
+            {creatingBlock ? (
+              <BlockForm
+                onSave={(title, body) =>
+                  addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
+                }
+                onCancel={() => setCreatingBlock(false)}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCreatingBlock(true)}
+                className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-4 text-lg text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
+                aria-label="새 블록 추가"
+              >
+                +
+              </button>
+            )}
+          </div>
+        </section>
+      </div>
+    </>
   )
 }
 
@@ -740,8 +732,14 @@ function WorkBlockCard({
 }
 
 /**
- * 내 기록을 좌측 드로어에 담는다 — 내 서재와 값이 같은 편집 공간이라
- * 이 페이지에서는 큰 자리를 차지하지 않고 필요할 때만 펼쳐 본다.
+ * 내 기록을 담는 자리 — 내 서재와 값이 같은 편집 공간이라 이 페이지에서는
+ * 크게 차지하지 않는다. 좁은 화면에서는 왼쪽에서 겹쳐 뜨는 서랍이고,
+ * 화면이 넓을 때(xl 이상)는 본문 옆에 자리를 차지하며 밀어내는 사이드바가 된다.
+ */
+/**
+ * RootLayout 이 내준 자리(헤더 아래, main 옆)에 포털로 그린다 — 뷰포트 기준
+ * fixed 가 아니라 문서 흐름 안에 실제로 있는 자리라서, 헤더 위로 올라가거나
+ * 겹치는 일이 구조적으로 없다.
  */
 function MyRecordDrawer({
   open,
@@ -749,59 +747,76 @@ function MyRecordDrawer({
   otherSlots,
   myValueOf,
   onSaveSlot,
-  onClose,
+  onToggle,
 }: {
   open: boolean
   summarySlot?: SlotDef
   otherSlots: SlotDef[]
   myValueOf: (slotId: string) => SlotValue | undefined
   onSaveSlot: (slotDefId: string, value: SlotValue['value']) => void
-  onClose: () => void
+  onToggle: () => void
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (open && e.key === 'Escape') onClose()
+      if (open && e.key === 'Escape') onToggle()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open, onToggle])
 
   const allSlots = summarySlot ? [summarySlot, ...otherSlots] : otherSlots
 
   return (
-    <aside
-      className={`fixed top-[11vh] bottom-[5vh] left-0 z-40 flex w-[min(24rem,100vw)] flex-col overflow-y-auto border border-l-0 border-neutral-200 bg-white shadow-xl transition-transform duration-150 ease-out motion-reduce:transition-none ${
-        open ? 'translate-x-0' : 'pointer-events-none -translate-x-full'
+    <div
+      className={`fixed top-[var(--header-h)] bottom-0 left-0 z-40 flex-none overflow-visible transition-[width] duration-150 ease-out motion-reduce:transition-none ${
+        open ? 'w-[min(28rem,100vw)]' : 'w-0'
       }`}
     >
-      <div className="sticky top-0 flex flex-col border-b border-neutral-200 bg-white px-5 py-3">
-        <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
-          나만
-        </span>
-        <span className="text-sm font-medium">내 기록</span>
-      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={open ? '내 기록 닫기' : '내 기록 열기'}
+        className="absolute inset-y-0 -right-6 z-10 flex w-6 cursor-pointer items-center justify-center rounded-r-2xl border border-l-0 border-neutral-200 bg-white text-neutral-400 shadow-lg transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+      >
+        <span aria-hidden>{open ? '‹' : '›'}</span>
+      </button>
 
-      <div className="flex flex-col gap-6 p-5">
-        {allSlots.map((slot) => (
-          <div
-            key={slot.id}
-            className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
-          >
-            <span className="text-sm font-semibold">
-              {slot.name}
-              {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+      <aside
+        className={`h-full overflow-hidden border border-l-0 border-neutral-200 bg-white shadow-xl transition-[width] duration-150 ease-out motion-reduce:transition-none ${
+          open ? 'w-[min(28rem,100vw)]' : 'w-0'
+        }`}
+      >
+        <div className="flex h-full w-[min(28rem,100vw)] flex-col">
+          <div className="flex flex-none flex-col border-b border-neutral-200 bg-white px-5 py-3">
+            <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
+              나만
             </span>
-            <SlotField
-              slot={slot}
-              value={myValueOf(slot.id)?.value}
-              onSave={(value) => onSaveSlot(slot.id, value)}
-            />
+            <span className="text-sm font-medium">내 기록</span>
           </div>
-        ))}
-        {allSlots.length === 0 && (
-          <p className="text-sm text-neutral-400">아직 작성할 수 있는 기록 항목이 없습니다.</p>
-        )}
-      </div>
-    </aside>
+
+          <div className="flex flex-col gap-6 overflow-y-auto overscroll-contain p-5">
+            {allSlots.map((slot) => (
+              <div
+                key={slot.id}
+                className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
+              >
+                <span className="text-sm font-semibold">
+                  {slot.name}
+                  {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+                </span>
+                <SlotField
+                  slot={slot}
+                  value={myValueOf(slot.id)?.value}
+                  onSave={(value) => onSaveSlot(slot.id, value)}
+                />
+              </div>
+            ))}
+            {allSlots.length === 0 && (
+              <p className="text-sm text-neutral-400">아직 작성할 수 있는 기록 항목이 없습니다.</p>
+            )}
+          </div>
+        </div>
+      </aside>
+    </div>
   )
 }
