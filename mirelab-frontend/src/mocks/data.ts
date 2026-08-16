@@ -502,10 +502,25 @@ const prepValues: SlotValue[] = [
   },
 ]
 
+// 영서(u1)의 내 서재 평점 — 스터디 책은 `shelf:` 접두어를 붙여 스터디 쪽 평점과 별개로 둔다.
+const shelfRatingValues: SlotValue[] = [
+  { targetId: 'shelf:w1', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
+  { targetId: 'shelf:w2', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+  { targetId: 'shelf:w3', slotDefId: 's1', userId: 'u1', value: { n: 5 }, draft: false },
+  { targetId: 'shelf:w4', slotDefId: 's1', userId: 'u1', value: { n: 3.5 }, draft: false },
+  { targetId: 'shelf:w5', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+  { targetId: 'shelf:w7', slotDefId: 's1', userId: 'u1', value: { n: 3 }, draft: false },
+  { targetId: 'shelf:w8', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
+  { targetId: 'shelf:w9', slotDefId: 's1', userId: 'u1', value: { n: 2.5 }, draft: false },
+  { targetId: 'shelf:w10', slotDefId: 's1', userId: 'u1', value: { n: 3.5 }, draft: false },
+  { targetId: 'p1', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+]
+
 export const slotValues: SlotValue[] = [
   ...prepValues,
   ...ratingValues,
   ...blurbValues,
+  ...shelfRatingValues,
 
   // ─── 사피엔스(w6) — 4·5회차에 걸쳐 쓴 것이지만 값은 작품 하나에 이어서 쌓인다 ───
   {
