@@ -11,7 +11,15 @@ import type {
   Work,
   WorkBlock,
 } from '@/types'
-import { Availability, SlotOwner, SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
+import {
+  Availability,
+  SlotOwner,
+  SlotScope,
+  SlotType,
+  Visibility,
+  WorkKind,
+  WorkStatus,
+} from '@/types'
 
 export const users: User[] = [
   { id: 'u1', name: '영서', color: 'bg-emerald-500' },
@@ -656,15 +664,7 @@ export const pollVotes: PollVote[] = [
   { pollId: 'p2', userId: 'u3', marks: { 0: Availability.YES, 1: Availability.YES } },
 ]
 
-export const studyEvents: StudyEvent[] = [
-  {
-    id: 'ev1',
-    studyId: 'st1',
-    at: '2026-08-24T19:00',
-    title: '뒤풀이',
-    note: '사피엔스 완독 기념',
-  },
-]
+export const studyEvents: StudyEvent[] = []
 
 // ─── 함께 쓰는 기록 ───────────────────────────────────────
 

@@ -51,7 +51,7 @@ export default function ThisSessionBanner() {
       </button>
 
       <Link
-        to={`/${study.slug}/w/${session.id}`}
+        to={work ? `/${study.slug}/books/${work.id}` : `/${study.slug}/sessions`}
         className="group relative flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-lg transition-colors hover:border-emerald-300"
       >
         {work && <Cover work={work} size="sm" />}

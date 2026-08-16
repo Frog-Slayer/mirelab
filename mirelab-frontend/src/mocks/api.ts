@@ -199,7 +199,8 @@ function summarize(session: Session): SessionSummary {
   const submitted = targetId
     ? study.memberIds.filter((uid) =>
         db.slotValues.some(
-          (v) => v.targetId === targetId && v.userId === uid && personalIds.has(v.slotDefId) && !v.draft,
+          (v) =>
+            v.targetId === targetId && v.userId === uid && personalIds.has(v.slotDefId) && !v.draft,
         ),
       )
     : []
@@ -242,12 +243,6 @@ export function addSession(input: {
 
 export function getSessions(studyId: string): Promise<SessionSummary[]> {
   return delay(db.sessions.filter((w) => w.studyId === studyId).map(summarize))
-}
-
-/** 모임 화면은 일정·제출 현황 확인용이다 — 기록은 전부 작품 상세에서 쓴다 */
-export function getSession(sessionId: string): Promise<SessionSummary | null> {
-  const session = db.sessions.find((w) => w.id === sessionId)
-  return delay(session ? summarize(session) : null)
 }
 
 /**
@@ -458,6 +453,7 @@ export interface ScheduleItem {
   title: string
   note?: string
   sessionId?: string
+  workId?: string
 }
 
 export function getSchedule(studyId: string): Promise<ScheduleItem[]> {
@@ -469,6 +465,7 @@ export function getSchedule(studyId: string): Promise<ScheduleItem[]> {
       at: w.meetAt!,
       title: db.works.find((x) => x.id === w.workId)?.title ?? '모임',
       sessionId: w.id,
+      workId: w.workId,
     }))
   const fromEvents: ScheduleItem[] = db.events
     .filter((e) => e.studyId === studyId)
@@ -658,7 +655,8 @@ export function getShelf(userId: string): Promise<Shelf> {
       work,
       study: db.studies.find((s) => s.id === work.studyId) ?? null,
       values: db.slotValues.filter(
-        (v) => v.targetId === shelfTargetId(work) && v.userId === userId && slotIds.has(v.slotDefId),
+        (v) =>
+          v.targetId === shelfTargetId(work) && v.userId === userId && slotIds.has(v.slotDefId),
       ),
     }))
 
@@ -713,8 +711,6 @@ export function getShelfEntry(userId: string, workId: string): Promise<ShelfDeta
     work,
     study: db.studies.find((s) => s.id === work.studyId) ?? null,
     slots,
-    values: db.slotValues.filter(
-      (v) => v.targetId === shelfTargetId(work) && v.userId === userId,
-    ),
+    values: db.slotValues.filter((v) => v.targetId === shelfTargetId(work) && v.userId === userId),
   })
 }

@@ -1,8 +1,6 @@
 import { createBrowserRouter, createHashRouter, Navigate } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
-import SessionsPage from '@/pages/SessionsPage'
-import SessionFormPage from '@/pages/SessionFormPage'
-import SessionPage from '@/pages/SessionPage'
+import SchedulePage from '@/pages/SchedulePage'
 import HallOfFamePage from '@/pages/HallOfFamePage'
 import WorkPage from '@/pages/WorkPage'
 import ShelfPage from '@/pages/ShelfPage'
@@ -29,9 +27,7 @@ export const router = createRouter([
         path: ':studySlug',
         children: [
           { index: true, element: <HallOfFamePage /> },
-          { path: 'sessions', element: <SessionsPage /> },
-          { path: 'sessions/new', element: <SessionFormPage /> },
-          { path: 'w/:sessionId', element: <SessionPage /> },
+          { path: 'sessions', element: <SchedulePage /> },
           { path: 'books/:workId', element: <WorkPage /> },
           // 내 서재 — 스터디 안에 있지만 개인화된 저장 공간이라 개인 기준으로 보여준다.
           { path: 'shelf', element: <ShelfPage /> },
