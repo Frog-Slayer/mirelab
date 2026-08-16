@@ -166,11 +166,10 @@ function Podium({
         featured ? 'min-h-72 items-start gap-7 p-7 sm:p-8' : 'min-h-36 gap-4 p-5'
       }`}
     >
-      <div
-        className={`relative flex-none self-center ${featured ? 'w-32 sm:w-40' : 'w-16'}`}
-      >
+      <RankSticker rank={rank as 1 | 2 | 3} />
+
+      <div className={`flex-none self-center ${featured ? 'w-32 sm:w-40' : 'w-16'}`}>
         <Cover work={work} size="lg" />
-        <RankSticker rank={rank as 1 | 2 | 3} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5 self-stretch">
         <span
@@ -252,7 +251,7 @@ function RankSticker({ rank }: { rank: 1 | 2 | 3 }) {
   return (
     <span
       aria-hidden
-      className={`absolute -right-2 -bottom-2 ${sizeCls} rotate-6`}
+      className={`absolute -top-2 -left-2 z-10 ${sizeCls} -rotate-6`}
       style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.4))' }}
     >
       {/* 바깥 링 */}
