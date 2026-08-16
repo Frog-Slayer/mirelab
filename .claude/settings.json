@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/usr/bin/sed -n '200,232p' src/mocks/data.ts)",
+      "Bash(/usr/bin/sed -n '86,95p' src/mocks/api.ts)",
+      "Bash(/opt/homebrew/bin/node -e ' *)",
+      "Bash(/opt/homebrew/bin/node /tmp/claude-501/-Users-yeongseo-Workspace-personal-mirelab/92948fda-4427-4dfd-af5b-91488fd4f153/scratchpad/wire-shelf.mjs)",
+      "Bash(/opt/homebrew/bin/node /tmp/claude-501/-Users-yeongseo-Workspace-personal-mirelab/92948fda-4427-4dfd-af5b-91488fd4f153/scratchpad/strip-personal.mjs)",
+      "Bash(/opt/homebrew/bin/node /tmp/claude-501/-Users-yeongseo-Workspace-personal-mirelab/92948fda-4427-4dfd-af5b-91488fd4f153/scratchpad/cleanup.mjs)",
+      "Bash(/usr/bin/grep -n \"^import\" src/components/layout/RootLayout.tsx)",
+      "Bash(/opt/homebrew/bin/node /tmp/claude-501/-Users-yeongseo-Workspace-personal-mirelab/92948fda-4427-4dfd-af5b-91488fd4f153/scratchpad/add-slots.mjs)",
+      "Bash(/usr/bin/sed -n '440,470p' src/mocks/data.ts)"
+    ]
+  }
+}

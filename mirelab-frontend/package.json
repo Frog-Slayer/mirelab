@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "format": "prettier --write .",
     "typecheck": "tsc -b --noEmit",
+    "build:demo": "VITE_DEMO=1 vite build && node scripts/build-demo.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
