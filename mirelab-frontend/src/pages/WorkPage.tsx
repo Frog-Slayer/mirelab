@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
@@ -19,7 +19,7 @@ import {
   updateWorkBlock,
   updateWorkReason,
 } from '@/mocks/api'
-import { formatDate, formatMeetAt, formatRating } from '@/lib/format'
+import { formatDate, formatRating } from '@/lib/format'
 import type { SlotDef, SlotValue, User, WorkBlock } from '@/types'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
@@ -343,30 +343,6 @@ export default function WorkPage() {
         }
         onClose={() => setDrawerOpen(false)}
       />
-
-      <section className="flex flex-col gap-2">
-        <div>
-          <h2 className="text-xl font-semibold">함께 읽은 모임</h2>
-          <p className="mt-1 text-sm text-neutral-500">언제 만났는지 확인합니다 — 기록은 위에서.</p>
-        </div>
-        {sessions.length === 0 && <p className="text-sm text-neutral-400">아직 모임이 없습니다.</p>}
-        <ul className="flex flex-col">
-          {sessions.map((session, i) => (
-            <li key={session.id}>
-              <Link
-                to={`/${study.slug}/w/${session.id}`}
-                className="flex items-center gap-4 border-b border-neutral-200 py-4 text-sm hover:bg-neutral-100"
-              >
-                <span className="w-8 text-center font-mono text-xs text-neutral-400 tabular-nums">
-                  {i + 1}
-                </span>
-                <span className="flex-1">{session.closed ? '마감됨' : '예정'}</span>
-                <span className="text-xs text-neutral-500">{formatMeetAt(session.meetAt)}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
     </div>
   )
 }
