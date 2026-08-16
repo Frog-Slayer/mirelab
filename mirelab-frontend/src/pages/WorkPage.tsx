@@ -49,6 +49,12 @@ export default function WorkPage() {
   const { open: drawerOpen, setOpen: setDrawerOpen } = useRecordDrawer()
   const [creatingBlock, setCreatingBlock] = useState(false)
 
+  // 드로어 열림 상태는 RootLayout 에 있어서 페이지를 떠나도 안 꺼진다 —
+  // 다른 화면에서 main 이 계속 밀려 있는 것처럼 보이니 나갈 때 접어둔다.
+  useEffect(() => {
+    return () => setDrawerOpen(false)
+  }, [setDrawerOpen])
+
   const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
   const { data: workSlots } = useQuery({
     queryKey: ['workSlots', study?.id, workId],
