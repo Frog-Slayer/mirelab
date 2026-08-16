@@ -283,32 +283,12 @@ export default function WorkPage() {
       )}
 
       <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
-            <p className="mt-1 text-sm text-neutral-500">
-              이 작품에 대해 다같이 자유롭게 남겨보세요.
-            </p>
-          </div>
-          {!creatingBlock && (
-            <button
-              type="button"
-              onClick={() => setCreatingBlock(true)}
-              className="app-button app-button-secondary flex-none"
-            >
-              + 새 블록
-            </button>
-          )}
+        <div>
+          <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            이 작품에 대해 다같이 자유롭게 남겨보세요.
+          </p>
         </div>
-
-        {creatingBlock && (
-          <BlockForm
-            onSave={(title, body) =>
-              addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
-            }
-            onCancel={() => setCreatingBlock(false)}
-          />
-        )}
 
         <div className="flex flex-col gap-4">
           {blocks.map((block) => (
@@ -321,10 +301,23 @@ export default function WorkPage() {
               onDelete={() => deleteBlock.mutate(block.id)}
             />
           ))}
-          {blocks.length === 0 && !creatingBlock && (
-            <p className="text-sm text-neutral-400">
-              아직 아무도 쓰지 않았습니다. 먼저 남겨보세요.
-            </p>
+
+          {creatingBlock ? (
+            <BlockForm
+              onSave={(title, body) =>
+                addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
+              }
+              onCancel={() => setCreatingBlock(false)}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setCreatingBlock(true)}
+              className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-4 text-lg text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
+              aria-label="새 블록 추가"
+            >
+              +
+            </button>
           )}
         </div>
       </section>
