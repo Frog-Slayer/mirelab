@@ -3,7 +3,6 @@ import RootLayout from '@/components/layout/RootLayout'
 import SessionsPage from '@/pages/SessionsPage'
 import SessionFormPage from '@/pages/SessionFormPage'
 import SessionPage from '@/pages/SessionPage'
-import LibraryPage from '@/pages/LibraryPage'
 import HallOfFamePage from '@/pages/HallOfFamePage'
 import WorkPage from '@/pages/WorkPage'
 import ShelfPage from '@/pages/ShelfPage'
@@ -15,16 +14,7 @@ import NotFoundPage from '@/pages/NotFoundPage'
 const createRouter = import.meta.env.VITE_DEMO ? createHashRouter : createBrowserRouter
 
 /** 스터디 slug 로 쓸 수 없는 이름 — 전역 경로와 부딪힌다 */
-export const RESERVED_SLUGS = [
-  'shelf',
-  'diary',
-  'settings',
-  'login',
-  'signup',
-  'api',
-  'admin',
-  'new',
-]
+export const RESERVED_SLUGS = ['diary', 'settings', 'login', 'signup', 'api', 'admin', 'new']
 
 export const router = createRouter([
   {
@@ -32,8 +22,6 @@ export const router = createRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Navigate to="/reading" replace /> },
-      { path: 'shelf', element: <ShelfPage /> },
-      { path: 'shelf/:workId', element: <ShelfWorkPage /> },
       {
         // 스터디 slug 가 최상위를 차지한다. React Router 는 정적 세그먼트를
         // 동적보다 먼저 매칭하므로 전역 경로를 나중에 추가해도 안전하지만,
@@ -44,8 +32,10 @@ export const router = createRouter([
           { path: 'sessions', element: <SessionsPage /> },
           { path: 'sessions/new', element: <SessionFormPage /> },
           { path: 'w/:sessionId', element: <SessionPage /> },
-          { path: 'library', element: <LibraryPage /> },
           { path: 'books/:workId', element: <WorkPage /> },
+          // 내 서재 — 스터디 안에 있지만 개인화된 저장 공간이라 개인 기준으로 보여준다.
+          { path: 'shelf', element: <ShelfPage /> },
+          { path: 'shelf/:workId', element: <ShelfWorkPage /> },
           { path: 'settings/slots', element: <SlotSettingsPage /> },
         ],
       },

@@ -4,12 +4,12 @@ import { useQuery } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import PickNote from '@/components/PickNote'
-import ThisSessionBanner from '@/components/ThisSessionBanner'
+import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
 import { useStudy } from '@/hooks/useStudy'
-import { getHallOfFame, type HallSort, type RankedWork } from '@/mocks/api'
+import { getHallOfFame, getLibrary, type RankedWork } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
-import { WorkKind } from '@/types'
+import { WorkStatus } from '@/types'
 
 type Filter = 'ALL' | 'BOOK' | 'MOVIE'
 
@@ -22,23 +22,42 @@ const filters: Array<{ key: Filter; label: string }> = [
 export default function HallOfFamePage() {
   const { study, members } = useStudy()
   const [filter, setFilter] = useState<Filter>('ALL')
-  const [sort, setSort] = useState<HallSort>('rating')
 
   const { data: works = [], isPending } = useQuery({
-    queryKey: ['hall', study?.id, sort],
-    queryFn: () => getHallOfFame(study!.id, sort),
+    queryKey: ['hall', study?.id],
+    queryFn: () => getHallOfFame(study!.id),
+    enabled: !!study,
+  })
+  const { data: allWorks = [] } = useQuery({
+    queryKey: ['library', study?.id],
+    queryFn: () => getLibrary(study!.id),
     enabled: !!study,
   })
 
   if (!study) return null
 
   const shown = works.filter((w) => filter === 'ALL' || w.kind === filter)
-  const [first, second, third, ...rest] = shown
+  const [first, second, third] = shown
+  // 1~3위는 카드로만 보여준다 — 책장에는 4위 이하부터. 일단은 완료된 작품만 책장에 보여준다.
+  const podiumIds = new Set([first, second, third].filter(Boolean).map((w) => w!.id))
+  // 위 명예의 전당 필터(전체 · 책 · 영화)를 책장에도 그대로 적용한다.
+  const shelfWorks = allWorks.filter(
+    (work) =>
+      (filter === 'ALL' || work.kind === filter) &&
+      !podiumIds.has(work.id) &&
+      work.status === WorkStatus.DONE,
+  )
+
+  const bookcaseItems: BookcaseItem[] = shelfWorks.map((work) => ({
+    id: work.id,
+    title: work.title,
+    author: work.author,
+    status: work.status,
+    href: `/${study.slug}/books/${work.id}`,
+  }))
 
   return (
     <div className="flex flex-col gap-10">
-      <ThisSessionBanner />
-
       <section className="flex flex-col gap-6">
         <div className="flex flex-wrap items-end justify-between gap-5 border-b border-neutral-200 pb-6">
           <div className="flex flex-col gap-1.5">
@@ -49,37 +68,27 @@ export default function HallOfFamePage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex rounded-lg bg-neutral-100 p-1">
-              {filters.map((f) => (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setFilter(f.key)}
-                  className={`cursor-pointer rounded-md px-3 py-1.5 text-xs transition-colors ${
-                    filter === f.key
-                      ? 'bg-white font-medium text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as HallSort)}
-              className="cursor-pointer rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-600 outline-none"
-            >
-              <option value="rating">별점순</option>
-              <option value="recent">최근순</option>
-            </select>
+          <div className="flex rounded-lg bg-neutral-100 p-1">
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={`cursor-pointer rounded-md px-3 py-1.5 text-xs transition-colors ${
+                  filter === f.key
+                    ? 'bg-white font-medium text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
 
         {isPending && <p className="text-sm text-neutral-400">불러오는 중…</p>}
 
-        {sort === 'rating' && first && (
+        {first ? (
           <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
             <Podium work={first} rank={1} slug={study.slug} users={members} featured />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2">
@@ -87,20 +96,13 @@ export default function HallOfFamePage() {
               {third && <Podium work={third} rank={3} slug={study.slug} users={members} />}
             </div>
           </div>
+        ) : (
+          !isPending && <p className="text-sm text-neutral-400">아직 완료한 작품이 없습니다.</p>
         )}
+      </section>
 
-        <ol className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-          {(sort === 'rating' ? rest : shown).map((work, i) => (
-            <RankRow
-              key={work.id}
-              work={work}
-              rank={sort === 'rating' ? i + 4 : i + 1}
-              showRank={sort === 'rating'}
-              slug={study.slug}
-              users={members}
-            />
-          ))}
-        </ol>
+      <section className="flex flex-col gap-6">
+        <Bookcase items={bookcaseItems} />
       </section>
     </div>
   )
@@ -126,11 +128,9 @@ function Podium({
         featured ? 'min-h-72 items-center gap-7 p-7 sm:p-8' : 'min-h-36 gap-4 p-5'
       }`}
     >
-      <span className="absolute top-4 right-4 text-3xl font-semibold text-neutral-200 tabular-nums">
-        {rank}
-      </span>
-      <div className={featured ? 'w-32 flex-none sm:w-40' : 'w-16 flex-none'}>
+      <div className={`relative ${featured ? 'w-32 flex-none sm:w-40' : 'w-16 flex-none self-start'}`}>
         <Cover work={work} size="lg" />
+        <RankSticker rank={rank as 1 | 2 | 3} />
       </div>
       <div className="flex min-w-0 flex-col gap-1.5">
         <span className={`pr-6 leading-tight font-semibold ${featured ? 'text-2xl' : 'text-base'}`}>
@@ -153,48 +153,69 @@ function Podium({
   )
 }
 
-function RankRow({
-  work,
-  rank,
-  showRank,
-  slug,
-  users,
-}: {
-  work: RankedWork
-  rank: number
-  showRank: boolean
-  slug: string
-  users: User[]
-}) {
+const rankStickerColors: Record<1 | 2 | 3, { gradient: string; ring: string; text: string }> = {
+  1: {
+    gradient:
+      'linear-gradient(155deg, #fff8dd 0%, #f6d365 22%, #caa233 45%, #8a6210 62%, #f9e79a 80%, #d4af37 100%)',
+    ring: '#7a5608',
+    text: '#4a3400',
+  },
+  2: {
+    gradient:
+      'linear-gradient(155deg, #ffffff 0%, #e6ebf0 22%, #a8b3bf 45%, #6b7684 62%, #eef2f6 80%, #b0b8c1 100%)',
+    ring: '#5b6570',
+    text: '#33383d',
+  },
+  3: {
+    gradient:
+      'linear-gradient(155deg, #f6dcc0 0%, #e0a469 22%, #a8632f 45%, #6e3d1c 62%, #f0c79a 80%, #b6733a 100%)',
+    ring: '#5c331a',
+    text: '#3c2410',
+  },
+}
+
+// 별 모양은 아니고, 포스터에 붙인 스티커/실 같은 느낌의 톱니 원.
+const stickerClipPath =
+  'polygon(50% 0%, 61% 10%, 75% 5%, 80% 18%, 95% 20%, 93% 35%, 100% 50%, 93% 65%, 95% 80%, 80% 82%, 75% 95%, 61% 90%, 50% 100%, 39% 90%, 25% 95%, 20% 82%, 5% 80%, 7% 65%, 0% 50%, 7% 35%, 5% 20%, 20% 18%, 25% 5%, 39% 10%)'
+
+/**
+ * border/box-shadow 는 사각 박스 기준이라 톱니 clip-path 모양을 고르게 못 따라가서
+ * (안쪽 흰 줄 두께가 꼭짓점/골 마다 달라 보임) 겹쳐 그리지 않는다.
+ * 대신 같은 clip-path 를 쓰는 레이어를 크기만 줄여 겹쳐 쌓는다 — 링 두께가 어디서나 같다.
+ */
+function RankSticker({ rank }: { rank: 1 | 2 | 3 }) {
+  const { gradient, ring, text } = rankStickerColors[rank]
+  const sizeCls = rank === 1 ? 'size-11 text-sm sm:size-12 sm:text-base' : 'size-7 text-xs sm:size-8'
+  const ringInset = rank === 1 ? '2px' : '1.3px'
+  const lineInset = rank === 1 ? '3.5px' : '2.3px'
+
   return (
-    <li>
-      <Link
-        to={`/${slug}/books/${work.id}`}
-        className="group flex items-center gap-5 border-b border-neutral-100 px-4 py-4 transition-colors last:border-0 hover:bg-neutral-50"
+    <span
+      aria-hidden
+      className={`absolute -right-2 -bottom-2 ${sizeCls} rotate-6`}
+      style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.4))' }}
+    >
+      {/* 바깥 링 */}
+      <span className="absolute inset-0" style={{ background: ring, clipPath: stickerClipPath }} />
+      {/* 안쪽 흰 줄 */}
+      <span
+        className="absolute"
+        style={{ inset: ringInset, background: '#fff', clipPath: stickerClipPath }}
+      />
+      {/* 금속 면 + 숫자 */}
+      <span
+        className="absolute grid place-items-center font-bold"
+        style={{
+          inset: lineInset,
+          background: gradient,
+          color: text,
+          clipPath: stickerClipPath,
+          boxShadow: 'inset 0 1px 1px rgba(255,255,255,.6), inset 0 -1px 2px rgba(0,0,0,.3)',
+          textShadow: '0 1px 0 rgba(255,255,255,.5), 0 -1px 1px rgba(0,0,0,.35)',
+        }}
       >
-        {showRank && (
-          <span className="w-8 text-right text-sm font-medium text-neutral-400 tabular-nums">
-            {rank}
-          </span>
-        )}
-        <Cover work={work} size="sm" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium">
-            {work.title}
-            <span className="ml-2 text-xs font-normal text-neutral-400">
-              {work.kind === WorkKind.MOVIE ? '영화' : '책'}
-            </span>
-          </span>
-          <span className="truncate text-xs text-neutral-500">{work.author}</span>
-          <PickNote addedBy={work.addedBy} reason={work.reason} users={users} />
-        </div>
-        <div className="flex items-center gap-2">
-          <Stars value={work.average} size="sm" />
-          <span className="w-8 text-right text-sm font-medium tabular-nums">
-            {formatRating(work.average)}
-          </span>
-        </div>
-      </Link>
-    </li>
+        {rank}
+      </span>
+    </span>
   )
 }

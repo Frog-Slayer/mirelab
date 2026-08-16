@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { addSlotDef, getSlotDefs, moveSlot, toggleSlotHidden } from '@/mocks/api'
 import { useStudy } from '@/hooks/useStudy'
 import type { SlotDef } from '@/types'
-import { SlotAttach, SlotOwner, SlotScope, SlotType, Visibility } from '@/types'
+import { SlotOwner, SlotScope, SlotType, Visibility } from '@/types'
 
 const typeLabel: Record<string, string> = {
   [SlotType.RATING]: '별점',
@@ -11,11 +11,6 @@ const typeLabel: Record<string, string> = {
   [SlotType.TEXT_LONG]: '긴 글',
   [SlotType.LIST]: '목록',
   [SlotType.SHARED_ITEMS]: '항목 목록',
-}
-
-const attachLabel: Record<string, string> = {
-  [SlotAttach.SESSION]: '모임마다',
-  [SlotAttach.WORK]: '작품에 한 번',
 }
 
 const visibilityLabel: Record<string, string> = {
@@ -46,7 +41,7 @@ export default function SlotSettingsPage() {
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">칸 관리</h1>
         <p className="text-sm text-neutral-500">
-          위에서부터 모임 화면에 그려지는 순서입니다. 칸을 추가하면 다음 모임부터 나타납니다.
+          위에서부터 작품 화면에 그려지는 순서입니다. 칸을 추가하면 다음부터 나타납니다.
         </p>
       </div>
 
@@ -81,13 +76,12 @@ export default function SlotSettingsPage() {
 
             <span className="min-w-28 text-sm font-medium">{slot.name}</span>
             <Pill>{typeLabel[slot.type]}</Pill>
-            <Pill accent={slot.attach === SlotAttach.WORK}>{attachLabel[slot.attach]}</Pill>
             <Pill accent={slot.scope === SlotScope.SHARED}>
               {slot.scope === SlotScope.SHARED ? '공동 · 실시간' : '개인별'}
             </Pill>
             <Pill>{visibilityLabel[slot.visibility]}</Pill>
             {slot.allowMemo && <Pill>💬 메모 허용</Pill>}
-            {slot.owner === SlotOwner.SESSION && <Pill dashed>이번 주만</Pill>}
+            {slot.owner === SlotOwner.SESSION && <Pill dashed>이번 모임만</Pill>}
 
             <div className="ml-auto flex items-center gap-3">
               {slot.hidden && (
@@ -117,14 +111,12 @@ function AddSlotForm({
     name: string
     type: SlotType
     scope: SlotDef['scope']
-    attach: SlotDef['attach']
     visibility: SlotDef['visibility']
   }) => void
 }) {
   const [name, setName] = useState('')
   const [scope, setScope] = useState<SlotDef['scope']>(SlotScope.PERSONAL)
   const [type, setType] = useState<SlotType>(SlotType.TEXT_SHORT)
-  const [attach, setAttach] = useState<SlotDef['attach']>(SlotAttach.SESSION)
   const [visibility, setVisibility] = useState<SlotDef['visibility']>(Visibility.ALWAYS)
 
   const isShared = scope === SlotScope.SHARED
@@ -138,7 +130,6 @@ function AddSlotForm({
           name: name.trim(),
           type: isShared ? SlotType.SHARED_ITEMS : type,
           scope,
-          attach,
           visibility,
         })
         setName('')
@@ -157,10 +148,6 @@ function AddSlotForm({
         <Select value={scope} onChange={(v) => setScope(v as SlotDef['scope'])}>
           <option value={SlotScope.PERSONAL}>개인별</option>
           <option value={SlotScope.SHARED}>공동</option>
-        </Select>
-        <Select value={attach} onChange={(v) => setAttach(v as SlotDef['attach'])}>
-          <option value={SlotAttach.SESSION}>모임마다</option>
-          <option value={SlotAttach.WORK}>작품에 한 번</option>
         </Select>
         <Select value={type} onChange={(v) => setType(v as SlotType)} disabled={isShared}>
           {isShared ? (

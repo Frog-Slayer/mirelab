@@ -5,16 +5,11 @@ import { Bookcase, BookcaseStatusFilters, type BookcaseFilter } from '@/componen
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useStudy } from '@/hooks/useStudy'
 import { addPersonalWork, getShelf, type ShelfEntry } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
 import type { SlotDef } from '@/types'
 import { SlotType, WorkKind, WorkStatus } from '@/types'
-
-const statusLabel: Record<string, string> = {
-  [WorkStatus.CANDIDATE]: '후보',
-  [WorkStatus.READING]: '읽는 중',
-  [WorkStatus.DONE]: '완료',
-}
 
 const columns = [
   { status: WorkStatus.CANDIDATE, label: '후보', hint: '읽고 싶은 것' },
@@ -24,14 +19,19 @@ const columns = [
 
 type ShelfView = 'SHELF' | 'BOARD'
 
+/** 스터디에서 온 책도 내 서재 안에서는 똑같이 자기 페이지(별도 기록)를 갖는다 */
+function entryHref(entry: ShelfEntry, currentStudySlug: string) {
+  return `/${currentStudySlug}/shelf/${entry.work.id}`
+}
+
 /**
  * 내 서재 — 내 책 목록. 여기서는 보기만 하고, 쓰는 건 상세에서 한다.
  */
 export default function ShelfPage() {
   const { user } = useCurrentUser()
+  const { study } = useStudy()
   const qc = useQueryClient()
   const [adding, setAdding] = useState(false)
-  const [activeId, setActiveId] = useState<string | null>(null)
   const [filter, setFilter] = useState<BookcaseFilter>('ALL')
   const [view, setView] = useState<ShelfView>('SHELF')
 
@@ -46,7 +46,7 @@ export default function ShelfPage() {
     onSuccess: () => qc.invalidateQueries(),
   })
 
-  if (!user || !shelf) return <p className="text-sm text-neutral-400">불러오는 중…</p>
+  if (!user || !study || !shelf) return <p className="text-sm text-neutral-400">불러오는 중…</p>
 
   const { slots, entries } = shelf
   const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
@@ -68,8 +68,6 @@ export default function ShelfPage() {
     filter === 'ALL'
       ? displayEntries
       : displayEntries.filter((item) => item.entry.work.status === filter)
-  const active =
-    filteredEntries.find((item) => item.entry.work.id === activeId) ?? filteredEntries[0]
   const rated = entries.filter((e) => myRating(e) !== null)
   const average = rated.length
     ? rated.reduce((sum, e) => sum + (myRating(e) ?? 0), 0) / rated.length
@@ -106,37 +104,30 @@ export default function ShelfPage() {
         />
       )}
 
-      {displayEntries.length > 0 &&
-        (view === 'SHELF' ? (
-          <>
+      {view === 'SHELF' ? (
+        <>
+          {displayEntries.length > 0 && (
             <BookcaseStatusFilters
               value={filter}
               items={displayEntries.map(({ entry }) => ({ status: entry.work.status }))}
               onChange={setFilter}
             />
-            {filteredEntries.length > 0 ? (
-              <Bookcase
-                items={filteredEntries.map(({ entry }) => ({
-                  id: entry.work.id,
-                  title: entry.work.title,
-                  author: entry.work.author,
-                  status: entry.work.status,
-                  href: `/shelf/${entry.work.id}`,
-                }))}
-                onActivate={setActiveId}
-              />
-            ) : (
-              <div className="rounded-xl border border-dashed border-neutral-300 px-5 py-12 text-center text-sm text-neutral-500">
-                이 상태의 책이 없습니다.
-              </div>
-            )}
-            {active && <ActiveBook item={active} />}
-          </>
-        ) : (
-          <ShelfBoard items={displayEntries} />
-        ))}
-
-      {entries.length === 0 && <p className="text-sm text-neutral-400">아직 담은 책이 없습니다.</p>}
+          )}
+          <Bookcase
+            items={filteredEntries.map(({ entry }) => ({
+              id: entry.work.id,
+              title: entry.work.title,
+              author: entry.work.author,
+              status: entry.work.status,
+              href: entryHref(entry, study.slug),
+              source: entry.study?.name ?? null,
+            }))}
+            onAdd={() => setAdding(true)}
+          />
+        </>
+      ) : (
+        <ShelfBoard items={displayEntries} slug={study.slug} />
+      )}
     </div>
   )
 }
@@ -189,7 +180,7 @@ function ViewToggle({
 }
 
 /** 읽는 상태별로 늘어놓는 보기. 칸 안은 내가 매긴 점수 순 */
-function ShelfBoard({ items }: { items: DisplayEntry[] }) {
+function ShelfBoard({ items, slug }: { items: DisplayEntry[]; slug: string }) {
   return (
     <div className="grid gap-8 md:grid-cols-3 md:gap-5">
       {columns.map(({ status, label, hint }) => {
@@ -205,7 +196,7 @@ function ShelfBoard({ items }: { items: DisplayEntry[] }) {
             {inColumn.length === 0 && <p className="py-5 text-sm text-neutral-400">비어 있음</p>}
 
             {inColumn.map((item) => (
-              <BoardCard key={item.entry.work.id} item={item} />
+              <BoardCard key={item.entry.work.id} item={item} slug={slug} />
             ))}
           </section>
         )
@@ -214,12 +205,12 @@ function ShelfBoard({ items }: { items: DisplayEntry[] }) {
   )
 }
 
-function BoardCard({ item }: { item: DisplayEntry }) {
+function BoardCard({ item, slug }: { item: DisplayEntry; slug: string }) {
   const { work, study } = item.entry
 
   return (
     <Link
-      to={`/shelf/${work.id}`}
+      to={entryHref(item.entry, slug)}
       className="flex flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-emerald-300"
     >
       <div className="flex gap-4">
@@ -242,38 +233,6 @@ function BoardCard({ item }: { item: DisplayEntry }) {
 
       {item.blurb && <p className="line-clamp-2 text-xs text-neutral-600">{item.blurb}</p>}
     </Link>
-  )
-}
-
-function ActiveBook({ item }: { item: DisplayEntry }) {
-  const { work, study } = item.entry
-
-  return (
-    <div className="grid gap-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm sm:grid-cols-[auto_1fr_auto] sm:items-center">
-      <Cover work={work} />
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-semibold">{work.title}</h2>
-          <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500">
-            {statusLabel[work.status]}
-          </span>
-        </div>
-        <p className="mt-1 text-sm text-neutral-500">
-          {work.author} · {study?.name ?? '혼자 읽음'}
-        </p>
-        {item.blurb && <p className="mt-2 text-sm text-neutral-700">{item.blurb}</p>}
-      </div>
-      <div className="flex items-center gap-2 sm:justify-self-end">
-        {item.rating === null ? (
-          <span className="text-sm text-neutral-400">아직 평가하지 않음</span>
-        ) : (
-          <>
-            <Stars value={item.rating} size="sm" />
-            <span className="text-lg font-semibold tabular-nums">{item.rating.toFixed(1)}</span>
-          </>
-        )}
-      </div>
-    </div>
   )
 }
 

@@ -10,16 +10,7 @@ import type {
   Session,
   Work,
 } from '@/types'
-import {
-  Availability,
-  SlotAttach,
-  SlotOwner,
-  SlotScope,
-  SlotType,
-  Visibility,
-  WorkKind,
-  WorkStatus,
-} from '@/types'
+import { Availability, SlotOwner, SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 export const users: User[] = [
   { id: 'u1', name: '영서', color: 'bg-emerald-500' },
@@ -226,13 +217,12 @@ export const works: Work[] = [
   },
 ]
 
+// 최신이 앞에 오는 순서로 둔다 — addSession 이 unshift 로 새 모임을 앞에 붙이는 것과 같은 순서다.
 export const sessions: Session[] = [
-  // 날짜가 아직 안 잡힌 회차 — 주기가 고정이 아니라서 흔한 상태다
+  // 날짜가 아직 안 잡힌 모임 — 주기가 고정이 아니라서 흔한 상태다
   {
     id: 'k6',
     studyId: 'st1',
-    no: 6,
-    title: '10~12장',
     workId: 'w6',
     meetAt: null,
     closed: false,
@@ -240,8 +230,6 @@ export const sessions: Session[] = [
   {
     id: 'k5',
     studyId: 'st1',
-    no: 5,
-    title: '7~9장',
     workId: 'w6',
     meetAt: '2026-08-17T20:00',
     closed: false,
@@ -249,8 +237,6 @@ export const sessions: Session[] = [
   {
     id: 'k4',
     studyId: 'st1',
-    no: 4,
-    title: '4~6장',
     workId: 'w6',
     meetAt: '2026-08-10T20:00',
     closed: true,
@@ -258,8 +244,6 @@ export const sessions: Session[] = [
   {
     id: 'k3',
     studyId: 'st1',
-    no: 3,
-    title: '1~3장',
     workId: 'w6',
     meetAt: '2026-08-03T20:00',
     closed: true,
@@ -267,8 +251,6 @@ export const sessions: Session[] = [
   {
     id: 'k2',
     studyId: 'st1',
-    no: 2,
-    title: '마무리',
     workId: 'w2',
     meetAt: '2026-07-27T20:00',
     closed: true,
@@ -276,8 +258,6 @@ export const sessions: Session[] = [
   {
     id: 'k1',
     studyId: 'st1',
-    no: 1,
-    title: '1부',
     workId: 'w2',
     meetAt: '2026-07-20T20:00',
     closed: true,
@@ -292,7 +272,6 @@ export const slotDefs: SlotDef[] = [
     name: '평점',
     type: SlotType.RATING,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.WORK,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -305,7 +284,6 @@ export const slotDefs: SlotDef[] = [
     name: '한줄평',
     type: SlotType.TEXT_SHORT,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.WORK,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -318,7 +296,6 @@ export const slotDefs: SlotDef[] = [
     name: '인상깊은 장면',
     type: SlotType.LIST,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -331,7 +308,6 @@ export const slotDefs: SlotDef[] = [
     name: '내 메모',
     type: SlotType.TEXT_LONG,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.WORK,
     visibility: Visibility.PRIVATE,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -344,7 +320,6 @@ export const slotDefs: SlotDef[] = [
     name: '줄거리',
     type: SlotType.SHARED_ITEMS,
     scope: SlotScope.SHARED,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: true,
@@ -357,7 +332,6 @@ export const slotDefs: SlotDef[] = [
     name: '오늘 나온 이야기',
     type: SlotType.SHARED_ITEMS,
     scope: SlotScope.SHARED,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: true,
@@ -370,7 +344,6 @@ export const slotDefs: SlotDef[] = [
     name: '발제문',
     type: SlotType.TEXT_LONG,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -383,7 +356,6 @@ export const slotDefs: SlotDef[] = [
     name: '다음 책 후보',
     type: SlotType.SHARED_ITEMS,
     scope: SlotScope.SHARED,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.SESSION,
     sessionId: 'k5',
@@ -397,7 +369,6 @@ export const slotDefs: SlotDef[] = [
     name: '내 요약',
     type: SlotType.TEXT_LONG,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -410,7 +381,6 @@ export const slotDefs: SlotDef[] = [
     name: '질문 · 토론거리',
     type: SlotType.LIST,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -423,7 +393,6 @@ export const slotDefs: SlotDef[] = [
     name: '인상깊은 구절',
     type: SlotType.LIST,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -432,8 +401,8 @@ export const slotDefs: SlotDef[] = [
   },
 ]
 
-// 평점·한줄평·내 메모는 작품에, 요약·질문·구절은 모임에 붙는다.
-// 한 작품을 여러 범위로 나눠 읽어도 최종 평가는 한 번만 작성한다.
+// 모든 칸 값은 작품에 붙는다. 요약·질문·구절도 여러 회차에 걸쳐 썼지만
+// 하나의 작품 기록으로 이어진다 — 회차별로 다시 나뉘지 않는다.
 
 /** 작품별 [영서, 호남, 희남, 승우] 평점. 0.1 단위라 어중간한 값이 섞인다 */
 const workRatings: Record<string, number[]> = {
@@ -493,14 +462,14 @@ const blurbValues: SlotValue[] = [
 
 const prepValues: SlotValue[] = [
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's10',
     userId: 'u1',
     value: { items: ['농업혁명이 개인에겐 재앙이었다는 주장, 어디까지 동의하나'] },
     draft: false,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's9',
     userId: 'u2',
     value: {
@@ -509,7 +478,7 @@ const prepValues: SlotValue[] = [
     draft: false,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's10',
     userId: 'u2',
     value: {
@@ -518,14 +487,14 @@ const prepValues: SlotValue[] = [
     draft: false,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's11',
     userId: 'u2',
     value: { items: ['우리는 밀을 길들이지 않았다. 밀이 우리를 길들였다'] },
     draft: false,
   },
   {
-    targetId: 'k2',
+    targetId: 'w2',
     slotDefId: 's10',
     userId: 'u3',
     value: { items: ['지리가 전부라면 개인의 선택은 어디에 남나'] },
@@ -538,9 +507,9 @@ export const slotValues: SlotValue[] = [
   ...ratingValues,
   ...blurbValues,
 
-  // ─── 5번째 모임 (진행 중) ───
+  // ─── 사피엔스(w6) — 4·5회차에 걸쳐 쓴 것이지만 값은 작품 하나에 이어서 쌓인다 ───
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's3',
     userId: 'u2',
     value: { items: ['우리는 밀을 길들이지 않았다', '화폐는 상호 신뢰의 시스템'] },
@@ -554,12 +523,13 @@ export const slotValues: SlotValue[] = [
     draft: true,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     userId: null,
     draft: false,
     value: {
       shared: [
+        { id: 'i6', text: '수렵채집 사회의 삶이 더 나았다는 근거' },
         { id: 'i1', text: '농업혁명은 생산량을 늘렸지만 개인의 삶은 오히려 나빠졌다' },
         { id: 'i2', text: '화폐는 상호 신뢰의 시스템으로 작동한다' },
         { id: 'i3', text: '제국은 문화를 흡수하며 확장한다' },
@@ -567,7 +537,7 @@ export const slotValues: SlotValue[] = [
     },
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's6',
     userId: null,
     draft: false,
@@ -576,34 +546,25 @@ export const slotValues: SlotValue[] = [
     },
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's8',
     userId: null,
     draft: false,
     value: { shared: [{ id: 'i5', text: '사피엔스 다음은 호모 데우스?' }] },
   },
-
-  // ─── 4회차 (마감됨) ───
   {
-    targetId: 'k4',
+    targetId: 'w6',
     slotDefId: 's3',
     userId: 'u1',
     value: { items: ['상상의 질서는 무너지지 않는다'] },
     draft: false,
-  },
-  {
-    targetId: 'k4',
-    slotDefId: 's5',
-    userId: null,
-    draft: false,
-    value: { shared: [{ id: 'i6', text: '수렵채집 사회의 삶이 더 나았다는 근거' }] },
   },
 ]
 
 export const memos: Memo[] = [
   {
     id: 'mo1',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     itemId: 'i1',
     userId: 'u2',
@@ -612,7 +573,7 @@ export const memos: Memo[] = [
   },
   {
     id: 'mo2',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     itemId: 'i1',
     userId: 'u3',
@@ -621,7 +582,7 @@ export const memos: Memo[] = [
   },
   {
     id: 'mo3',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     itemId: 'i2',
     userId: 'u1',
@@ -630,7 +591,7 @@ export const memos: Memo[] = [
   },
   {
     id: 'mo4',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's6',
     itemId: 'i4',
     userId: 'u1',

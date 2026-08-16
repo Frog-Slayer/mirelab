@@ -16,7 +16,6 @@ export default function SessionFormPage() {
   const navigate = useNavigate()
 
   const [picked, setPicked] = useState<Picked>(null)
-  const [title, setTitle] = useState('')
   const [meetAt, setMeetAt] = useState('')
   const [undecided, setUndecided] = useState(true)
 
@@ -43,7 +42,6 @@ export default function SessionFormPage() {
       }
       return addSession({
         studyId: study!.id,
-        title: title.trim(),
         workId,
         meetAt: undecided || !meetAt ? null : meetAt,
       })
@@ -57,14 +55,14 @@ export default function SessionFormPage() {
   if (!study || !user) return null
 
   const ongoing = library.filter((w) => w.status !== WorkStatus.DONE)
-  const canSubmit = title.trim().length > 0 && !create.isPending
+  const canSubmit = !create.isPending
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">새 모임</h1>
         <p className="text-sm text-neutral-500">
-          정해진 주기가 없으니 날짜는 나중에 정해도 됩니다. 책과 범위만 있으면 시작할 수 있습니다.
+          정해진 주기가 없으니 날짜는 나중에 정해도 됩니다. 책만 있으면 시작할 수 있습니다.
         </p>
       </div>
 
@@ -113,18 +111,7 @@ export default function SessionFormPage() {
         </p>
       </section>
 
-      {/* 2. 범위 */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-neutral-700">범위</h2>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="예: 7~9장 · 1부 · 마무리"
-          className="rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
-        />
-      </section>
-
-      {/* 3. 날짜 */}
+      {/* 2. 날짜 */}
       <section className="flex flex-col gap-3">
         <h2 className="text-sm font-semibold text-neutral-700">모임 일시</h2>
 
@@ -160,7 +147,6 @@ export default function SessionFormPage() {
         <Link to={`/${study.slug}/sessions`} className="text-sm text-neutral-500 hover:underline">
           취소
         </Link>
-        {!title.trim() && <span className="text-xs text-neutral-400">범위를 적어주세요</span>}
       </div>
     </div>
   )

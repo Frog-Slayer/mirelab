@@ -9,6 +9,11 @@ export interface BookcaseItem {
   author: string
   status: WorkStatus
   href: string
+  /**
+   * 어디서 온 책인지 — 스터디 이름이면 스터디 책, `null`이면 혼자 담은 책.
+   * `undefined`면 이 구분이 의미 없는 곳(명예의 전당 등)이라 표시를 안 한다.
+   */
+  source?: string | null
 }
 
 const statusLabel: Record<WorkStatus, string> = {
@@ -78,29 +83,76 @@ export function BookcaseStatusFilters({
 export function Bookcase({
   items,
   onActivate,
+  onAdd,
 }: {
   items: BookcaseItem[]
   onActivate?: (id: string) => void
+  /** 있으면 빈 칸이 "+" 로 바뀌어 책 추가 모달을 띄운다. 없으면 그냥 빈 칸으로만 보여준다 */
+  onAdd?: () => void
 }) {
   return (
     <section
       aria-label="책장"
       className="overflow-hidden rounded-xl border-8 border-[#71543d] bg-[#ddd7ce] shadow-[inset_0_0_20px_rgba(56,40,27,0.18),0_8px_22px_rgba(38,31,24,0.1)]"
     >
-      {chunk(items, 7).map((row, rowIndex) => (
-        <div key={rowIndex}>
+      {items.length === 0 ? (
+        <div>
           <ol className="flex min-h-52 items-end gap-1.5 overflow-x-auto px-5 pt-6 pb-1">
-            {row.map((item) => (
-              <BookSpine key={item.id} item={item} onActivate={onActivate} />
-            ))}
+            <EmptySlot onAdd={onAdd} />
           </ol>
           <div className="h-4 border-y border-[#5e4432] bg-[#856346] shadow-[0_6px_10px_rgba(42,29,19,0.25)]" />
-          {rowIndex < Math.ceil(items.length / 7) - 1 && (
-            <div className="h-3 bg-[#6f5139]" aria-hidden />
-          )}
         </div>
-      ))}
+      ) : (
+        chunk(items, 7).map((row, rowIndex) => (
+          <div key={rowIndex}>
+            <ol className="flex min-h-52 items-end gap-1.5 overflow-x-auto px-5 pt-6 pb-1">
+              {row.map((item) => (
+                <BookSpine key={item.id} item={item} onActivate={onActivate} />
+              ))}
+            </ol>
+            <div className="h-4 border-y border-[#5e4432] bg-[#856346] shadow-[0_6px_10px_rgba(42,29,19,0.25)]" />
+            {rowIndex < Math.ceil(items.length / 7) - 1 && (
+              <div className="h-3 bg-[#6f5139]" aria-hidden />
+            )}
+          </div>
+        ))
+      )}
     </section>
+  )
+}
+
+/**
+ * 필터 등으로 보여줄 게 없을 때도 빈 책장이 아니라 빈 칸 하나가 꽂힌 책장으로 보여준다.
+ * onAdd 가 있으면 그 칸 자체가 "+" 버튼이 되어 책을 추가할 수 있다.
+ */
+function EmptySlot({ onAdd }: { onAdd?: () => void }) {
+  const cls =
+    'flex w-10 flex-none items-center justify-center rounded-t-[3px] border border-dashed text-lg'
+
+  if (onAdd) {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={onAdd}
+          aria-label="책 추가하기"
+          title="책 추가하기"
+          className={`${cls} cursor-pointer border-black/25 text-black/35 transition-colors hover:border-emerald-600/50 hover:bg-black/5 hover:text-emerald-700`}
+          style={{ height: 150 }}
+        >
+          +
+        </button>
+      </li>
+    )
+  }
+
+  return (
+    <li>
+      <span className="sr-only">표시할 작품이 없습니다</span>
+      <div aria-hidden className={`${cls} border-black/20 text-black/25`} style={{ height: 150 }}>
+        —
+      </div>
+    </li>
   )
 }
 
@@ -162,8 +214,10 @@ function BookSpine({
         onMouseEnter={() => onActivate?.(item.id)}
         onFocus={() => onActivate?.(item.id)}
         onTouchStart={() => onActivate?.(item.id)}
-        title={`${item.title} — ${item.author}`}
-        aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}`}
+        title={`${item.title} — ${item.author}${item.source !== undefined ? ` · ${item.source ?? '혼자 읽음'}` : ''}`}
+        aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}${
+          item.source !== undefined ? `, ${item.source ?? '혼자 읽음'}` : ''
+        }`}
         className={`group relative flex origin-bottom flex-col items-center justify-between overflow-hidden rounded-t-[3px] border border-black/15 px-1.5 py-2.5 shadow-[inset_-4px_0_7px_rgba(0,0,0,0.14),2px_2px_4px_rgba(0,0,0,0.18)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[inset_-4px_0_7px_rgba(0,0,0,0.1),4px_7px_10px_rgba(0,0,0,0.2)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
         style={{ height, width, backgroundColor: palette.background, color: palette.color }}
       >

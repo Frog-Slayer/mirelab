@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import MonthCalendar from '@/components/MonthCalendar'
-import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
 import { addEvent, decidePoll, getPolls, getSchedule, vote, type PollDetail } from '@/mocks/api'
@@ -48,8 +47,6 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      {!study.hasWorks && <ThisSessionBanner />}
-
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">일정</h1>
         <p className="text-sm text-neutral-500">

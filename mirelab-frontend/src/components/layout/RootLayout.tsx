@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import UserSwitcher from '@/components/UserSwitcher'
+import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { getMyStudies } from '@/mocks/api'
 import type { Study } from '@/types'
@@ -55,16 +56,6 @@ export default function RootLayout() {
           )}
 
           <div className="ml-auto flex items-center gap-4">
-            <NavLink
-              to="/shelf"
-              className={({ isActive }) =>
-                isActive
-                  ? 'text-sm font-medium text-neutral-900'
-                  : 'text-sm text-neutral-500 hover:text-neutral-900'
-              }
-            >
-              내 서재
-            </NavLink>
             <UserSwitcher />
           </div>
         </div>
@@ -81,6 +72,9 @@ export default function RootLayout() {
           목 데이터로 동작합니다. 새로고침하면 초기 상태로 돌아갑니다.
         </p>
       </footer>
+
+      {/* 스터디 안 어느 화면에서든 다음 모임으로 바로 들어가는 플로팅 카드 */}
+      <ThisSessionBanner />
     </div>
   )
 }
@@ -88,16 +82,17 @@ export default function RootLayout() {
 function StudyNav({ study }: { study: Study }) {
   const base = `/${study.slug}`
 
-  // 명예의 전당을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
+  // 홈(명예의 전당 + 책장)을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
   const items = study.hasWorks
     ? [
-        { to: base, label: '명예의 전당', end: true },
-        { to: `${base}/library`, label: '작품', end: false },
+        { to: base, label: '홈', end: true },
         { to: `${base}/sessions`, label: '모임', end: true },
+        { to: `${base}/shelf`, label: '내 서재', end: false },
       ]
     : [
         { to: base, label: '홈', end: true },
         { to: `${base}/sessions`, label: '모임', end: true },
+        { to: `${base}/shelf`, label: '내 서재', end: false },
       ]
 
   return (

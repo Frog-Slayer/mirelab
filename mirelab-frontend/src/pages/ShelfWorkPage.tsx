@@ -1,8 +1,9 @@
-import { Link, Navigate, useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useStudy } from '@/hooks/useStudy'
 import { getShelfEntry, saveValue } from '@/mocks/api'
 import type { SlotDef } from '@/types'
 import { Visibility, WorkKind, WorkStatus } from '@/types'
@@ -14,11 +15,13 @@ const statusLabel: Record<string, string> = {
 }
 
 /**
- * 혼자 읽은 작품의 상세. 스터디 작품은 하나로 합친 작품 상세로 보낸다.
+ * 내 서재 안의 책 상세. 스터디에서 온 책도 여기서 기록하지만, 스터디 쪽 작품
+ * 상세의 기록과는 별개다(각자 다른 targetId 를 쓴다 — mocks/api.ts 의 shelfTargetId).
  */
 export default function ShelfWorkPage() {
   const { workId = '' } = useParams()
   const { user } = useCurrentUser()
+  const { study: currentStudy } = useStudy()
   const qc = useQueryClient()
 
   const { data, isPending } = useQuery({
@@ -33,18 +36,21 @@ export default function ShelfWorkPage() {
   })
 
   if (isPending) return <p className="text-sm text-neutral-400">불러오는 중…</p>
-  if (!data || !user) return <p className="text-sm text-neutral-500">내 서재에 없는 책입니다.</p>
+  if (!data || !user || !currentStudy)
+    return <p className="text-sm text-neutral-500">내 서재에 없는 책입니다.</p>
 
   const { work, study, slots, values } = data
-
-  // 스터디 작품은 개인/공용 페이지를 나누지 않고 하나의 작품 상세을 사용한다.
-  if (study) return <Navigate to={`/${study.slug}/books/${work.id}#my-record`} replace />
+  // 스터디에서 온 책은 스터디 쪽 기록과 안 겹치도록 다른 targetId 를 쓴다.
+  const targetId = study ? `shelf:${work.id}` : work.id
 
   const valueOf = (slot: SlotDef) => values.find((v) => v.slotDefId === slot.id)
 
   return (
     <div className="flex max-w-3xl flex-col gap-8">
-      <Link to="/shelf" className="text-sm text-neutral-500 hover:text-neutral-900">
+      <Link
+        to={`/${currentStudy.slug}/shelf`}
+        className="text-sm text-neutral-500 hover:text-neutral-900"
+      >
         ← 내 서재
       </Link>
 
@@ -65,7 +71,9 @@ export default function ShelfWorkPage() {
           <p className="text-sm text-neutral-500">
             {work.author} · {work.year}
           </p>
-          <span className="text-xs text-neutral-400">혼자 읽은 책</span>
+          <span className="text-xs text-neutral-400">
+            {study ? `${study.name} · 개인 기록은 스터디와 별개` : '혼자 읽은 책'}
+          </span>
         </div>
       </header>
 
@@ -83,7 +91,7 @@ export default function ShelfWorkPage() {
               value={valueOf(slot)?.value}
               onSave={(value) =>
                 save.mutate({
-                  targetId: work.id,
+                  targetId,
                   slotDefId: slot.id,
                   userId: user.id,
                   value,

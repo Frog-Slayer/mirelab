@@ -60,7 +60,7 @@ export default function WorkPage() {
     mutationFn: () => removeWork(workId),
     onSuccess: () => {
       qc.invalidateQueries()
-      navigate(`/${study?.slug}/library`)
+      navigate(`/${study?.slug}`)
     },
   })
 
@@ -237,9 +237,7 @@ export default function WorkPage() {
       <section className="flex flex-col gap-2">
         <div>
           <h2 className="text-xl font-semibold">함께 읽은 모임</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            범위별 개인 준비와 함께 정리한 기록을 봅니다.
-          </p>
+          <p className="mt-1 text-sm text-neutral-500">언제 만났는지 확인합니다 — 기록은 위에서.</p>
         </div>
         {sessions.length === 0 && <p className="text-sm text-neutral-400">아직 모임이 없습니다.</p>}
         <ul className="flex flex-col">
@@ -252,7 +250,7 @@ export default function WorkPage() {
                 <span className="w-8 text-center font-mono text-xs text-neutral-400 tabular-nums">
                   {i + 1}
                 </span>
-                <span className="flex-1">{session.title}</span>
+                <span className="flex-1">{session.closed ? '마감됨' : '예정'}</span>
                 <span className="text-xs text-neutral-500">{formatMeetAt(session.meetAt)}</span>
               </Link>
             </li>

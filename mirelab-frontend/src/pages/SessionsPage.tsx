@@ -1,7 +1,6 @@
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
-import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { useStudy } from '@/hooks/useStudy'
 import { getSessions, type SessionSummary } from '@/mocks/api'
 import { formatMeetAt } from '@/lib/format'
@@ -41,8 +40,6 @@ export default function SessionsPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      {!study.hasWorks && <ThisSessionBanner />}
-
       <div className="flex flex-wrap items-end justify-between gap-6 border-b border-neutral-200 pb-6">
         <div className="flex flex-col gap-1.5">
           <h1 className="text-3xl font-semibold tracking-[-0.03em]">모임</h1>
@@ -94,10 +91,7 @@ export default function SessionsPage() {
                       <span className="w-12 flex-none text-center text-xs text-neutral-400">
                         {nth}번째
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {session.title}
-                      </span>
-                      <span className="font-mono text-xs text-neutral-500">
+                      <span className="min-w-0 flex-1 truncate font-mono text-sm text-neutral-700">
                         {formatMeetAt(session.meetAt)}
                       </span>
                       {!session.closed && (

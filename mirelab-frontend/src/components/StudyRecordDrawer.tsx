@@ -126,7 +126,7 @@ export default function StudyRecordDrawer({ workId, study, onClose }: Props) {
                   <span className="w-4 flex-none font-mono text-xs text-neutral-400 tabular-nums">
                     {i + 1}
                   </span>
-                  <span className="flex-1 truncate">{session.title}</span>
+                  <span className="flex-1 truncate">{session.closed ? '마감됨' : '예정'}</span>
                   <span className="font-mono text-[11px] text-neutral-400">
                     {formatMeetAt(session.meetAt)}
                   </span>
