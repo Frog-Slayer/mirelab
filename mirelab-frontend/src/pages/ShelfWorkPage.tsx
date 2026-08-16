@@ -6,7 +6,7 @@ import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
 import { getShelfEntry, saveValue } from '@/mocks/api'
 import type { SlotDef } from '@/types'
-import { Visibility, WorkKind, WorkStatus } from '@/types'
+import { SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
   [WorkStatus.CANDIDATE]: '후보',
@@ -45,6 +45,17 @@ export default function ShelfWorkPage() {
 
   const valueOf = (slot: SlotDef) => values.find((v) => v.slotDefId === slot.id)
 
+  const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
+  const blurbSlot = slots.find(
+    (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
+  )
+  const consolidatedIds = new Set(
+    [ratingSlot?.id, blurbSlot?.id].filter((id): id is string => !!id),
+  )
+  const otherSlots = slots.filter((slot) => !consolidatedIds.has(slot.id))
+  const summarySlot = otherSlots.find((slot) => slot.name === '내 요약')
+  const restSlots = otherSlots.filter((slot) => slot.id !== summarySlot?.id)
+
   return (
     <div className="flex flex-col gap-10">
       <Link
@@ -58,7 +69,7 @@ export default function ShelfWorkPage() {
         <div className="w-40 flex-none sm:w-44">
           <Cover work={work} size="lg" />
         </div>
-        <div className="flex flex-col gap-2.5 pt-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-0.5">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-neutral-400">
               {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
@@ -85,38 +96,99 @@ export default function ShelfWorkPage() {
               {work.description}
             </p>
           )}
-          <span className="text-xs text-neutral-400">
-            {study ? `${study.name} · 개인 기록은 스터디와 별개` : '혼자 읽은 책'}
-          </span>
+          <span className="text-xs text-neutral-400">{study ? study.name : '혼자 읽은 책'}</span>
+
+          {(ratingSlot || blurbSlot) && (
+            <div className="mt-auto flex flex-col gap-2 pt-2">
+              {ratingSlot && (
+                <SlotField
+                  slot={ratingSlot}
+                  value={valueOf(ratingSlot)?.value}
+                  onSave={(value) =>
+                    save.mutate({
+                      targetId,
+                      slotDefId: ratingSlot.id,
+                      userId: user.id,
+                      value,
+                      draft: false,
+                    })
+                  }
+                />
+              )}
+              {blurbSlot && (
+                <SlotField
+                  slot={blurbSlot}
+                  value={valueOf(blurbSlot)?.value}
+                  onSave={(value) =>
+                    save.mutate({
+                      targetId,
+                      slotDefId: blurbSlot.id,
+                      userId: user.id,
+                      value,
+                      draft: false,
+                    })
+                  }
+                />
+              )}
+            </div>
+          )}
         </div>
       </header>
 
       <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
         <h2 className="text-xl font-semibold">내 기록</h2>
 
-        {slots.map((slot) => (
-          <div key={slot.id} className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-neutral-700">
-              {slot.name}
-              {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
-            </span>
-            <SlotField
-              slot={slot}
-              value={valueOf(slot)?.value}
-              onSave={(value) =>
-                save.mutate({
-                  targetId,
-                  slotDefId: slot.id,
-                  userId: user.id,
-                  value,
-                  draft: false,
-                })
-              }
-            />
-          </div>
-        ))}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {summarySlot && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-semibold text-neutral-700">
+                {summarySlot.name}
+                {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+              </span>
+              <div className="flex flex-1 flex-col [&>textarea]:h-full [&>textarea]:flex-1">
+                <SlotField
+                  slot={summarySlot}
+                  value={valueOf(summarySlot)?.value}
+                  onSave={(value) =>
+                    save.mutate({
+                      targetId,
+                      slotDefId: summarySlot.id,
+                      userId: user.id,
+                      value,
+                      draft: false,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
 
-        {slots.length === 0 && (
+          <div className="flex flex-col gap-6">
+            {restSlots.map((slot) => (
+              <div key={slot.id} className="flex flex-col gap-2">
+                <span className="text-sm font-semibold text-neutral-700">
+                  {slot.name}
+                  {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+                </span>
+                <SlotField
+                  slot={slot}
+                  value={valueOf(slot)?.value}
+                  onSave={(value) =>
+                    save.mutate({
+                      targetId,
+                      slotDefId: slot.id,
+                      userId: user.id,
+                      value,
+                      draft: false,
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {otherSlots.length === 0 && (
           <p className="text-sm text-neutral-400">아직 작성할 수 있는 작품 기록 항목이 없습니다.</p>
         )}
       </section>

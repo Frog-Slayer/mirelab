@@ -94,6 +94,8 @@ export default function WorkPage() {
   const personalSlots = slots.filter(
     (slot) => slot.scope === SlotScope.PERSONAL && !consolidatedIds.has(slot.id),
   )
+  const summarySlot = personalSlots.find((slot) => slot.name === '내 요약')
+  const otherPersonalSlots = personalSlots.filter((slot) => slot.id !== summarySlot?.id)
   const blurbOf = (userId: string) => {
     const v = values.find((x) => x.slotDefId === blurbSlot?.id && x.userId === userId)
     return v && 'text' in v.value ? v.value.text : ''
@@ -263,7 +265,7 @@ export default function WorkPage() {
 
       <section
         id="my-record"
-        className="flex max-w-3xl flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
+        className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
       >
         <div>
           <h2 className="text-xl font-semibold">내 기록</h2>
@@ -272,30 +274,58 @@ export default function WorkPage() {
           </p>
         </div>
 
-        {personalSlots.map((slot) => (
-          <div
-            key={slot.id}
-            className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
-          >
-            <span className="text-sm font-semibold">
-              {slot.name}
-              {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
-            </span>
-            <SlotField
-              slot={slot}
-              value={myValueOf(slot.id)?.value}
-              onSave={(value) =>
-                save.mutate({
-                  targetId: work.id,
-                  slotDefId: slot.id,
-                  userId: user.id,
-                  value,
-                  draft: false,
-                })
-              }
-            />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {summarySlot && (
+            <div className="flex flex-col gap-2">
+              <span className="text-sm font-semibold">
+                {summarySlot.name}
+                {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+              </span>
+              <div className="flex flex-1 flex-col [&>textarea]:h-full [&>textarea]:flex-1">
+                <SlotField
+                  slot={summarySlot}
+                  value={myValueOf(summarySlot.id)?.value}
+                  onSave={(value) =>
+                    save.mutate({
+                      targetId: work.id,
+                      slotDefId: summarySlot.id,
+                      userId: user.id,
+                      value,
+                      draft: false,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col gap-6">
+            {otherPersonalSlots.map((slot) => (
+              <div
+                key={slot.id}
+                className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
+              >
+                <span className="text-sm font-semibold">
+                  {slot.name}
+                  {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+                </span>
+                <SlotField
+                  slot={slot}
+                  value={myValueOf(slot.id)?.value}
+                  onSave={(value) =>
+                    save.mutate({
+                      targetId: work.id,
+                      slotDefId: slot.id,
+                      userId: user.id,
+                      value,
+                      draft: false,
+                    })
+                  }
+                />
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </section>
 
       <section className="flex flex-col gap-2">
@@ -383,9 +413,9 @@ function PickBlock({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="app-button app-button-ghost whitespace-nowrap"
+          className="whitespace-nowrap text-sm font-medium text-neutral-400 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-neutral-600 hover:decoration-neutral-500"
         >
-          {reason ? '이유 고치기' : '이유 적기'}
+          {reason ? '수정' : '이유 적기'}
         </button>
       )}
     </div>
