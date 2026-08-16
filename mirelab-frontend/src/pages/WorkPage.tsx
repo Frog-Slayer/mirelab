@@ -93,39 +93,41 @@ export default function WorkPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <header className="flex flex-wrap items-start justify-between gap-8 border-b border-neutral-200 pb-8">
-        <div className="flex items-center gap-6">
-          <div className="w-32">
-            <Cover work={work} size="lg" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-neutral-400">
-                {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
-              </span>
-              <span
-                className={`rounded-full border px-2 py-0.5 text-xs ${
-                  work.status === WorkStatus.READING
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                    : 'border-neutral-200 text-neutral-500'
-                }`}
-              >
-                {statusLabel[work.status]}
-              </span>
+      <header className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="flex gap-6">
+            <div className="w-40 flex-none sm:w-48">
+              <Cover work={work} size="lg" />
             </div>
-            <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
-              {work.title}
-            </h1>
-            <p className="text-base text-neutral-500">
-              {work.author} · {work.year}
-            </p>
-            {work.actors && work.actors.length > 0 && (
-              <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
-            )}
-            {work.description && (
-              <p className="max-w-xl text-sm text-neutral-600">{work.description}</p>
-            )}
-            <div className="mt-1">
+            <div className="flex flex-col gap-2.5 pt-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-neutral-400">
+                  {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
+                </span>
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    work.status === WorkStatus.READING
+                      ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
+                      : 'border-neutral-200 text-neutral-500'
+                  }`}
+                >
+                  {statusLabel[work.status]}
+                </span>
+              </div>
+              <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
+                {work.title}
+              </h1>
+              <p className="text-base text-neutral-500">
+                {work.author} · {work.year}
+              </p>
+              {work.actors && work.actors.length > 0 && (
+                <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
+              )}
+              {work.description && (
+                <p className="max-w-xl text-sm leading-relaxed text-neutral-600">
+                  {work.description}
+                </p>
+              )}
               <PickBlock
                 addedBy={work.addedBy}
                 reason={work.reason}
@@ -133,62 +135,72 @@ export default function WorkPage() {
                 canEdit={work.addedBy === user.id}
                 onSave={(next) => editReason.mutate(next)}
               />
-            </div>
-            {work.voterCount > 0 && (
-              <div className="mt-3 flex flex-wrap items-start gap-x-10 gap-y-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-serif text-4xl leading-none tabular-nums">
+              {work.voterCount > 0 && (
+                <div className="mt-1 flex items-center gap-2.5">
+                  <span className="font-serif text-3xl leading-none tabular-nums">
                     {formatRating(work.average)}
                   </span>
                   <Stars value={work.average} />
-                  <span className="text-xs text-neutral-500">{work.voterCount}명</span>
+                  <span className="text-xs text-neutral-500">{work.voterCount}명 평가</span>
                 </div>
+              )}
+            </div>
+          </div>
 
-                <div className="flex flex-col gap-1.5">
-                  {members.map((m) => {
-                    const score = work.ratings[m.id]
-                    if (score === undefined) return null
-                    return (
-                      <div key={m.id} className="flex items-baseline gap-2.5 text-sm">
-                        <span
-                          className={`size-2 flex-none translate-y-px rounded-full ${m.color}`}
-                          aria-hidden
-                        />
-                        <span className="w-10 flex-none text-neutral-600">{m.name}</span>
-                        <Stars value={score} size="sm" />
-                        <span className="w-7 flex-none font-mono text-xs text-neutral-500 tabular-nums">
-                          {score.toFixed(1)}
-                        </span>
-                        <span className="text-neutral-700">{blurbOf(m.id)}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
+          <div className="flex items-center gap-2">
+            {step && (
+              <button
+                type="button"
+                onClick={() => changeStatus.mutate(step.to)}
+                disabled={changeStatus.isPending}
+                className="app-button app-button-primary"
+              >
+                {step.label}
+              </button>
             )}
+            <button
+              type="button"
+              onClick={() => setManageOpen(true)}
+              className="app-button app-button-secondary app-icon-button"
+              aria-label="상태 바꾸기 · 삭제"
+            >
+              …
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {step && (
-            <button
-              type="button"
-              onClick={() => changeStatus.mutate(step.to)}
-              disabled={changeStatus.isPending}
-              className="app-button app-button-primary"
-            >
-              {step.label}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setManageOpen(true)}
-            className="app-button app-button-secondary app-icon-button"
-            aria-label="상태 바꾸기 · 삭제"
-          >
-            …
-          </button>
-        </div>
+        {work.voterCount > 0 && (
+          <div className="border-t border-neutral-100 pt-5">
+            <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
+              멤버별 평점
+            </span>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {members.map((m) => {
+                const score = work.ratings[m.id]
+                if (score === undefined) return null
+                return (
+                  <div
+                    key={m.id}
+                    className="relative flex flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white p-3"
+                  >
+                    <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
+                      <span aria-hidden>★</span>
+                      <span className="font-mono tabular-nums">{score.toFixed(1)}</span>
+                    </span>
+                    <div className="flex items-center gap-1.5 pr-10">
+                      <span className="truncate text-sm font-medium text-neutral-800">
+                        {m.name}
+                      </span>
+                    </div>
+                    {blurbOf(m.id) && (
+                      <p className="line-clamp-2 text-xs text-neutral-600">{blurbOf(m.id)}</p>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </header>
 
       {manageOpen && (

@@ -55,7 +55,7 @@ export default function ShelfWorkPage() {
       </Link>
 
       <header className="flex flex-wrap items-center gap-6 border-b border-neutral-200 pb-7">
-        <div className="w-28">
+        <div className="w-40 flex-none sm:w-44">
           <Cover work={work} size="lg" />
         </div>
         <div className="flex flex-col gap-2">
