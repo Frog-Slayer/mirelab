@@ -14,17 +14,9 @@ import MyRecordDrawer from '@/components/work/MyRecordDrawer'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
-import {
-  addSession,
-  getHallOfFame,
-  getWork,
-  getWorkSlots,
-  removeWork,
-  saveValue,
-  setWorkStatus,
-  updateWorkReason,
-} from '@/mocks/api'
 import { formatRating } from '@/lib/format'
+import { addSession } from '@/lib/sessionApi'
+import { getWorkSlots, saveValue } from '@/lib/slotApi'
 import {
   addWorkBlock,
   getWorkBlocks,
@@ -32,6 +24,7 @@ import {
   removeWorkBlock,
   updateWorkBlockTitle,
 } from '@/lib/workBlockApi'
+import { getHallOfFame, getWork, removeWork, setWorkStatus, updateWorkReason } from '@/lib/workApi'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -66,9 +59,8 @@ export default function WorkPage() {
 
   const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
   const { data: workSlots } = useQuery({
-    queryKey: ['workSlots', study?.id, workId],
-    queryFn: () => getWorkSlots(study!.id, workId),
-    enabled: !!study,
+    queryKey: ['workSlots', workId],
+    queryFn: () => getWorkSlots(workId),
   })
   const blockApiReady = isWorkBlockApiReady(workId)
   const { data: blocks = [] } = useQuery({
@@ -78,8 +70,8 @@ export default function WorkPage() {
   })
   // 명예의 전당과 같은 기준(장르 구분 없는 전체 순위)으로 계산해 어긋나지 않게 한다.
   const { data: hallOfFame } = useQuery({
-    queryKey: ['hallOfFame', study?.id],
-    queryFn: () => getHallOfFame(study!.id),
+    queryKey: ['hallOfFame', study?.slug],
+    queryFn: () => getHallOfFame(study!.slug),
     enabled: !!study,
   })
 
@@ -339,9 +331,7 @@ export default function WorkPage() {
             <StartDialog
               title={work.status === WorkStatus.CANDIDATE ? '언제 시작하나요?' : '일정 추가'}
               submitLabel={work.status === WorkStatus.CANDIDATE ? '시작하기' : '추가하기'}
-              onStart={(meetAt) =>
-                startReading.mutate({ studyId: study.id, workId: work.id, meetAt })
-              }
+              onStart={(meetAt) => startReading.mutate({ workId: work.id, meetAt })}
               onClose={() => setStartOpen(false)}
             />
           )}

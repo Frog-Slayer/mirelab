@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CurrentUserContext, type CurrentUserValue } from '@/hooks/currentUser'
-import { getUsers } from '@/mocks/api'
+import { getUsers } from '@/lib/userApi'
 
 const STORAGE_KEY = 'mirelab.userId'
 

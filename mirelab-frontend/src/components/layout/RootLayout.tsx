@@ -5,7 +5,7 @@ import UserSwitcher from '@/components/UserSwitcher'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
-import { getMyStudies } from '@/mocks/api'
+import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
 export default function RootLayout() {
