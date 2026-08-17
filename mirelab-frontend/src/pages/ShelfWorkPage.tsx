@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
+import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
@@ -92,9 +93,7 @@ export default function ShelfWorkPage() {
             <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
           )}
           {work.description && (
-            <p className="max-w-xl text-sm leading-relaxed text-neutral-600">
-              {work.description}
-            </p>
+            <p className="max-w-xl text-sm leading-relaxed text-neutral-600">{work.description}</p>
           )}
           <span className="text-xs text-neutral-400">{study ? study.name : '혼자 읽은 책'}</span>
 
@@ -145,9 +144,9 @@ export default function ShelfWorkPage() {
                 {summarySlot.name}
                 {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
               </span>
-              <div className="flex flex-1 flex-col [&>textarea]:h-full [&>textarea]:flex-1">
-                <SlotField
-                  slot={summarySlot}
+              <div className="flex flex-1 flex-col">
+                <PersonalBlockNoteField
+                  key={workId}
                   value={valueOf(summarySlot)?.value}
                   onSave={(value) =>
                     save.mutate({
