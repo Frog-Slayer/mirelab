@@ -10,6 +10,7 @@ import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
 import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.user.UserRepository
+import com.mirelab.infra.work.WorkBlockRepository
 import com.mirelab.infra.work.WorkRepository
 import java.time.Year
 import java.util.UUID
@@ -24,6 +25,7 @@ class WorkService(
     private val sessionRepository: SessionRepository,
     private val slotDefRepository: SlotDefRepository,
     private val slotValueRepository: SlotValueRepository,
+    private val workBlockRepository: WorkBlockRepository,
 ) {
     /** 완료작만 별점순 — 스터디의 첫 화면 */
     fun hallOfFame(slug: String): List<RankedWorkResponse> {
@@ -76,13 +78,18 @@ class WorkService(
         return true
     }
 
-    /** 후보 상태이고, 모임·별점 기록이 없을 때만 지운다 — 화면에서도 막지만 여기서도 막는다 */
+    /**
+     * 후보 상태이고, 모임·별점·함께 쓰는 기록이 없을 때만 지운다 — 화면에서도 막지만
+     * 여기서도 막는다. WorkBlock.work 는 cascade 없는 FK 라, 블록을 안 걸러내면
+     * workRepository.delete 가 참조 무결성 위반으로 그냥 실패해버린다.
+     */
     @Transactional
     fun remove(workId: UUID): Boolean {
         val work = workRepository.findById(workId).orElse(null) ?: return false
         if (work.status != WorkStatus.CANDIDATE) return false
         if (sessionRepository.findByWorkId(workId).isNotEmpty()) return false
         if (hasVotes(work)) return false
+        if (workBlockRepository.findByWorkIdOrderByCreatedAt(workId).isNotEmpty()) return false
         workRepository.delete(work)
         return true
     }
