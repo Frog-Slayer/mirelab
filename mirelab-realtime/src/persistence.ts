@@ -1,4 +1,5 @@
 import * as Y from 'yjs'
+import { docs } from 'y-websocket/bin/utils'
 import type { Persistence } from 'y-websocket/bin/utils'
 
 const SPRING_BASE_URL = process.env.SPRING_BASE_URL ?? 'http://localhost:8080'
@@ -56,11 +57,65 @@ function hasMeaningfulContent(doc: Y.Doc): boolean {
 }
 
 /**
+ * 이 방(room)이 최초 스냅샷을 성공적으로 불러왔는지 — 못 불러왔는데 저장까지
+ * 해버리면, 마침 그 사이 Spring 이 회복했을 때 진짜 내용을 빈/부분 문서로
+ * 덮어써버린다. 로드 성공 전엔 저장을 아예 건너뛴다.
+ */
+const safeToPersist = new Set<string>()
+
+async function tryLoadSnapshot(
+  docName: string,
+  doc: Y.Doc,
+  attempts: number,
+  delayMs: number,
+): Promise<boolean> {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const snapshot = await fetchSnapshot(docName)
+      if (snapshot && snapshot.length > 0) {
+        Y.applyUpdate(doc, snapshot)
+      }
+      return true
+    } catch (err) {
+      console.error(`[persistence] ${docName} 스냅샷 로드 실패 (시도 ${i + 1}/${attempts})`, err)
+      if (i < attempts - 1) await wait(delayMs)
+    }
+  }
+  return false
+}
+
+/**
+ * 최초 로드가 다 실패하면, 방이 열려 있는 동안(다른 곳에서 docs 맵에서 지워질 때까지)
+ * 백그라운드에서 계속 재시도한다. 늦게 도착한 스냅샷을 그때 가서 합쳐도(Y.applyUpdate)
+ * CRDT라 그 사이 로컬 편집과 안전하게 병합된다 — 재접속을 요구할 필요가 없다.
+ */
+function scheduleBackgroundReload(docName: string, doc: Y.Doc): void {
+  const timer = setInterval(() => {
+    if (safeToPersist.has(docName) || !docs.has(docName)) {
+      clearInterval(timer)
+      return
+    }
+    tryLoadSnapshot(docName, doc, 1, 0).then((ok) => {
+      if (ok) {
+        safeToPersist.add(docName)
+        clearInterval(timer)
+        console.log(`[persistence] ${docName} 스냅샷 로드가 지연 후 성공 — 저장 재개`)
+      }
+    })
+  }, 3000)
+}
+
+/**
  * writeState 는 마지막 접속자가 나갈 때 한 번만 불리는데, 그 사이 릴레이가
  * 죽거나 재시작되면 메모리에만 있던 편집분이 통째로 날아간다 — 주기적으로도
  * 같은 경로로 저장해서 유실 구간을 짧게 줄인다. 실패하면 한 번 재시도한다.
  */
 export async function saveSnapshot(docName: string, doc: Y.Doc): Promise<void> {
+  if (!safeToPersist.has(docName)) {
+    console.warn(`[persistence] ${docName} 최초 로드가 아직 안 끝나서 저장을 건너뜀`)
+    return
+  }
+
   const save = hasMeaningfulContent(doc)
     ? () => pushSnapshot(docName, Y.encodeStateAsUpdate(doc))
     : () => clearSnapshot(docName)
@@ -86,14 +141,18 @@ export async function saveSnapshot(docName: string, doc: Y.Doc): Promise<void> {
  */
 export const springSnapshotPersistence: Persistence = {
   bindState: async (docName, doc) => {
-    try {
-      const snapshot = await fetchSnapshot(docName)
-      if (snapshot && snapshot.length > 0) {
-        Y.applyUpdate(doc, snapshot)
-      }
-    } catch (err) {
-      console.error(`[persistence] ${docName} 스냅샷을 불러오지 못함`, err)
+    const ok = await tryLoadSnapshot(docName, doc, 3, 500)
+    if (ok) {
+      safeToPersist.add(docName)
+    } else {
+      console.error(`[persistence] ${docName} 최초 스냅샷 로드 실패 — 복구될 때까지 저장을 보류`)
+      scheduleBackgroundReload(docName, doc)
     }
   },
-  writeState: (docName, doc) => saveSnapshot(docName, doc),
+  writeState: async (docName, doc) => {
+    await saveSnapshot(docName, doc)
+    // 다음에 이 방이 다시 열릴 때(새 WSSharedDoc) 이전 세션의 "로드 성공" 상태가
+    // 새어들어가지 않도록 지운다 — 재개장 때는 다시 처음부터 로드를 확인해야 한다.
+    safeToPersist.delete(docName)
+  },
 }
