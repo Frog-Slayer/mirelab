@@ -7,7 +7,11 @@ import { BlockNoteView } from '@blocknote/shadcn'
 import '@blocknote/shadcn/style.css'
 import type { User } from '@/types'
 
-const REALTIME_URL = import.meta.env.VITE_REALTIME_URL ?? 'ws://localhost:1234/yjs'
+// /api 와 같은 이유로 same-origin 기본값을 쓴다 — "localhost"를 박아두면 tailscale 같은
+// 다른 호스트로 접속했을 때 브라우저가 자기 자신의 localhost로 붙으려 든다.
+const REALTIME_URL =
+  import.meta.env.VITE_REALTIME_URL ??
+  `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/yjs`
 
 // User.color 는 tailwind 클래스 문자열이라(예: "bg-emerald-500"), 커서 렌더링엔 실제
 // 색상 값이 필요하다. 지금 쓰는 4가지 색만 매핑해둔다.
