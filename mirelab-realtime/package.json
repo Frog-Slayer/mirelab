@@ -1,0 +1,23 @@
+{
+  "name": "mirelab-realtime",
+  "version": "0.0.1",
+  "private": true,
+  "type": "commonjs",
+  "description": "함께 쓰는 기록의 Yjs 실시간 릴레이. Spring/Postgres가 최종 저장소이고, 여기는 무상태 릴레이 + 스냅샷 push/pull만 한다.",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "y-websocket": "2.0.4",
+    "yjs": "^13.6.32",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.5.10",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}
