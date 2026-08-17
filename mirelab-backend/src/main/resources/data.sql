@@ -21,6 +21,6 @@ insert into slot_defs (id, study_id, name, type, visibility, owner, session_id, 
 insert into works (id, study_id, owner_id, kind, title, author, published_year, status, added_by, reason, description) values
   ('d1111111-1111-1111-1111-111111111111', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', null, 'BOOK', '사피엔스', '유발 하라리', 2015, 'DONE', '11111111-1111-1111-1111-111111111111', '다같이 읽고 싶어서', null);
 
-insert into slot_values (id, work_id, slot_def_id, user_id, value_json, draft) values
-  ('e1111111-1111-1111-1111-111111111111', 'd1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', '{"n": 5}', false),
-  ('e2222222-2222-2222-2222-222222222222', 'd1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '{"n": 4}', false);
+insert into slot_values (id, work_id, slot_def_id, user_id, value_json, draft, context) values
+  ('e1111111-1111-1111-1111-111111111111', 'd1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '11111111-1111-1111-1111-111111111111', '{"n": 5}', false, 'STUDY'),
+  ('e2222222-2222-2222-2222-222222222222', 'd1111111-1111-1111-1111-111111111111', 'c1111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', '{"n": 4}', false, 'STUDY');

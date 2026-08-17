@@ -5,6 +5,8 @@ import com.mirelab.domain.work.Work
 import jakarta.persistence.Column
 import jakarta.persistence.Convert
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -14,6 +16,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.util.UUID
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 /**
  * 칸 값 하나. 붙는 대상은 항상 작품([Work]) 이다 — 모임은 일정만 안다.
@@ -21,16 +25,14 @@ import java.util.UUID
  * [value] 는 칸 타입마다 모양이 다른 JSON 이다(`{"n": 4}` · `{"text": "..."}` ·
  * `{"items": [...]}`). 칸 타입이 사용자 마음대로 늘어나니 컬럼을 미리 못 만든다.
  *
- * TODO 내 서재(개인 소장 기록)는 스터디 작품 기록과 값이 겹치면 안 되는데, 지금 프론트
- * 목은 `targetId` 에 `shelf:` 접두어를 붙이는 임시방편을 쓰고 있다. 실제 스키마에서는
- * 이 구분을 어떻게 모델링할지(별도 테이블 vs 구분 컬럼) 아직 정하지 않았다 — 내 서재
- * 화면에 손댈 때 다시 결정한다.
+ * 같은 (work, slotDef, user) 라도 스터디 공식 기록과 내 서재 개인 기록은 다른 값일 수
+ * 있어([SlotValueContext] 참고), 그 셋만으로는 유일하지 않다 — context 까지 넣어야 한다.
  */
 @Entity
 @Table(
     name = "slot_values",
     uniqueConstraints = [
-        UniqueConstraint(columnNames = ["work_id", "slot_def_id", "user_id"]),
+        UniqueConstraint(columnNames = ["work_id", "slot_def_id", "user_id", "context"]),
     ],
 )
 class SlotValue(
@@ -56,4 +58,9 @@ class SlotValue(
     var value: Map<String, Any?>,
 
     var draft: Boolean = true,
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(nullable = false)
+    var context: SlotValueContext = SlotValueContext.STUDY,
 )

@@ -2,6 +2,7 @@ package com.mirelab.application.work
 
 import com.mirelab.application.session.toResponse
 import com.mirelab.domain.slot.SlotType
+import com.mirelab.domain.slot.SlotValueContext
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkStatus
 import com.mirelab.infra.session.SessionRepository
@@ -103,13 +104,16 @@ class WorkService(
 
     private fun hasVotes(work: Work): Boolean {
         val slotId = ratingSlotId(work.study?.id ?: return false) ?: return false
-        return slotValueRepository.findByWorkId(work.id!!).any { it.slotDef.id == slotId && !it.draft }
+        return slotValueRepository.findByWorkIdAndContext(work.id!!, SlotValueContext.STUDY)
+            .any { it.slotDef.id == slotId && !it.draft }
     }
 
+    // 명예의 전당 순위는 스터디 공식 기록(STUDY)만 센다 — 내 서재 개인 평점은 안 섞인다.
     private fun rank(work: Work, studyId: UUID): RankedWorkResponse {
         val slotId = ratingSlotId(studyId)
         val values = if (slotId != null) {
-            slotValueRepository.findByWorkId(work.id!!).filter { it.slotDef.id == slotId && !it.draft }
+            slotValueRepository.findByWorkIdAndContext(work.id!!, SlotValueContext.STUDY)
+                .filter { it.slotDef.id == slotId && !it.draft }
         } else {
             emptyList()
         }

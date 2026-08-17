@@ -2,6 +2,7 @@ package com.mirelab.application.slot
 
 import com.mirelab.domain.slot.SlotOwner
 import com.mirelab.domain.slot.SlotValue
+import com.mirelab.domain.slot.SlotValueContext
 import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
 import com.mirelab.infra.user.UserRepository
@@ -17,7 +18,10 @@ class SlotService(
     private val workRepository: WorkRepository,
     private val userRepository: UserRepository,
 ) {
-    /** 칸은 그 작품이 속한 스터디 기준. 콜아웃 칸(owner: SESSION)은 그 모임이 이 작품 소관일 때만 */
+    /**
+     * 칸은 그 작품이 속한 스터디 기준. 콜아웃 칸(owner: SESSION)은 그 모임이 이 작품 소관일 때만.
+     * 작품 상세는 스터디 공식 기록(STUDY)만 보여준다 — 내 서재 개인 기록은 별도 화면·API 몫이다.
+     */
     fun getWorkSlots(workId: UUID): WorkSlotsResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
         val studyId = work.study?.id ?: return null
@@ -26,13 +30,18 @@ class SlotService(
             .filter { !it.hidden }
             .filter { it.owner == SlotOwner.STUDY || it.session?.work?.id == workId }
 
-        val values = slotValueRepository.findByWorkId(workId)
+        val values = slotValueRepository.findByWorkIdAndContext(workId, SlotValueContext.STUDY)
         return WorkSlotsResponse(slots.map { it.toResponse() }, values.map { it.toResponse() })
     }
 
     @Transactional
     fun saveValue(workId: UUID, input: SlotValueInput): SlotValueResponse {
-        val existing = slotValueRepository.findByWorkIdAndSlotDefIdAndUserId(workId, input.slotDefId, input.userId)
+        val existing = slotValueRepository.findByWorkIdAndSlotDefIdAndUserIdAndContext(
+            workId,
+            input.slotDefId,
+            input.userId,
+            SlotValueContext.STUDY,
+        )
         val entity = if (existing != null) {
             existing.value = input.value
             input.draft?.let { existing.draft = it }
