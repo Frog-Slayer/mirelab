@@ -32,6 +32,7 @@ data class AddPersonalWorkRequest(
     val title: String,
     val author: String,
     val coverUrl: String? = null,
+    val description: String? = null,
 )
 
 data class ShelfSlotValueInput(

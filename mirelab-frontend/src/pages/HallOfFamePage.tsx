@@ -237,6 +237,7 @@ function AddDialog({
     author: string
     reason: string
     coverUrl?: string
+    description?: string
   }) => void
   onClose: () => void
 }) {
@@ -250,6 +251,7 @@ function AddDialog({
   const [author, setAuthor] = useState('')
   const [reason, setReason] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
+  const [description, setDescription] = useState('')
 
   return (
     <dialog
@@ -270,6 +272,7 @@ function AddDialog({
             author: author.trim(),
             reason: reason.trim(),
             coverUrl: coverUrl || undefined,
+            description: description || undefined,
           })
         }}
         className="flex flex-col gap-3 p-5"
@@ -300,11 +303,13 @@ function AddDialog({
             onChange={(v) => {
               setTitle(v)
               setCoverUrl('')
+              setDescription('')
             }}
             onPick={(book) => {
               setTitle(book.title)
               setAuthor(book.author)
               setCoverUrl(book.cover)
+              setDescription(book.description)
             }}
           />
           <input

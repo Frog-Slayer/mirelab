@@ -67,6 +67,7 @@ class WorkService(
             addedBy = addedBy,
             reason = input.reason,
             coverUrl = input.coverUrl,
+            description = input.description,
         )
         return workRepository.save(work).toResponse()
     }

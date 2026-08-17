@@ -28,6 +28,7 @@ export function addWork(input: {
   addedBy: string
   reason?: string
   coverUrl?: string
+  description?: string
 }): Promise<Work> {
   return api.post(`/studies/${input.slug}/works`, {
     kind: input.kind,
@@ -36,6 +37,7 @@ export function addWork(input: {
     addedBy: input.addedBy,
     reason: input.reason,
     coverUrl: input.coverUrl,
+    description: input.description,
   })
 }
 

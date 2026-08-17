@@ -11,6 +11,7 @@ data class CreateWorkRequest(
     val addedBy: UUID?,
     val reason: String?,
     val coverUrl: String? = null,
+    val description: String? = null,
 )
 
 data class UpdateStatusRequest(val status: WorkStatus)

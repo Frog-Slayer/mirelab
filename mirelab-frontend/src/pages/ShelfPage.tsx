@@ -194,7 +194,13 @@ function AddDialog({
   onSubmit,
   onClose,
 }: {
-  onSubmit: (input: { kind: WorkKind; title: string; author: string; coverUrl?: string }) => void
+  onSubmit: (input: {
+    kind: WorkKind
+    title: string
+    author: string
+    coverUrl?: string
+    description?: string
+  }) => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -202,6 +208,7 @@ function AddDialog({
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
+  const [description, setDescription] = useState('')
 
   useEffect(() => {
     ref.current?.showModal()
@@ -225,6 +232,7 @@ function AddDialog({
             title: title.trim(),
             author: author.trim(),
             coverUrl: coverUrl || undefined,
+            description: description || undefined,
           })
         }}
         className="flex flex-col gap-3 p-5"
@@ -256,11 +264,13 @@ function AddDialog({
             onChange={(v) => {
               setTitle(v)
               setCoverUrl('')
+              setDescription('')
             }}
             onPick={(book) => {
               setTitle(book.title)
               setAuthor(book.author)
               setCoverUrl(book.cover)
+              setDescription(book.description)
             }}
           />
           <input
