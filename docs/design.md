@@ -372,7 +372,10 @@ Kotlin 2.3 · Spring Boot 4.1 · JPA · Postgres (개발 중 H2)
 
 ## 8. 다음
 
-1. 백엔드 엔티티 + 스키마 — `Study / Member / Session / SlotDef / SlotValue / Memo`
-2. API — 모임 조회, 칸 값 저장
-3. 프론트 칸 렌더러 + 모임 화면
-4. 실시간 · 책 API · 리마인더
+1. ~~백엔드 엔티티 + 스키마 — `Study / Member / Session / SlotDef / SlotValue / Memo`~~
+2. ~~API — 모임 조회, 칸 값 저장~~
+3. ~~프론트 칸 렌더러 + 모임 화면~~
+4. 프론트 디자인 — 특히 블록노트 에디터
+5. 영화/도서 정보 가져오기 (외부 API 연동)
+6. 구글 로그인
+7. 모바일 대응
