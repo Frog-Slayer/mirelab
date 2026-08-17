@@ -5,7 +5,6 @@ import HallOfFamePage from '@/pages/HallOfFamePage'
 import WorkPage from '@/pages/WorkPage'
 import ShelfPage from '@/pages/ShelfPage'
 import ShelfWorkPage from '@/pages/ShelfWorkPage'
-import SlotSettingsPage from '@/pages/SlotSettingsPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 // 데모 빌드(단일 HTML)는 임의의 경로에 얹히므로 pushState 를 쓰면 안 된다.
@@ -32,7 +31,6 @@ export const router = createRouter([
           // 내 서재 — 스터디 안에 있지만 개인화된 저장 공간이라 개인 기준으로 보여준다.
           { path: 'shelf', element: <ShelfPage /> },
           { path: 'shelf/:workId', element: <ShelfWorkPage /> },
-          { path: 'settings/slots', element: <SlotSettingsPage /> },
         ],
       },
       { path: '*', element: <NotFoundPage /> },

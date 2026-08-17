@@ -391,60 +391,6 @@ export function removeWorkBlock(id: string): Promise<void> {
   return delay(undefined)
 }
 
-// ─── 칸 관리 ───────────────────────────────────────────────
-
-export function getSlotDefs(studyId: string): Promise<SlotDef[]> {
-  return delay(db.slotDefs.filter((s) => s.studyId === studyId).sort((a, b) => a.order - b.order))
-}
-
-export function addSlotDef(input: {
-  studyId: string
-  name: string
-  type: SlotType
-  scope: SlotDef['scope']
-  visibility: SlotDef['visibility']
-}): Promise<SlotDef> {
-  const siblings = db.slotDefs.filter((s) => s.studyId === input.studyId)
-  const created: SlotDef = {
-    id: nextId('s'),
-    studyId: input.studyId,
-    name: input.name,
-    type: input.type,
-    scope: input.scope,
-    visibility: input.visibility,
-    owner: SlotOwner.STUDY,
-    allowMemo: input.scope === SlotScope.SHARED,
-    order: Math.max(0, ...siblings.map((s) => s.order)) + 1,
-    hidden: false,
-  }
-  db.slotDefs.push(created)
-  return delay(created)
-}
-
-/** 지우지 않고 숨긴다 — 과거 회차의 기록은 남아야 한다 */
-export function toggleSlotHidden(slotDefId: string): Promise<void> {
-  const slot = db.slotDefs.find((s) => s.id === slotDefId)
-  if (slot) slot.hidden = !slot.hidden
-  return delay(undefined, 60)
-}
-
-export function moveSlot(slotDefId: string, direction: -1 | 1): Promise<void> {
-  const target = db.slotDefs.find((s) => s.id === slotDefId)
-  if (!target) return delay(undefined, 0)
-  const sorted = db.slotDefs
-    .filter((s) => s.studyId === target.studyId)
-    .sort((a, b) => a.order - b.order)
-  const index = sorted.findIndex((s) => s.id === slotDefId)
-  const swapWith = index + direction
-  if (swapWith < 0 || swapWith >= sorted.length) return delay(undefined, 0)
-  const a = sorted[index]
-  const b = sorted[swapWith]
-  const tmp = a.order
-  a.order = b.order
-  b.order = tmp
-  return delay(undefined, 60)
-}
-
 // ─── 일정 ─────────────────────────────────────────────────
 
 export interface ScheduleItem {
