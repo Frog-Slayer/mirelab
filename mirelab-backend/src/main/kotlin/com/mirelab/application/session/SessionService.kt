@@ -50,11 +50,19 @@ class SessionService(
             }
     }
 
-    /** 진행 중인 회차 = 안 끝난 것 중 가장 가까운 날. 날짜 미정은 뒤로 민다 */
+    /**
+     * 진행 중인 회차 = 안 끝난 것 중 가장 가까운 날. 날짜 미정은 뒤로 민다.
+     *
+     * closed 를 지나간 회차로 자동으로 바꿔주는 경로가 아직 없어서(회차를 "닫는"
+     * 기능 자체가 없다), meetAt 이 이미 지난 회차까지 여기서 걸러야 한다 — 안 그러면
+     * 새 회차를 잡아도 지난 회차의 meetAt 이 더 이르다는 이유로 계속 그 지난 회차가
+     * 뜬다.
+     */
     fun currentSession(slug: String): CurrentSessionResponse? {
         val study = studyRepository.findBySlug(slug) ?: return null
+        val now = Instant.now()
         val session = sessionRepository.findByStudyId(study.id!!)
-            .filter { !it.closed }
+            .filter { !it.closed && (it.meetAt == null || !it.meetAt!!.isBefore(now)) }
             .minByOrNull { it.meetAt ?: Instant.MAX }
             ?: return null
         return CurrentSessionResponse(session.toResponse(), session.work?.toResponse())

@@ -57,3 +57,10 @@ allOpen {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
+
+// 로컬 실행(./gradlew bootRun)에서만 dev 프로필을 명시적으로 켠다 — DevDataSeeder 는
+// 이걸 켜야만 도는 opt-in 이라, 패키징된 jar 를 그냥 실행하는 배포 환경은 아무것도
+// 안 켜져서 안전하다(운영은 SPRING_PROFILES_ACTIVE 를 따로 정하지 않는 한 시딩 안 함).
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    systemProperty("spring.profiles.active", "dev")
+}
