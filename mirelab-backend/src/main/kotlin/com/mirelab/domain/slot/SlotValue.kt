@@ -3,6 +3,7 @@ package com.mirelab.domain.slot
 import com.mirelab.domain.user.User
 import com.mirelab.domain.work.Work
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
@@ -13,8 +14,6 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
 import java.util.UUID
-import org.hibernate.annotations.JdbcTypeCode
-import org.hibernate.type.SqlTypes
 
 /**
  * 칸 값 하나. 붙는 대상은 항상 작품([Work]) 이다 — 모임은 일정만 안다.
@@ -52,8 +51,8 @@ class SlotValue(
     var user: User,
 
     // "value" 는 H2 에서 예약어라 컬럼명이 그대로면 DDL 파싱에서 깨진다.
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "value_json", nullable = false)
+    @Convert(converter = SlotValueJsonConverter::class)
+    @Column(name = "value_json", nullable = false, length = 4000)
     var value: Map<String, Any?>,
 
     var draft: Boolean = true,
