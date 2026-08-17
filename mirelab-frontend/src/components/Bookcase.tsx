@@ -3,8 +3,8 @@ import Cover from '@/components/Cover'
 import PickNote from '@/components/PickNote'
 import Stars from '@/components/Stars'
 import { formatRating } from '@/lib/format'
-import type { User, WorkKind } from '@/types'
-import { WorkStatus } from '@/types'
+import type { User } from '@/types'
+import { WorkKind, WorkStatus } from '@/types'
 
 export type BookcaseFilter = 'ALL' | WorkStatus
 
@@ -53,6 +53,16 @@ const spineColors = [
   { background: '#d7d1c5', color: '#393630' },
   { background: '#34434e', color: '#f3f6f7' },
 ]
+
+const ticketPalettes = [
+  { paper: '#f1e4bc', panel: '#a6383d', ink: '#6f3135', text: '#f7eaca' },
+  { paper: '#e5dcc3', panel: '#3e5a74', ink: '#263e52', text: '#f6f0df' },
+  { paper: '#e7dfbf', panel: '#496b62', ink: '#2e4d46', text: '#f5f0dc' },
+  { paper: '#ead8c1', panel: '#775263', ink: '#512f3f', text: '#f9e9e5' },
+  { paper: '#eee0b9', panel: '#98713a', ink: '#634719', text: '#fff3cf' },
+]
+
+const ticketRotations = ['-rotate-2', '-rotate-1', '', 'rotate-1', 'rotate-2']
 
 export function BookcaseStatusFilters({
   value,
@@ -119,7 +129,7 @@ export function Bookcase({
   return (
     <section
       aria-label="책장"
-      className="rounded-xl border-8 border-[#71543d] bg-[#ddd7ce] shadow-[inset_0_0_20px_rgba(56,40,27,0.18),0_8px_22px_rgba(38,31,24,0.1)]"
+      className="rounded-xl border-8 border-[#71543d] bg-[#a89b8c] shadow-[inset_0_0_20px_rgba(56,40,27,0.24),0_8px_22px_rgba(38,31,24,0.14)]"
     >
       {empty ? (
         <ShelfCompartment>
@@ -153,7 +163,7 @@ export function Bookcase({
 function ShelfCompartment({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <ol className="flex min-h-56 flex-wrap items-end gap-2.5 bg-[linear-gradient(90deg,rgba(78,53,32,0.04)_1px,transparent_1px)] bg-size-[14px_14px] px-5 pt-7 pb-1.5">
+      <ol className="flex min-h-56 flex-wrap items-end gap-2.5 bg-[#a89b8c] bg-[linear-gradient(90deg,rgba(54,35,21,0.1)_1px,transparent_1px)] bg-size-[14px_14px] px-5 pt-7 pb-1.5">
         {children}
       </ol>
       <div className="h-4 border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]" />
@@ -242,7 +252,80 @@ function BookDisplay({
   users: User[]
   onActivate?: (id: string) => void
 }) {
+  if (item.kind === WorkKind.MOVIE) {
+    return <MovieTicket item={item} users={users} onActivate={onActivate} />
+  }
+
   return <BookCover item={item} users={users} onActivate={onActivate} />
+}
+
+function MovieTicket({
+  item,
+  users,
+  onActivate,
+}: {
+  item: BookcaseItem
+  users: User[]
+  onActivate?: (id: string) => void
+}) {
+  const hash = hashTitle(item.title)
+  const palette = ticketPalettes[hash % ticketPalettes.length]
+  const rotation = ticketRotations[hash % ticketRotations.length]
+
+  return (
+    <li className="group/ticket relative">
+      <Link
+        to={item.href}
+        onMouseEnter={() => onActivate?.(item.id)}
+        onFocus={() => onActivate?.(item.id)}
+        onTouchStart={() => onActivate?.(item.id)}
+        aria-label={`${item.title}, ${item.author}, 영화, ${statusLabel[item.status]}`}
+        className={`relative flex h-48 w-24 origin-bottom flex-col overflow-hidden p-2 shadow-[3px_3px_5px_rgba(0,0,0,0.22)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.24)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${rotation}`}
+        style={{
+          backgroundColor: palette.paper,
+          color: palette.text,
+          clipPath:
+            'polygon(5px 0, 12% 3px, 24% 0, 36% 3px, 48% 0, 60% 3px, 72% 0, 84% 3px, calc(100% - 5px) 0, 100% 5px, calc(100% - 3px) 12%, 100% 24%, calc(100% - 3px) 36%, 100% 48%, calc(100% - 3px) 60%, 100% 72%, calc(100% - 3px) 84%, 100% calc(100% - 5px), calc(100% - 5px) 100%, 88% calc(100% - 3px), 76% 100%, 64% calc(100% - 3px), 52% 100%, 40% calc(100% - 3px), 28% 100%, 16% calc(100% - 3px), 5px 100%, 0 calc(100% - 5px), 3px 88%, 0 76%, 3px 64%, 0 52%, 3px 40%, 0 28%, 3px 16%, 0 5px)',
+          filter: 'drop-shadow(4px 6px 5px rgba(42, 29, 19, 0.34))',
+        }}
+      >
+        <div
+          className="flex min-h-0 flex-1 flex-col justify-between border-2 p-2.5"
+          style={{ backgroundColor: palette.panel, borderColor: palette.text }}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
+            <span
+              className="grid size-4 place-items-center rounded-full"
+              style={{ backgroundColor: palette.text }}
+            >
+              <StatusGlyph status={item.status} />
+            </span>
+          </div>
+          {item.coverUrl ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center py-1">
+              <Cover
+                work={item}
+                size="lg"
+                className="h-auto w-full !aspect-auto rounded-none border-0 bg-transparent"
+              />
+            </div>
+          ) : (
+            <>
+              <span className="break-all text-sm leading-tight font-semibold">{item.title}</span>
+              <span className="truncate text-[10px] opacity-75">{item.author || '미상'}</span>
+            </>
+          )}
+        </div>
+        <div className="flex h-9 shrink-0 items-center justify-between px-1" style={{ color: palette.ink }}>
+          <span className="h-4 w-11 bg-[repeating-linear-gradient(90deg,currentColor_0_2px,transparent_2px_3px,currentColor_3px_4px,transparent_4px_6px)] opacity-75" />
+          <span className="text-[8px] tabular-nums">{item.year}</span>
+        </div>
+      </Link>
+
+      <BookPreview item={item} users={users} group="ticket" />
+    </li>
+  )
 }
 
 function BookCover({
@@ -314,7 +397,7 @@ function BookPreview({
 }: {
   item: BookcaseItem
   users: User[]
-  group: 'cover'
+  group: 'cover' | 'ticket'
 }) {
   return (
     <div

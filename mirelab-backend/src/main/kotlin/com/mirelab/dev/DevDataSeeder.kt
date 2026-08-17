@@ -128,6 +128,7 @@ class DevDataSeeder(
         val reason: String?,
         val description: String?,
         val actors: List<String> = emptyList(),
+        val coverUrl: String? = null,
     )
 
     private fun seedWorks() {
@@ -205,6 +206,7 @@ class DevDataSeeder(
                 Ids.HONAM, "영화도 한 편씩 섞어보자",
                 "반지하 가족이 부잣집에 하나둘 얹혀살게 되며 벌어지는 계급의 블랙코미디.",
                 listOf("송강호", "이선균", "조여정", "최우식"),
+                "https://i.namu.wiki/i/30qFF-forQ4aa4lCt9pHnJHGcTJxjptuh1DrO6dYqZ3dNed2Uh6Bu17CQBVdC8AqgsJtXheS5RGB7EaWFCNsge0EaqD5kNl2a3IzN_OC46VlhUHQJWriC2dw27rkThYjXWEughfroH_AMluqy9U_xQ.webp",
             ),
             WorkSeed(
                 Ids.W15, Ids.STUDY, null, "BOOK", "정의란 무엇인가", "마이클 샌델", 2010, "CANDIDATE",
@@ -224,10 +226,10 @@ class DevDataSeeder(
         for (w in works) {
             jdbcTemplate.update(
                 """insert into works
-                   (id, study_id, owner_id, kind, title, author, published_year, status, added_by, reason, description)
-                   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   (id, study_id, owner_id, kind, title, author, published_year, status, added_by, reason, description, cover_url)
+                   values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 w.id, w.studyId, w.ownerId, w.kind, w.title, w.author, w.year, w.status, w.addedBy, w.reason,
-                w.description,
+                w.description, w.coverUrl,
             )
             w.actors.forEachIndexed { index, actor ->
                 jdbcTemplate.update(
