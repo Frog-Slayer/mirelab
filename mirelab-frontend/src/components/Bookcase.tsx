@@ -130,7 +130,7 @@ export function Bookcase({
           {hasCompleted && (
             <ShelfCompartment>
               {completed.map((item) => (
-                <BookSpine key={item.id} item={item} users={users} onActivate={onActivate} />
+                <BookDisplay key={item.id} item={item} users={users} onActivate={onActivate} />
               ))}
             </ShelfCompartment>
           )}
@@ -138,7 +138,7 @@ export function Bookcase({
           {hasOthers && (
             <ShelfCompartment>
               {others.map((item) => (
-                <BookSpine key={item.id} item={item} users={users} onActivate={onActivate} />
+                <BookDisplay key={item.id} item={item} users={users} onActivate={onActivate} />
               ))}
               {onAdd && <EmptySlot onAdd={onAdd} />}
             </ShelfCompartment>
@@ -153,8 +153,10 @@ export function Bookcase({
 function ShelfCompartment({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <ol className="flex min-h-52 flex-wrap items-end gap-1.5 px-5 pt-6 pb-1">{children}</ol>
-      <div className="h-4 border-y border-[#5e4432] bg-[#856346] shadow-[0_6px_10px_rgba(42,29,19,0.25)]" />
+      <ol className="flex min-h-56 flex-wrap items-end gap-2.5 bg-[linear-gradient(90deg,rgba(78,53,32,0.04)_1px,transparent_1px)] bg-size-[14px_14px] px-5 pt-7 pb-1.5">
+        {children}
+      </ol>
+      <div className="h-4 border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]" />
     </div>
   )
 }
@@ -231,7 +233,19 @@ export function StatusGlyph({
   )
 }
 
-function BookSpine({
+function BookDisplay({
+  item,
+  users,
+  onActivate,
+}: {
+  item: BookcaseItem
+  users: User[]
+  onActivate?: (id: string) => void
+}) {
+  return <BookCover item={item} users={users} onActivate={onActivate} />
+}
+
+function BookCover({
   item,
   users,
   onActivate,
@@ -241,14 +255,16 @@ function BookSpine({
   onActivate?: (id: string) => void
 }) {
   const hash = hashTitle(item.title)
+  // 실제 표지는 폭만 정하고 이미지 자체의 원본 비율을 따른다.
+  // 텍스트 표지는 조금 낮게 잡아 가판대가 지나치게 우뚝해 보이지 않게 한다.
+  const height = 168 + (hash % 14)
+  const width = item.coverUrl ? 110 + (hash % 10) : 96 + (hash % 12)
+  const lean = hash % 5 === 0 ? '-rotate-2' : hash % 7 === 0 ? 'rotate-1' : ''
   const palette = spineColors[hash % spineColors.length]
-  const height = 142 + (hash % 44)
-  const width = 38 + (hash % 12)
-  const lean = hash % 5 === 0 ? '-rotate-2' : hash % 7 === 0 ? 'rotate-2' : ''
-  const titleSize = item.title.length > 18 ? 11 : item.title.length > 12 ? 12 : 14
+  const titleSize = item.title.length > 34 ? 10 : item.title.length > 22 ? 11 : 13
 
   return (
-    <li className="group/spine relative">
+    <li className="group/cover relative">
       <Link
         to={item.href}
         onMouseEnter={() => onActivate?.(item.id)}
@@ -257,48 +273,75 @@ function BookSpine({
         aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}${
           item.source !== undefined ? `, ${item.source ?? '혼자 읽음'}` : ''
         }`}
-        className={`relative flex origin-bottom flex-col items-center justify-between overflow-hidden rounded-t-[3px] border border-black/15 px-1.5 py-2.5 shadow-[inset_-4px_0_7px_rgba(0,0,0,0.14),2px_2px_4px_rgba(0,0,0,0.18)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[inset_-4px_0_7px_rgba(0,0,0,0.1),4px_7px_10px_rgba(0,0,0,0.2)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
-        style={{ height, width, backgroundColor: palette.background, color: palette.color }}
+        className={`relative block origin-bottom overflow-hidden rounded-t-sm border border-black/25 bg-white shadow-[3px_3px_5px_rgba(0,0,0,0.24),inset_3px_0_rgba(255,255,255,0.35)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.28)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
+        style={item.coverUrl ? { width } : { height, width }}
       >
-        <span className="flex h-4 items-start justify-center">
-          <StatusGlyph status={item.status} inverted={item.status === WorkStatus.CANDIDATE} />
+        {item.coverUrl ? (
+          <Cover
+            work={item}
+            size="lg"
+            className="h-auto w-full !aspect-auto rounded-none border-0 bg-white"
+          />
+        ) : (
+          <div
+            className="flex h-full w-full flex-col justify-between p-3.5"
+            style={{ backgroundColor: palette.background, color: palette.color }}
+          >
+            <span className="h-px w-7 bg-current opacity-60" aria-hidden />
+            <span
+              className="break-all leading-[1.35] font-semibold"
+              style={{ fontSize: titleSize }}
+            >
+              {item.title}
+            </span>
+            <span className="text-[9px] leading-tight opacity-75">{item.author || '작자 미상'}</span>
+          </div>
+        )}
+        <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-white/90 shadow-sm">
+          <StatusGlyph status={item.status} />
         </span>
-        <span
-          className="max-h-[76%] overflow-hidden leading-tight font-semibold whitespace-nowrap [text-orientation:mixed] [writing-mode:vertical-rl]"
-          style={{ fontSize: titleSize }}
-        >
-          {item.title}
-        </span>
-        <span className="size-1.5 rounded-full bg-current opacity-45" aria-hidden />
       </Link>
 
-      {/* 호버 미리보기 — 위쪽 순위 카드와 같은 내용(스티커만 뺌) */}
-      <div className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover/spine:visible group-hover/spine:opacity-100 group-focus-within/spine:visible group-focus-within/spine:opacity-100">
-        <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
-          <div className="w-10 flex-none">
-            <Cover work={item} size="sm" />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="truncate text-sm font-semibold text-neutral-900">{item.title}</span>
-            <span className="truncate text-xs text-neutral-500">
-              {item.author} · {item.year}
-            </span>
-            {!!item.voterCount && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold tabular-nums text-neutral-900">
-                  {formatRating(item.average ?? 0)}
-                </span>
-                <Stars value={item.average ?? 0} size="sm" />
-              </div>
-            )}
-            {item.description && (
-              <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>
-            )}
-            <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />
-          </div>
+      <BookPreview item={item} users={users} group="cover" />
+    </li>
+  )
+}
+
+function BookPreview({
+  item,
+  users,
+  group,
+}: {
+  item: BookcaseItem
+  users: User[]
+  group: 'cover'
+}) {
+  return (
+    <div
+      className={`pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover/${group}:visible group-hover/${group}:opacity-100 group-focus-within/${group}:visible group-focus-within/${group}:opacity-100`}
+    >
+      <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
+        <div className="w-10 flex-none">
+          <Cover work={item} size="sm" />
+        </div>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="truncate text-sm font-semibold text-neutral-900">{item.title}</span>
+          <span className="truncate text-xs text-neutral-500">
+            {item.author} · {item.year}
+          </span>
+          {!!item.voterCount && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold tabular-nums text-neutral-900">
+                {formatRating(item.average ?? 0)}
+              </span>
+              <Stars value={item.average ?? 0} size="sm" />
+            </div>
+          )}
+          {item.description && <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>}
+          <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />
         </div>
       </div>
-    </li>
+    </div>
   )
 }
 

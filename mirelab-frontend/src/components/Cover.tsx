@@ -5,6 +5,7 @@ import { WorkKind } from '@/types'
 interface Props {
   work: Pick<Work, 'title' | 'kind' | 'coverUrl'>
   size?: 'sm' | 'md' | 'lg'
+  className?: string
 }
 
 const widths = { sm: 'w-12', md: 'w-20', lg: 'w-full' }
@@ -19,7 +20,7 @@ function upscale(url: string) {
 }
 
 // 영화는 아직 TMDB 연동 전이라 coverUrl 이 없다 — 그동안은 자리만 잡아둔 placeholder를 보여준다.
-export default function Cover({ work, size = 'md' }: Props) {
+export default function Cover({ work, size = 'md', className = '' }: Props) {
   const [src, setSrc] = useState(() => (work.coverUrl ? upscale(work.coverUrl) : undefined))
 
   useEffect(() => {
@@ -35,14 +36,14 @@ export default function Cover({ work, size = 'md' }: Props) {
           if (work.coverUrl && src !== work.coverUrl) setSrc(work.coverUrl)
           else setSrc(undefined)
         }}
-        className={`${widths[size]} aspect-2/3 flex-none rounded-md border border-neutral-200 object-cover`}
+        className={`${widths[size]} aspect-2/3 flex-none rounded-md border border-neutral-200 object-cover ${className}`}
       />
     )
   }
 
   return (
     <div
-      className={`${widths[size]} aspect-2/3 flex-none overflow-hidden rounded-md border border-neutral-200 bg-neutral-100`}
+      className={`${widths[size]} aspect-2/3 flex-none overflow-hidden rounded-md border border-neutral-200 bg-neutral-100 ${className}`}
     >
       <div className="flex h-full flex-col justify-between p-2">
         <span className="text-xs font-medium text-neutral-400">
