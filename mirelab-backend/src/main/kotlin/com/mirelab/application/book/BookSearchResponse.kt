@@ -1,6 +1,7 @@
 package com.mirelab.application.book
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import org.springframework.web.util.HtmlUtils
 
 data class BookSearchResponse(
     val title: String,
@@ -30,13 +31,14 @@ data class AladinItem(
     val cover: String = "",
     val description: String = "",
 ) {
+    // 알라딘이 JSON 응답에서도 XML 이스케이프(&lt; &amp; 등)를 그대로 남겨 보낸다
     fun toResponse() = BookSearchResponse(
-        title = title,
-        author = author,
-        publisher = publisher,
+        title = HtmlUtils.htmlUnescape(title),
+        author = HtmlUtils.htmlUnescape(author),
+        publisher = HtmlUtils.htmlUnescape(publisher),
         pubDate = pubDate,
         isbn13 = isbn13,
         cover = cover,
-        description = description,
+        description = HtmlUtils.htmlUnescape(description),
     )
 }
