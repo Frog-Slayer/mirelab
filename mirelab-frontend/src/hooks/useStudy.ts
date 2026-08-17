@@ -12,6 +12,7 @@ export function useStudy() {
   const { data: study, isPending } = useQuery({
     queryKey: ['study', studySlug],
     queryFn: () => getStudy(studySlug),
+    enabled: !!studySlug,
   })
 
   const { data: members = [] } = useQuery({
