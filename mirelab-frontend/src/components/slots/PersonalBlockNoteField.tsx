@@ -33,15 +33,21 @@ export default function PersonalBlockNoteField({
   saveRef.current = onSave
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>
+    let timer: ReturnType<typeof setTimeout> | undefined
     const unsubscribe = editor.onChange(() => {
       clearTimeout(timer)
       timer = setTimeout(() => {
+        timer = undefined
         saveRef.current({ blocks: editor.document })
       }, 600)
     })
     return () => {
-      clearTimeout(timer)
+      // 대기 중이던 저장이 있으면 취소만 하지 말고 그 자리에서 마저 반영한다 —
+      // 안 그러면 마지막 입력 후 600ms 안에 다른 작품·사용자로 넘어갈 때 그 편집이 사라진다.
+      if (timer !== undefined) {
+        clearTimeout(timer)
+        saveRef.current({ blocks: editor.document })
+      }
       unsubscribe()
     }
   }, [editor])

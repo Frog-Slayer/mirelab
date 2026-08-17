@@ -63,8 +63,9 @@ export default function WorkPage() {
     queryFn: () => getWork(workId),
   })
   const { data: workSlots } = useQuery({
-    queryKey: ['workSlots', workId],
-    queryFn: () => getWorkSlots(workId),
+    queryKey: ['workSlots', workId, user?.id],
+    queryFn: () => getWorkSlots(workId, user!.id),
+    enabled: !!user,
   })
   const blockApiReady = isWorkBlockApiReady(workId)
   const { data: blocks = [] } = useQuery({

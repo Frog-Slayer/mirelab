@@ -53,10 +53,14 @@ export function toSlotValue(r: SlotValueResponse): SlotValue {
   }
 }
 
+/** viewerId 는 서버가 비공개·마감 전 칸 값을 걸러내는 기준이다 — 응답에 아예 안 실려 온다 */
 export async function getWorkSlots(
   workId: string,
+  viewerId: string,
 ): Promise<{ slots: SlotDef[]; values: SlotValue[] }> {
-  const res = await api.get<WorkSlotsResponse>(`/works/${workId}/slots`)
+  const res = await api.get<WorkSlotsResponse>(`/works/${workId}/slots`, {
+    headers: { 'X-User-Id': viewerId },
+  })
   return { slots: res.slots.map(toSlotDef), values: res.values.map(toSlotValue) }
 }
 
