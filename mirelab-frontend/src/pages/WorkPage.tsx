@@ -11,6 +11,7 @@ import ManageDialog from '@/components/work/ManageDialog'
 import BlockForm from '@/components/work/BlockForm'
 import WorkBlockCard from '@/components/work/WorkBlockCard'
 import MyRecordDrawer from '@/components/work/MyRecordDrawer'
+import NotFoundPage from '@/pages/NotFoundPage'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
@@ -57,7 +58,10 @@ export default function WorkPage() {
     return () => setDrawerOpen(false)
   }, [setDrawerOpen])
 
-  const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
+  const { data, isPending } = useQuery({
+    queryKey: ['work', workId],
+    queryFn: () => getWork(workId),
+  })
   const { data: workSlots } = useQuery({
     queryKey: ['workSlots', workId],
     queryFn: () => getWorkSlots(workId),
@@ -109,6 +113,7 @@ export default function WorkPage() {
   const editBlock = useMutation({ mutationFn: updateWorkBlockTitle, onSuccess: refresh })
   const deleteBlock = useMutation({ mutationFn: removeWorkBlock, onSuccess: refresh })
 
+  if (!isPending && data === null) return <NotFoundPage />
   if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
 
   const { work, sessions } = data
@@ -151,9 +156,11 @@ export default function WorkPage() {
   return (
     <>
       <MyRecordDrawer
-        // BlockNote 에디터(내 요약)는 마운트 시점의 초기값만 읽으므로, 작품이 바뀌면
-        // 통째로 다시 마운트시켜 새 작품의 내용으로 초기화되게 한다.
-        key={workId}
+        // BlockNote 에디터(내 요약)는 마운트 시점의 초기값만 읽으므로, 작품이 바뀌거나
+        // (UserSwitcher로) 사용자가 바뀌면 통째로 다시 마운트시켜 그 사람의 내용으로
+        // 초기화되게 한다 — 안 그러면 이전 사용자의 내용을 그대로 보여주다 새 사용자
+        // 레코드에 덮어쓰게 된다.
+        key={`${workId}-${user.id}`}
         open={drawerOpen}
         summarySlot={summarySlot}
         otherSlots={otherPersonalSlots}

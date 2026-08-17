@@ -1,4 +1,4 @@
-import { api } from '@/lib/api'
+import { ApiError, api } from '@/lib/api'
 import type { Session, Work, WorkKind } from '@/types'
 
 export interface RankedWork extends Work {
@@ -37,8 +37,15 @@ export function addWork(input: {
   })
 }
 
-export function getWork(workId: string): Promise<{ work: RankedWork; sessions: Session[] } | null> {
-  return api.get(`/works/${workId}`)
+export async function getWork(
+  workId: string,
+): Promise<{ work: RankedWork; sessions: Session[] } | null> {
+  try {
+    return await api.get(`/works/${workId}`)
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null
+    throw err
+  }
 }
 
 export function setWorkStatus(workId: string, status: Work['status']): Promise<void> {

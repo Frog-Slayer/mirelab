@@ -16,7 +16,14 @@ export default function PersonalBlockNoteField({
   value?: SlotValueData
   onSave: (value: SlotValueData) => void
 }) {
-  const initialBlocks = value && 'blocks' in value ? (value.blocks as PartialBlock[]) : undefined
+  // 예전 UI는 이 칸을 { text } 로 저장했다 — 그대로 두면 조용히 버려지고 빈 에디터로
+  // 시작한 뒤 다음 편집 때 덮어써 사라지므로, 문단 하나짜리 블록으로 옮겨 담는다.
+  const initialBlocks: PartialBlock[] | undefined =
+    value && 'blocks' in value
+      ? (value.blocks as PartialBlock[])
+      : value && 'text' in value && value.text
+        ? [{ type: 'paragraph', content: value.text }]
+        : undefined
 
   const editor = useCreateBlockNote({
     initialContent: initialBlocks && initialBlocks.length > 0 ? initialBlocks : undefined,

@@ -334,7 +334,15 @@ class DevDataSeeder(
         )
         values += ValueSeed(
             Ids.SAPIENS, Ids.S9, Ids.HONAM,
-            mapOf("text" to "수렵채집에서 농업으로 넘어가며 개인의 삶의 질은 오히려 나빠졌다는 게 1부의 핵심."),
+            // "내 요약"은 BlockNote 칸이라 { blocks } 로 시드한다 — { text } 는 예전 UI 포맷.
+            mapOf(
+                "blocks" to listOf(
+                    mapOf(
+                        "type" to "paragraph",
+                        "content" to "수렵채집에서 농업으로 넘어가며 개인의 삶의 질은 오히려 나빠졌다는 게 1부의 핵심.",
+                    ),
+                ),
+            ),
         )
         values += ValueSeed(
             Ids.SAPIENS, Ids.S10, Ids.HONAM,
@@ -357,11 +365,10 @@ class DevDataSeeder(
             mapOf("items" to listOf("상상의 질서는 무너지지 않는다")),
         )
 
-        // 영서의 내 서재 평점 — 스터디 쪽 기록과 안 겹치도록 SHELF 컨텍스트를 쓴다.
-        val shelfRatings = mapOf(
-            Ids.W1 to 4.5, Ids.W2 to 4.0, Ids.W3 to 5.0, Ids.W4 to 3.5, Ids.W5 to 4.0,
-            Ids.W7 to 3.0, Ids.W8 to 4.5, Ids.W9 to 2.5, Ids.W10 to 3.5, Ids.P1 to 4.0,
-        )
+        // 영서가 혼자 담은 책의 내 서재 평점 — 스터디가 없는 책만 SHELF 컨텍스트를 쓴다.
+        // 스터디 책(W1 등)은 이미 위 workRatings 에서 영서의 STUDY 평점을 받았고,
+        // 서재도 이제 그 값을 그대로 보여주므로 여기서 SHELF 로 또 넣으면 안 된다.
+        val shelfRatings = mapOf(Ids.P1 to 4.0)
         for ((workId, n) in shelfRatings) {
             values += ValueSeed(workId, Ids.S1, Ids.YEONGSEO, mapOf("n" to n), context = "SHELF")
         }

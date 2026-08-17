@@ -145,7 +145,7 @@ export default function ShelfWorkPage() {
               </span>
               <div className="flex flex-1 flex-col">
                 <PersonalBlockNoteField
-                  key={workId}
+                  key={`${workId}-${user.id}`}
                   value={valueOf(summarySlot)?.value}
                   onSave={(value) =>
                     save.mutate({

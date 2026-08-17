@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import jakarta.persistence.UniqueConstraint
@@ -53,8 +54,10 @@ class SlotValue(
     var user: User,
 
     // "value" 는 H2 에서 예약어라 컬럼명이 그대로면 DDL 파싱에서 깨진다.
+    // BlockNote 문서는 블록마다 id·props·styles 가 붙어 금방 커지므로 VARCHAR 로 못 담는다.
+    @Lob
     @Convert(converter = SlotValueJsonConverter::class)
-    @Column(name = "value_json", nullable = false, length = 4000)
+    @Column(name = "value_json", nullable = false)
     var value: Map<String, Any?>,
 
     var draft: Boolean = true,
