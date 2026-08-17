@@ -3,7 +3,7 @@ package com.mirelab.dev
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.ZoneId
 import java.util.UUID
 import org.springframework.boot.CommandLineRunner
 import org.springframework.jdbc.core.JdbcTemplate
@@ -247,7 +247,7 @@ class DevDataSeeder(
         for ((id, workId, meetAt) in sessions) {
             jdbcTemplate.update(
                 "insert into sessions (id, study_id, work_id, meet_at, closed) values (?, ?, ?, ?, ?)",
-                id, Ids.STUDY, workId, meetAt?.let { Instant.from(it.atOffset(ZoneOffset.UTC)) }, id in closedIds,
+                id, Ids.STUDY, workId, meetAt?.let { it.atZone(ZoneId.of("Asia/Seoul")).toInstant() }, id in closedIds,
             )
         }
     }

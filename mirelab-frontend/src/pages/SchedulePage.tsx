@@ -1,14 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import MonthCalendar from '@/components/MonthCalendar'
 import { useStudy } from '@/hooks/useStudy'
-import { getSchedule } from '@/mocks/api'
+import { getSchedule } from '@/lib/scheduleApi'
 
 export default function SchedulePage() {
   const { study } = useStudy()
 
   const { data: items = [] } = useQuery({
-    queryKey: ['schedule', study?.id],
-    queryFn: () => getSchedule(study!.id),
+    queryKey: ['schedule', study?.slug],
+    queryFn: () => getSchedule(study!.slug),
     enabled: !!study,
   })
 

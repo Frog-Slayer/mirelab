@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
-import { getCurrentSession } from '@/mocks/api'
+import { getCurrentSession } from '@/lib/scheduleApi'
 import { useStudy } from '@/hooks/useStudy'
 import { formatDday, formatMeetAt } from '@/lib/format'
 
@@ -15,8 +15,8 @@ export default function ThisSessionBanner() {
   const [closedId, setClosedId] = useState<string | null>(null)
 
   const { data: current } = useQuery({
-    queryKey: ['currentSession', study?.id],
-    queryFn: () => getCurrentSession(study!.id),
+    queryKey: ['currentSession', study?.slug],
+    queryFn: () => getCurrentSession(study!.slug),
     enabled: !!study,
   })
 
