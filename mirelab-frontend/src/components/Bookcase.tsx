@@ -271,6 +271,10 @@ function MovieTicket({
   const hash = hashTitle(item.title)
   const palette = ticketPalettes[hash % ticketPalettes.length]
   const rotation = ticketRotations[hash % ticketRotations.length]
+  // 포스터가 있어도 일반 티켓과 비슷한 덩치를 유지하되, 포스터 면과 스텁을 함께 감싼다.
+  const posterWidth = 88 + (hash % 8)
+  const ticketWidth = item.coverUrl ? posterWidth + 16 : 96
+  const ticketHeight = item.coverUrl ? Math.round(posterWidth * 1.5) + 72 : 192
 
   return (
     <li className="group/ticket relative">
@@ -280,8 +284,10 @@ function MovieTicket({
         onFocus={() => onActivate?.(item.id)}
         onTouchStart={() => onActivate?.(item.id)}
         aria-label={`${item.title}, ${item.author}, 영화, ${statusLabel[item.status]}`}
-        className={`relative flex h-48 w-24 origin-bottom flex-col overflow-hidden p-2 shadow-[3px_3px_5px_rgba(0,0,0,0.22)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.24)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${rotation}`}
+        className={`relative flex origin-bottom flex-col justify-between overflow-hidden p-2 shadow-[3px_3px_5px_rgba(0,0,0,0.22)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.24)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${rotation}`}
         style={{
+          width: ticketWidth,
+          height: ticketHeight,
           backgroundColor: palette.paper,
           color: palette.text,
           clipPath:
@@ -290,28 +296,37 @@ function MovieTicket({
         }}
       >
         <div
-          className="flex min-h-0 flex-1 flex-col justify-between border-2 p-2.5"
+          className={`relative flex border-2 ${item.coverUrl ? 'min-h-0 flex-1 flex-col overflow-hidden' : 'min-h-0 flex-1 flex-col justify-between p-2.5'}`}
           style={{ backgroundColor: palette.panel, borderColor: palette.text }}
         >
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
-            <span
-              className="grid size-4 place-items-center rounded-full"
-              style={{ backgroundColor: palette.text }}
-            >
-              <StatusGlyph status={item.status} />
-            </span>
-          </div>
           {item.coverUrl ? (
-            <div className="flex min-h-0 flex-1 items-center justify-center py-1">
+            <>
+              <div className="flex h-5 shrink-0 items-center justify-between px-2">
+                <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
+                <span
+                  className="grid size-4 place-items-center rounded-full shadow-sm"
+                  style={{ backgroundColor: palette.text }}
+                >
+                  <StatusGlyph status={item.status} />
+                </span>
+              </div>
               <Cover
                 work={item}
                 size="lg"
-                className="h-auto w-full !aspect-auto rounded-none border-0 bg-transparent"
+                className="min-h-0 flex-1 !aspect-auto rounded-none border-0 object-contain"
               />
-            </div>
+            </>
           ) : (
             <>
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
+                <span
+                  className="grid size-4 place-items-center rounded-full"
+                  style={{ backgroundColor: palette.text }}
+                >
+                  <StatusGlyph status={item.status} />
+                </span>
+              </div>
               <span className="break-all text-sm leading-tight font-semibold">{item.title}</span>
               <span className="truncate text-[10px] opacity-75">{item.author || '미상'}</span>
             </>
@@ -399,9 +414,15 @@ function BookPreview({
   users: User[]
   group: 'cover' | 'ticket'
 }) {
+  // Tailwind가 hover 변형을 빌드할 수 있도록 클래스 이름은 정적으로 둔다.
+  const visibilityClass =
+    group === 'ticket'
+      ? 'group-hover/ticket:visible group-hover/ticket:opacity-100 group-focus-within/ticket:visible group-focus-within/ticket:opacity-100'
+      : 'group-hover/cover:visible group-hover/cover:opacity-100 group-focus-within/cover:visible group-focus-within/cover:opacity-100'
+
   return (
     <div
-      className={`pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 opacity-0 transition-opacity duration-150 group-hover/${group}:visible group-hover/${group}:opacity-100 group-focus-within/${group}:visible group-focus-within/${group}:opacity-100`}
+      className={`pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 opacity-0 transition-opacity duration-150 ${visibilityClass}`}
     >
       <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
         <div className="w-10 flex-none">
