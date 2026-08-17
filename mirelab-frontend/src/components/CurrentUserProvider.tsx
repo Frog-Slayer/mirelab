@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { CurrentUserContext, type CurrentUserValue } from '@/hooks/currentUser'
-import { getUsers } from '@/mocks/api'
+import { getUsers } from '@/lib/userApi'
 
 const STORAGE_KEY = 'mirelab.userId'
 
-// 샌드박스된 iframe 에서는 localStorage 접근이 막혀 있을 수 있다 (데모 페이지)
+// 샌드박스된 iframe·프라이빗 모드 등에서는 localStorage 접근이 막혀 있을 수 있다
 function readStored(): string | null {
   try {
     return localStorage.getItem(STORAGE_KEY)

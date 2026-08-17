@@ -1,4 +1,4 @@
-import { createBrowserRouter, createHashRouter, Navigate } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
 import SchedulePage from '@/pages/SchedulePage'
 import HallOfFamePage from '@/pages/HallOfFamePage'
@@ -7,13 +7,10 @@ import ShelfPage from '@/pages/ShelfPage'
 import ShelfWorkPage from '@/pages/ShelfWorkPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
-// 데모 빌드(단일 HTML)는 임의의 경로에 얹히므로 pushState 를 쓰면 안 된다.
-const createRouter = import.meta.env.VITE_DEMO ? createHashRouter : createBrowserRouter
-
 /** 스터디 slug 로 쓸 수 없는 이름 — 전역 경로와 부딪힌다 */
 export const RESERVED_SLUGS = ['diary', 'settings', 'login', 'signup', 'api', 'admin', 'new']
 
-export const router = createRouter([
+export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,

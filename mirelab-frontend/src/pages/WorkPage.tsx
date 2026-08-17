@@ -11,20 +11,13 @@ import ManageDialog from '@/components/work/ManageDialog'
 import BlockForm from '@/components/work/BlockForm'
 import WorkBlockCard from '@/components/work/WorkBlockCard'
 import MyRecordDrawer from '@/components/work/MyRecordDrawer'
+import NotFoundPage from '@/pages/NotFoundPage'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
-import {
-  addSession,
-  getHallOfFame,
-  getWork,
-  getWorkSlots,
-  removeWork,
-  saveValue,
-  setWorkStatus,
-  updateWorkReason,
-} from '@/mocks/api'
 import { formatRating } from '@/lib/format'
+import { addSession } from '@/lib/sessionApi'
+import { getWorkSlots, saveValue } from '@/lib/slotApi'
 import {
   addWorkBlock,
   getWorkBlocks,
@@ -32,6 +25,7 @@ import {
   removeWorkBlock,
   updateWorkBlockTitle,
 } from '@/lib/workBlockApi'
+import { getHallOfFame, getWork, removeWork, setWorkStatus, updateWorkReason } from '@/lib/workApi'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -64,11 +58,14 @@ export default function WorkPage() {
     return () => setDrawerOpen(false)
   }, [setDrawerOpen])
 
-  const { data } = useQuery({ queryKey: ['work', workId], queryFn: () => getWork(workId) })
+  const { data, isPending } = useQuery({
+    queryKey: ['work', workId],
+    queryFn: () => getWork(workId),
+  })
   const { data: workSlots } = useQuery({
-    queryKey: ['workSlots', study?.id, workId],
-    queryFn: () => getWorkSlots(study!.id, workId),
-    enabled: !!study,
+    queryKey: ['workSlots', workId, user?.id],
+    queryFn: () => getWorkSlots(workId, user!.id),
+    enabled: !!user,
   })
   const blockApiReady = isWorkBlockApiReady(workId)
   const { data: blocks = [] } = useQuery({
@@ -78,8 +75,8 @@ export default function WorkPage() {
   })
   // 명예의 전당과 같은 기준(장르 구분 없는 전체 순위)으로 계산해 어긋나지 않게 한다.
   const { data: hallOfFame } = useQuery({
-    queryKey: ['hallOfFame', study?.id],
-    queryFn: () => getHallOfFame(study!.id),
+    queryKey: ['hallOfFame', study?.slug],
+    queryFn: () => getHallOfFame(study!.slug),
     enabled: !!study,
   })
 
@@ -117,6 +114,7 @@ export default function WorkPage() {
   const editBlock = useMutation({ mutationFn: updateWorkBlockTitle, onSuccess: refresh })
   const deleteBlock = useMutation({ mutationFn: removeWorkBlock, onSuccess: refresh })
 
+  if (!isPending && data === null) return <NotFoundPage />
   if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
 
   const { work, sessions } = data
@@ -159,6 +157,11 @@ export default function WorkPage() {
   return (
     <>
       <MyRecordDrawer
+        // BlockNote 에디터(내 요약)는 마운트 시점의 초기값만 읽으므로, 작품이 바뀌거나
+        // (UserSwitcher로) 사용자가 바뀌면 통째로 다시 마운트시켜 그 사람의 내용으로
+        // 초기화되게 한다 — 안 그러면 이전 사용자의 내용을 그대로 보여주다 새 사용자
+        // 레코드에 덮어쓰게 된다.
+        key={`${workId}-${user.id}`}
         open={drawerOpen}
         summarySlot={summarySlot}
         otherSlots={otherPersonalSlots}
@@ -336,9 +339,7 @@ export default function WorkPage() {
             <StartDialog
               title={work.status === WorkStatus.CANDIDATE ? '언제 시작하나요?' : '일정 추가'}
               submitLabel={work.status === WorkStatus.CANDIDATE ? '시작하기' : '추가하기'}
-              onStart={(meetAt) =>
-                startReading.mutate({ studyId: study.id, workId: work.id, meetAt })
-              }
+              onStart={(meetAt) => startReading.mutate({ workId: work.id, meetAt })}
               onClose={() => setStartOpen(false)}
             />
           )}

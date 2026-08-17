@@ -3,6 +3,7 @@ package com.mirelab.application.session
 import java.time.Instant
 import java.util.UUID
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -16,4 +17,11 @@ class SessionController(private val sessionService: SessionService) {
     fun add(@PathVariable workId: UUID, @RequestBody body: AddSessionRequest): ResponseEntity<SessionResponse> =
         sessionService.addForWork(workId, body.meetAt)?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
+
+    @GetMapping("/api/studies/{slug}/schedule")
+    fun schedule(@PathVariable slug: String): List<ScheduleItemResponse> = sessionService.schedule(slug)
+
+    @GetMapping("/api/studies/{slug}/current-session")
+    fun currentSession(@PathVariable slug: String): ResponseEntity<CurrentSessionResponse> =
+        sessionService.currentSession(slug)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.noContent().build()
 }

@@ -1,10 +1,11 @@
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
+import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
-import { getShelfEntry, saveValue } from '@/mocks/api'
+import { getShelfEntry, saveShelfValue } from '@/lib/shelfApi'
 import type { SlotDef } from '@/types'
 import { SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
@@ -16,7 +17,7 @@ const statusLabel: Record<string, string> = {
 
 /**
  * 내 서재 안의 책 상세. 스터디에서 온 책도 여기서 기록하지만, 스터디 쪽 작품
- * 상세의 기록과는 별개다(각자 다른 targetId 를 쓴다 — mocks/api.ts 의 shelfTargetId).
+ * 상세의 기록과는 별개다 — 백엔드가 컨텍스트(SHELF)로 구분해준다.
  */
 export default function ShelfWorkPage() {
   const { workId = '' } = useParams()
@@ -31,7 +32,7 @@ export default function ShelfWorkPage() {
   })
 
   const save = useMutation({
-    mutationFn: saveValue,
+    mutationFn: saveShelfValue,
     onSuccess: () => qc.invalidateQueries(),
   })
 
@@ -40,8 +41,7 @@ export default function ShelfWorkPage() {
     return <p className="text-sm text-neutral-500">내 서재에 없는 책입니다.</p>
 
   const { work, study, slots, values } = data
-  // 스터디에서 온 책은 스터디 쪽 기록과 안 겹치도록 다른 targetId 를 쓴다.
-  const targetId = study ? `shelf:${work.id}` : work.id
+  const targetId = work.id
 
   const valueOf = (slot: SlotDef) => values.find((v) => v.slotDefId === slot.id)
 
@@ -92,9 +92,7 @@ export default function ShelfWorkPage() {
             <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
           )}
           {work.description && (
-            <p className="max-w-xl text-sm leading-relaxed text-neutral-600">
-              {work.description}
-            </p>
+            <p className="max-w-xl text-sm leading-relaxed text-neutral-600">{work.description}</p>
           )}
           <span className="text-xs text-neutral-400">{study ? study.name : '혼자 읽은 책'}</span>
 
@@ -145,9 +143,9 @@ export default function ShelfWorkPage() {
                 {summarySlot.name}
                 {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
               </span>
-              <div className="flex flex-1 flex-col [&>textarea]:h-full [&>textarea]:flex-1">
-                <SlotField
-                  slot={summarySlot}
+              <div className="flex flex-1 flex-col">
+                <PersonalBlockNoteField
+                  key={`${workId}-${user.id}`}
                   value={valueOf(summarySlot)?.value}
                   onSave={(value) =>
                     save.mutate({

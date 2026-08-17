@@ -53,8 +53,13 @@ class SlotValue(
     var user: User,
 
     // "value" 는 H2 에서 예약어라 컬럼명이 그대로면 DDL 파싱에서 깨진다.
+    // BlockNote 문서는 블록마다 id·props·styles 가 붙어 금방 커지므로 VARCHAR(4000)로
+    // 못 담는다 — 그렇다고 @Lob 을 쓰면 PostgreSQL에서는 (문자열이라도) large object/OID
+    // 로 매핑돼버려서 별도 트랜잭션 취급이 필요해진다. LONGVARCHAR 로 지정해 PostgreSQL은
+    // text, H2는 clob 으로 매핑되는 평범한 텍스트 컬럼을 쓴다.
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Convert(converter = SlotValueJsonConverter::class)
-    @Column(name = "value_json", nullable = false, length = 4000)
+    @Column(name = "value_json", nullable = false, length = 1_000_000)
     var value: Map<String, Any?>,
 
     var draft: Boolean = true,

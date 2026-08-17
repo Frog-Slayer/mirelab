@@ -8,7 +8,13 @@ import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
 import RankSticker from '@/components/RankSticker'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
-import { addWork, getHallOfFame, getLibrary, type LibraryEntry, type RankedWork } from '@/mocks/api'
+import {
+  addWork,
+  getHallOfFame,
+  getLibrary,
+  type LibraryEntry,
+  type RankedWork,
+} from '@/lib/workApi'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
 import { WorkKind, WorkStatus } from '@/types'
@@ -34,13 +40,13 @@ export default function HallOfFamePage() {
   const [adding, setAdding] = useState(false)
 
   const { data: works = [], isPending } = useQuery({
-    queryKey: ['hall', study?.id],
-    queryFn: () => getHallOfFame(study!.id),
+    queryKey: ['hall', study?.slug],
+    queryFn: () => getHallOfFame(study!.slug),
     enabled: !!study,
   })
   const { data: allWorks = [] } = useQuery({
-    queryKey: ['library', study?.id],
-    queryFn: () => getLibrary(study!.id),
+    queryKey: ['library', study?.slug],
+    queryFn: () => getLibrary(study!.slug),
     enabled: !!study,
   })
 
@@ -137,7 +143,7 @@ export default function HallOfFamePage() {
             initialKind={filter === 'ALL' ? undefined : filter}
             onClose={() => setAdding(false)}
             onSubmit={(input) => {
-              create.mutate({ ...input, studyId: study.id, addedBy: user.id })
+              create.mutate({ ...input, slug: study.slug, addedBy: user.id })
               setAdding(false)
             }}
           />

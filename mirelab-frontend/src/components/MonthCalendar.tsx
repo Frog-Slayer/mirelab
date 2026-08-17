@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import type { ScheduleItem } from '@/mocks/api'
+import type { ScheduleItem } from '@/lib/scheduleApi'
 
 const SESSIONDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -29,7 +29,7 @@ export default function MonthCalendar({ items, slug }: Props) {
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   const byDay = new Map<string, ScheduleItem[]>()
   for (const item of items) {
-    const k = item.at.slice(0, 10)
+    const k = key(new Date(item.at))
     byDay.set(k, [...(byDay.get(k) ?? []), item])
   }
 
@@ -117,7 +117,8 @@ export default function MonthCalendar({ items, slug }: Props) {
 
                   <div className="mt-1 flex flex-col gap-1">
                     {dayItems.map((item, i) => {
-                      const time = item.at.slice(11, 16)
+                      const at = new Date(item.at)
+                      const time = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
                       const chip = (
                         <span className="block truncate">
                           <span className="font-mono text-xs opacity-70">{time}</span> {item.title}

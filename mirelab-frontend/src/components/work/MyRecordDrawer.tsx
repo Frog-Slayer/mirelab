@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
 import SlotField from '@/components/slots/SlotField'
 import type { SlotDef, SlotValue } from '@/types'
 import { Visibility } from '@/types'
@@ -35,8 +36,6 @@ export default function MyRecordDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onToggle])
 
-  const allSlots = summarySlot ? [summarySlot, ...otherSlots] : otherSlots
-
   return (
     <div
       className={`fixed top-[var(--header-h)] bottom-0 left-0 z-40 flex-none overflow-visible transition-[width] duration-150 ease-out motion-reduce:transition-none ${
@@ -66,7 +65,19 @@ export default function MyRecordDrawer({
           </div>
 
           <div className="flex flex-col gap-6 overflow-y-auto overscroll-contain p-5">
-            {allSlots.map((slot) => (
+            {summarySlot && (
+              <div className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0">
+                <span className="text-sm font-semibold">
+                  {summarySlot.name}
+                  {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
+                </span>
+                <PersonalBlockNoteField
+                  value={myValueOf(summarySlot.id)?.value}
+                  onSave={(value) => onSaveSlot(summarySlot.id, value)}
+                />
+              </div>
+            )}
+            {otherSlots.map((slot) => (
               <div
                 key={slot.id}
                 className="flex flex-col gap-2 border-t border-neutral-100 pt-5 first:border-0 first:pt-0"
@@ -82,7 +93,7 @@ export default function MyRecordDrawer({
                 />
               </div>
             ))}
-            {allSlots.length === 0 && (
+            {!summarySlot && otherSlots.length === 0 && (
               <p className="text-sm text-neutral-400">아직 작성할 수 있는 기록 항목이 없습니다.</p>
             )}
           </div>
