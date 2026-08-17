@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { searchBooks, type BookSearchResult } from '@/lib/bookApi'
 import { WorkKind } from '@/types'
@@ -17,6 +17,10 @@ export default function BookTitleField({
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [debouncedTitle, setDebouncedTitle] = useState('')
+  // absolute 대신 fixed로 그려서, 이 필드가 <dialog>(모달) 안에 있어도
+  // 모달의 overflow에 잘리지 않고 화면 기준으로 뜨게 한다.
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedTitle(title.trim()), 300)
@@ -29,8 +33,24 @@ export default function BookTitleField({
     enabled: kind === WorkKind.BOOK && debouncedTitle.length >= 2 && showSuggestions,
   })
 
+  useEffect(() => {
+    if (!showSuggestions || suggestions.length === 0) return
+
+    const updateRect = () => {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (rect) setDropdownRect({ top: rect.bottom + 4, left: rect.left, width: rect.width })
+    }
+    updateRect()
+    window.addEventListener('resize', updateRect)
+    window.addEventListener('scroll', updateRect, true)
+    return () => {
+      window.removeEventListener('resize', updateRect)
+      window.removeEventListener('scroll', updateRect, true)
+    }
+  }, [showSuggestions, suggestions.length])
+
   return (
-    <div className="relative min-w-40 flex-1">
+    <div ref={containerRef} className="relative min-w-40 flex-1">
       <input
         value={title}
         onChange={(e) => {
@@ -41,8 +61,10 @@ export default function BookTitleField({
         placeholder="제목"
         className="w-full rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
       />
-      {showSuggestions && suggestions.length > 0 && (
-        <ul className="absolute top-full right-0 left-0 z-10 mt-1 max-h-64 overflow-y-auto rounded-sm border border-neutral-200 bg-white shadow-md">
+      {showSuggestions && suggestions.length > 0 && dropdownRect && (
+        <ul
+          style={{ top: dropdownRect.top, left: dropdownRect.left, width: dropdownRect.width }}
+          className="fixed z-10 max-h-64 overflow-y-auto rounded-sm border border-neutral-200 bg-white shadow-md">
           {suggestions.map((book, index) => (
             <li key={book.isbn13 || `${book.title}-${index}`}>
               <button
