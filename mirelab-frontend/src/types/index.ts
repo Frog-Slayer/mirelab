@@ -125,6 +125,7 @@ export interface WorkBlock {
   workId: string
   authorId: string
   title: string
+  hasContent: boolean
   createdAt: string
 }
 

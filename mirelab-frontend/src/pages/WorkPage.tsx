@@ -16,19 +16,21 @@ import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import {
   addSession,
-  addWorkBlock,
   getHallOfFame,
   getWork,
-  getWorkBlocks,
   getWorkSlots,
   removeWork,
-  removeWorkBlock,
   saveValue,
   setWorkStatus,
-  updateWorkBlockTitle,
   updateWorkReason,
 } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
+import {
+  addWorkBlock,
+  getWorkBlocks,
+  removeWorkBlock,
+  updateWorkBlockTitle,
+} from '@/lib/workBlockApi'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {

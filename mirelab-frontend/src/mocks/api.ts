@@ -10,13 +10,13 @@ import type {
   User,
   Session,
   Work,
-  WorkBlock,
 } from '@/types'
 import { SlotOwner, SlotScope, SlotType, Visibility, WorkStatus } from '@/types'
 import * as seed from './data'
 
 // 백엔드가 생기기 전까지 쓰는 인메모리 목. 화면이 실제로 동작하는지 보기 위한 것이라
 // 새로고침하면 초기 상태로 돌아간다. 나중에 lib/api.ts 호출로 갈아끼운다.
+// "함께 쓰는 기록"(WorkBlock)은 실시간 서버가 붙어야 해서 이미 lib/workBlockApi.ts 로 갈아탔다.
 const db = {
   users: structuredClone(seed.users),
   studies: structuredClone(seed.studies),
@@ -28,7 +28,6 @@ const db = {
   polls: structuredClone(seed.meetingPolls),
   votes: structuredClone(seed.pollVotes),
   events: structuredClone(seed.studyEvents),
-  workBlocks: structuredClone(seed.workBlocks),
 }
 
 let seq = 100
@@ -351,41 +350,6 @@ export function getWorkSlots(studyId: string, workId: string): Promise<WorkSlots
     slots,
     values: db.slotValues.filter((v) => v.targetId === workId),
   })
-}
-
-// ─── 함께 쓰는 기록 ─────────────────────────────────────────
-
-export function getWorkBlocks(workId: string): Promise<WorkBlock[]> {
-  return delay(
-    db.workBlocks
-      .filter((b) => b.workId === workId)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-  )
-}
-
-export function addWorkBlock(input: {
-  workId: string
-  authorId: string
-  title: string
-}): Promise<WorkBlock> {
-  const created: WorkBlock = { ...input, id: nextId('blk'), createdAt: new Date().toISOString() }
-  db.workBlocks.push(created)
-  return delay(created)
-}
-
-export function updateWorkBlockTitle(input: {
-  id: string
-  title: string
-}): Promise<WorkBlock | null> {
-  const block = db.workBlocks.find((b) => b.id === input.id)
-  if (!block) return delay(null)
-  block.title = input.title
-  return delay(block)
-}
-
-export function removeWorkBlock(id: string): Promise<void> {
-  db.workBlocks = db.workBlocks.filter((b) => b.id !== id)
-  return delay(undefined)
 }
 
 // ─── 일정 ─────────────────────────────────────────────────
