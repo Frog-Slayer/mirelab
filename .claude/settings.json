@@ -9,7 +9,31 @@
       "Bash(/opt/homebrew/bin/node /tmp/claude-501/-Users-yeongseo-Workspace-personal-mirelab/92948fda-4427-4dfd-af5b-91488fd4f153/scratchpad/cleanup.mjs)",
       "Bash(/usr/bin/grep -n \"^import\" src/components/layout/RootLayout.tsx)",
       "Bash(/opt/homebrew/bin/node /tmp/claude-501/-Users-yeongseo-Workspace-personal-mirelab/92948fda-4427-4dfd-af5b-91488fd4f153/scratchpad/add-slots.mjs)",
-      "Bash(/usr/bin/sed -n '440,470p' src/mocks/data.ts)"
+      "Bash(/usr/bin/sed -n '440,470p' src/mocks/data.ts)",
+      "Bash(npx tsc *)",
+      "Bash(npx oxlint *)",
+      "Bash(npm run *)",
+      "Bash(lsof -ti:5173 -sTCP:LISTEN)",
+      "Bash(xargs -r kill)",
+      "Bash(nohup npm run dev -- --port 5173)",
+      "Bash(disown)",
+      "Bash(timeout 30 bash -c 'until curl -sf http://localhost:5173 >/dev/null; do sleep 1; done')",
+      "Bash(which chromium-cli *)",
+      "Read(//tmp/claude-1000/bundled-skills/**)",
+      "Bash(find / -maxdepth 6 -iname \"*chromium-cli*\")",
+      "Bash(npm ls *)",
+      "Bash(python3 -c \"import playwright\")",
+      "Bash(grep -rn \"'/shelf\\\\|\\\\\"/shelf\\\\|/shelf\\\\`\\\\|to=\\\\\"/shelf\\\\|to={\\\\`/shelf\" /home/yeongseo/mirelab/mirelab-frontend/src --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(grep -rn \"m\\\\.color\\\\|member\\\\.color\\\\|\\\\.color}\\\\`\" /home/yeongseo/mirelab/mirelab-frontend/src --include=\"*.tsx\")",
+      "Bash(npx prettier *)",
+      "Bash(grep -n \"const { work, sessions }\\\\|const blurbOf\" /home/yeongseo/mirelab/mirelab-frontend/src/pages/WorkPage.tsx)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(cd /home/yeongseo/mirelab/mirelab-frontend/src && echo \"=== routes/index.tsx ===\"; cat -n routes/index.tsx; echo; echo \"=== main entry \\(App/main.tsx\\) ===\"; find .. -maxdepth 1 -iname \"main.tsx\" -o -iname \"App.tsx\" 2>/dev/null; find . -iname \"App.tsx\" -o -iname \"main.tsx\")",
+      "Read(//home/yeongseo/**)",
+      "Bash(cd /home/yeongseo/mirelab/mirelab-frontend/src && echo \"=== main.tsx ===\"; cat -n main.tsx; echo; echo \"=== search for CurrentUserProvider ===\"; grep -rn \"CurrentUserProvider\\\\|Provider\" --include=\"*.tsx\" --include=\"*.ts\" . ; echo; echo \"=== search for zustand ===\"; grep -rn \"zustand\" -i ../package.json; echo; echo \"=== search for createContext across repo ===\"; grep -rln \"createContext\" .)",
+      "Bash(grep -n \"const { open, setOpen, slot }\\\\|if \\(!slot\\) return null\\\\|slot,\\\\n  \\)\" /home/yeongseo/mirelab/mirelab-frontend/src/pages/WorkPage.tsx)",
+      "Bash(git rm *)",
+      "Bash(grep -rn \"SessionsPage\\\\|SessionPage\\\\b\\\\|/w/\\\\${\" src)"
     ]
   }
 }

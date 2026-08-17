@@ -12,6 +12,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
+    allowedHosts: ['yeongseo-mini-s.taildf0713.ts.net'],
     port: 5173,
     proxy: {
       // 백엔드(Spring Boot)로 프록시. 브라우저에서는 same-origin 이라 CORS 설정이 필요 없다.

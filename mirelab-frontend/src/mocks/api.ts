@@ -10,8 +10,9 @@ import type {
   User,
   Session,
   Work,
+  WorkBlock,
 } from '@/types'
-import { SlotAttach, SlotOwner, SlotScope, SlotType, Visibility, WorkStatus } from '@/types'
+import { SlotOwner, SlotScope, SlotType, Visibility, WorkStatus } from '@/types'
 import * as seed from './data'
 
 // 백엔드가 생기기 전까지 쓰는 인메모리 목. 화면이 실제로 동작하는지 보기 위한 것이라
@@ -27,6 +28,7 @@ const db = {
   polls: structuredClone(seed.meetingPolls),
   votes: structuredClone(seed.pollVotes),
   events: structuredClone(seed.studyEvents),
+  workBlocks: structuredClone(seed.workBlocks),
 }
 
 let seq = 100
@@ -76,16 +78,11 @@ export interface RankedWork extends Work {
   distribution: number[]
 }
 
-/** 그 스터디에서 작품에 붙어 있는 평점 칸 */
+/** 그 스터디의 평점 칸 */
 function workRatingSlotId(studyId: string | undefined): string | undefined {
   if (!studyId) return undefined
-  return db.slotDefs.find(
-    (s) =>
-      s.studyId === studyId &&
-      s.type === SlotType.RATING &&
-      s.attach === SlotAttach.WORK &&
-      !s.hidden,
-  )?.id
+  return db.slotDefs.find((s) => s.studyId === studyId && s.type === SlotType.RATING && !s.hidden)
+    ?.id
 }
 
 function rank(work: Work): RankedWork {
@@ -118,7 +115,11 @@ export function getHallOfFame(studyId: string, sort: HallSort = 'rating'): Promi
 export function getWork(workId: string): Promise<{ work: RankedWork; sessions: Session[] } | null> {
   const work = db.works.find((w) => w.id === workId)
   if (!work) return delay(null)
-  const sessions = db.sessions.filter((w) => w.workId === workId).sort((a, b) => a.no - b.no)
+  // db.sessions 는 최신이 앞이다 — 오래된 순으로 뒤집어 보여준다.
+  const sessions = db.sessions
+    .filter((w) => w.workId === workId)
+    .slice()
+    .reverse()
   return delay({ work: rank(work), sessions })
 }
 
@@ -190,20 +191,19 @@ function summarize(session: Session): SessionSummary {
   const study = db.studies.find((s) => s.id === session.studyId)!
   const personalIds = new Set(
     db.slotDefs
-      .filter(
-        (s) =>
-          s.studyId === session.studyId &&
-          s.scope === SlotScope.PERSONAL &&
-          s.attach === SlotAttach.SESSION,
-      )
+      .filter((s) => s.studyId === session.studyId && s.scope === SlotScope.PERSONAL)
       .map((s) => s.id),
   )
-  const submitted = study.memberIds.filter((uid) =>
-    db.slotValues.some(
-      (v) =>
-        v.targetId === session.id && v.userId === uid && personalIds.has(v.slotDefId) && !v.draft,
-    ),
-  )
+  // 값은 작품에 붙으므로 "제출"도 이 회차만이 아니라 이 작품 전체 기준이다.
+  const targetId = session.workId
+  const submitted = targetId
+    ? study.memberIds.filter((uid) =>
+        db.slotValues.some(
+          (v) =>
+            v.targetId === targetId && v.userId === uid && personalIds.has(v.slotDefId) && !v.draft,
+        ),
+      )
+    : []
 
   return {
     session,
@@ -223,60 +223,26 @@ export function getCurrentSession(studyId: string): Promise<SessionSummary | nul
 
 export function addSession(input: {
   studyId: string
-  title: string
   workId?: string
   meetAt: string | null
 }): Promise<Session> {
-  const siblings = db.sessions.filter((s) => s.studyId === input.studyId)
   const created: Session = {
     id: nextId('k'),
     studyId: input.studyId,
-    no: Math.max(0, ...siblings.map((s) => s.no)) + 1,
-    title: input.title,
     workId: input.workId,
     meetAt: input.meetAt,
     closed: false,
   }
+  // 최신을 앞에 둔다 — db.sessions 는 항상 이 순서를 유지한다.
   db.sessions.unshift(created)
-  // 회차가 잡히면 그 작품은 읽는 중이 된다
+  // 모임이 잡히면 그 작품은 읽는 중이 된다
   const work = db.works.find((w) => w.id === input.workId)
   if (work && work.status === WorkStatus.CANDIDATE) work.status = WorkStatus.READING
   return delay(created)
 }
 
 export function getSessions(studyId: string): Promise<SessionSummary[]> {
-  return delay(
-    db.sessions
-      .filter((w) => w.studyId === studyId)
-      .sort((a, b) => b.no - a.no)
-      .map(summarize),
-  )
-}
-
-export interface SessionDetail {
-  session: Session
-  work: Work | null
-  slots: SlotDef[]
-  values: SlotValue[]
-  memos: Memo[]
-}
-
-export function getSession(sessionId: string): Promise<SessionDetail | null> {
-  const session = db.sessions.find((w) => w.id === sessionId)
-  if (!session) return delay(null)
-
-  const slots = db.slotDefs
-    .filter((s) => s.studyId === session.studyId && !s.hidden && s.attach === SlotAttach.SESSION)
-    .filter((s) => s.owner === SlotOwner.STUDY || s.sessionId === sessionId)
-    .sort((a, b) => a.order - b.order)
-
-  return delay({
-    session,
-    work: db.works.find((w) => w.id === session.workId) ?? null,
-    slots,
-    values: db.slotValues.filter((v) => v.targetId === sessionId),
-    memos: db.memos.filter((m) => m.targetId === sessionId),
-  })
+  return delay(db.sessions.filter((w) => w.studyId === studyId).map(summarize))
 }
 
 /**
@@ -346,25 +312,14 @@ export function removeMemo(memoId: string): Promise<void> {
 
 // ─── 내 기록 ───────────────────────────────────────────────
 
-export interface MyEntry {
-  session: Session
-  work: Work | null
-  values: SlotValue[]
-  memos: Array<Memo & { quote: string; slotName: string }>
-}
-
 export interface MyWorkEntry {
   work: Work
   values: SlotValue[]
 }
 
-/** 작품에 붙은 내 기록 — 평점·한줄평처럼 책 한 권에 한 번 쓰는 것들 */
+/** 작품에 붙은 내 기록 — 모든 칸 값은 책 한 권 단위로 쌓인다 */
 export function getMyWorkRecords(studyId: string, userId: string): Promise<MyWorkEntry[]> {
-  const workSlotIds = new Set(
-    db.slotDefs
-      .filter((s) => s.studyId === studyId && s.attach === SlotAttach.WORK)
-      .map((s) => s.id),
-  )
+  const workSlotIds = new Set(db.slotDefs.filter((s) => s.studyId === studyId).map((s) => s.id))
   const entries = db.works
     .filter((w) => w.studyId === studyId)
     .map((work) => ({
@@ -377,33 +332,6 @@ export function getMyWorkRecords(studyId: string, userId: string): Promise<MyWor
   return delay(entries)
 }
 
-export function getMyRecords(studyId: string, userId: string): Promise<MyEntry[]> {
-  const entries = db.sessions
-    .filter((w) => w.studyId === studyId)
-    .sort((a, b) => b.no - a.no)
-    .map((session) => {
-      const values = db.slotValues.filter((v) => v.targetId === session.id && v.userId === userId)
-      const memos = db.memos
-        .filter((m) => m.targetId === session.id && m.userId === userId)
-        .map((m) => {
-          const slot = db.slotDefs.find((s) => s.id === m.slotDefId)
-          const holder = db.slotValues.find(
-            (v) => v.targetId === m.targetId && v.slotDefId === m.slotDefId,
-          )
-          const items = holder && 'shared' in holder.value ? holder.value.shared : []
-          return {
-            ...m,
-            quote: items.find((i) => i.id === m.itemId)?.text ?? '(삭제된 항목)',
-            slotName: slot?.name ?? '',
-          }
-        })
-      return { session, work: db.works.find((w) => w.id === session.workId) ?? null, values, memos }
-    })
-    .filter((e) => e.values.length > 0 || e.memos.length > 0)
-
-  return delay(entries)
-}
-
 export interface WorkSlots {
   slots: SlotDef[]
   values: SlotValue[]
@@ -411,7 +339,13 @@ export interface WorkSlots {
 
 export function getWorkSlots(studyId: string, workId: string): Promise<WorkSlots> {
   const slots = db.slotDefs
-    .filter((s) => s.studyId === studyId && !s.hidden && s.attach === SlotAttach.WORK)
+    .filter((s) => s.studyId === studyId && !s.hidden)
+    // 콜아웃 칸(owner: SESSION)은 그 모임이 이 작품 소관일 때만 보여준다.
+    .filter(
+      (s) =>
+        s.owner === SlotOwner.STUDY ||
+        db.sessions.find((se) => se.id === s.sessionId)?.workId === workId,
+    )
     .sort((a, b) => a.order - b.order)
   return delay({
     slots,
@@ -419,60 +353,42 @@ export function getWorkSlots(studyId: string, workId: string): Promise<WorkSlots
   })
 }
 
-// ─── 칸 관리 ───────────────────────────────────────────────
+// ─── 함께 쓰는 기록 ─────────────────────────────────────────
 
-export function getSlotDefs(studyId: string): Promise<SlotDef[]> {
-  return delay(db.slotDefs.filter((s) => s.studyId === studyId).sort((a, b) => a.order - b.order))
+export function getWorkBlocks(workId: string): Promise<WorkBlock[]> {
+  return delay(
+    db.workBlocks
+      .filter((b) => b.workId === workId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  )
 }
 
-export function addSlotDef(input: {
-  studyId: string
-  name: string
-  type: SlotType
-  scope: SlotDef['scope']
-  attach: SlotDef['attach']
-  visibility: SlotDef['visibility']
-}): Promise<SlotDef> {
-  const siblings = db.slotDefs.filter((s) => s.studyId === input.studyId)
-  const created: SlotDef = {
-    id: nextId('s'),
-    studyId: input.studyId,
-    name: input.name,
-    type: input.type,
-    scope: input.scope,
-    attach: input.attach,
-    visibility: input.visibility,
-    owner: SlotOwner.STUDY,
-    allowMemo: input.scope === SlotScope.SHARED,
-    order: Math.max(0, ...siblings.map((s) => s.order)) + 1,
-    hidden: false,
-  }
-  db.slotDefs.push(created)
+export function addWorkBlock(input: {
+  workId: string
+  authorId: string
+  title: string
+  body: string
+}): Promise<WorkBlock> {
+  const created: WorkBlock = { ...input, id: nextId('blk'), createdAt: new Date().toISOString() }
+  db.workBlocks.push(created)
   return delay(created)
 }
 
-/** 지우지 않고 숨긴다 — 과거 회차의 기록은 남아야 한다 */
-export function toggleSlotHidden(slotDefId: string): Promise<void> {
-  const slot = db.slotDefs.find((s) => s.id === slotDefId)
-  if (slot) slot.hidden = !slot.hidden
-  return delay(undefined, 60)
+export function updateWorkBlock(input: {
+  id: string
+  title: string
+  body: string
+}): Promise<WorkBlock | null> {
+  const block = db.workBlocks.find((b) => b.id === input.id)
+  if (!block) return delay(null)
+  block.title = input.title
+  block.body = input.body
+  return delay(block)
 }
 
-export function moveSlot(slotDefId: string, direction: -1 | 1): Promise<void> {
-  const target = db.slotDefs.find((s) => s.id === slotDefId)
-  if (!target) return delay(undefined, 0)
-  const sorted = db.slotDefs
-    .filter((s) => s.studyId === target.studyId)
-    .sort((a, b) => a.order - b.order)
-  const index = sorted.findIndex((s) => s.id === slotDefId)
-  const swapWith = index + direction
-  if (swapWith < 0 || swapWith >= sorted.length) return delay(undefined, 0)
-  const a = sorted[index]
-  const b = sorted[swapWith]
-  const tmp = a.order
-  a.order = b.order
-  b.order = tmp
-  return delay(undefined, 60)
+export function removeWorkBlock(id: string): Promise<void> {
+  db.workBlocks = db.workBlocks.filter((b) => b.id !== id)
+  return delay(undefined)
 }
 
 // ─── 일정 ─────────────────────────────────────────────────
@@ -483,18 +399,19 @@ export interface ScheduleItem {
   title: string
   note?: string
   sessionId?: string
+  workId?: string
 }
 
 export function getSchedule(studyId: string): Promise<ScheduleItem[]> {
   const fromSessions: ScheduleItem[] = db.sessions
-    // 날짜가 안 잡힌 회차는 달력에 놓을 자리가 없다
+    // 날짜가 안 잡힌 모임은 달력에 놓을 자리가 없다
     .filter((w) => w.studyId === studyId && w.meetAt)
     .map((w) => ({
       kind: 'SESSION',
       at: w.meetAt!,
-      title: `${w.no}회차 · ${w.title}`,
-      note: db.works.find((x) => x.id === w.workId)?.title,
+      title: db.works.find((x) => x.id === w.workId)?.title ?? '모임',
       sessionId: w.id,
+      workId: w.workId,
     }))
   const fromEvents: ScheduleItem[] = db.events
     .filter((e) => e.studyId === studyId)
@@ -660,18 +577,20 @@ export interface Shelf {
   entries: ShelfEntry[]
 }
 
+/**
+ * 내 서재 안에서 쓰는 값의 targetId. 스터디에서 온 책은 스터디 쪽 기록(targetId = work.id)과
+ * 겹치지 않도록 접두어를 붙여 따로 둔다 — 내 서재 기록과 스터디 기록은 서로 다른 장부다.
+ */
+function shelfTargetId(work: Work): string {
+  return work.studyId ? `shelf:${work.id}` : work.id
+}
+
 export function getShelf(userId: string): Promise<Shelf> {
   const myStudies = db.studies.filter((s) => s.memberIds.includes(userId))
   const myStudyIds = new Set(myStudies.map((s) => s.id))
 
   const slots = db.slotDefs
-    .filter(
-      (s) =>
-        myStudyIds.has(s.studyId) &&
-        !s.hidden &&
-        s.attach === SlotAttach.WORK &&
-        s.scope === SlotScope.PERSONAL,
-    )
+    .filter((s) => myStudyIds.has(s.studyId) && !s.hidden && s.scope === SlotScope.PERSONAL)
     .sort((a, b) => a.order - b.order)
 
   const slotIds = new Set(slots.map((s) => s.id))
@@ -682,7 +601,8 @@ export function getShelf(userId: string): Promise<Shelf> {
       work,
       study: db.studies.find((s) => s.id === work.studyId) ?? null,
       values: db.slotValues.filter(
-        (v) => v.targetId === work.id && v.userId === userId && slotIds.has(v.slotDefId),
+        (v) =>
+          v.targetId === shelfTargetId(work) && v.userId === userId && slotIds.has(v.slotDefId),
       ),
     }))
 
@@ -717,8 +637,8 @@ export interface ShelfDetail {
 }
 
 /**
- * 내 서재의 책 하나. 철저히 개인 단위라 회차는 끼어들지 않는다.
- * 스터디 공동 기록은 스터디 쪽 작품 상세에서 본다.
+ * 내 서재의 책 하나. 회차는 끼어들지 않고, 스터디에서 온 책이라도 여기 기록은
+ * 스터디 쪽 작품 상세의 기록과 별개다 — 각자 자기 targetId 를 쓴다.
  */
 export function getShelfEntry(userId: string, workId: string): Promise<ShelfDetail | null> {
   const work = db.works.find((w) => w.id === workId)
@@ -730,19 +650,13 @@ export function getShelfEntry(userId: string, workId: string): Promise<ShelfDeta
   if (!mine) return delay(null)
 
   const slots = db.slotDefs
-    .filter(
-      (s) =>
-        myStudyIds.has(s.studyId) &&
-        !s.hidden &&
-        s.attach === SlotAttach.WORK &&
-        s.scope === SlotScope.PERSONAL,
-    )
+    .filter((s) => myStudyIds.has(s.studyId) && !s.hidden && s.scope === SlotScope.PERSONAL)
     .sort((a, b) => a.order - b.order)
 
   return delay({
     work,
     study: db.studies.find((s) => s.id === work.studyId) ?? null,
     slots,
-    values: db.slotValues.filter((v) => v.targetId === workId && v.userId === userId),
+    values: db.slotValues.filter((v) => v.targetId === shelfTargetId(work) && v.userId === userId),
   })
 }

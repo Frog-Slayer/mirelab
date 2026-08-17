@@ -1,7 +1,10 @@
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import UserSwitcher from '@/components/UserSwitcher'
+import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { useCurrentUser } from '@/hooks/currentUser'
+import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
 import { getMyStudies } from '@/mocks/api'
 import type { Study } from '@/types'
 
@@ -9,6 +12,23 @@ export default function RootLayout() {
   const { user } = useCurrentUser()
   const { studySlug } = useParams()
   const navigate = useNavigate()
+  const [recordDrawerOpen, setRecordDrawerOpen] = useState(false)
+  const recordDrawer: RecordDrawerContext = {
+    open: recordDrawerOpen,
+    setOpen: setRecordDrawerOpen,
+  }
+
+  // 헤더 높이가 늘었다 줄었다 하므로(스터디 탭 유무 등) 재서 변수로 내려준다 —
+  // "내 기록" 드로어가 헤더 바로 아래부터 정확히 시작하게 하려고.
+  const headerRef = useRef<HTMLElement>(null)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  useEffect(() => {
+    const el = headerRef.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => setHeaderHeight(entry.contentRect.height))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   const { data: studies = [] } = useQuery({
     queryKey: ['myStudies', user?.id],
@@ -19,8 +39,14 @@ export default function RootLayout() {
   const current = studies.find((s) => s.slug === studySlug) ?? null
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur-xl">
+    <div
+      className="flex min-h-full flex-col"
+      style={{ '--header-h': `${headerHeight}px` } as CSSProperties}
+    >
+      <header
+        ref={headerRef}
+        className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur-xl"
+      >
         <div className="mx-auto flex max-w-6xl items-center gap-5 px-6 py-3.5">
           <Link to="/" className="text-lg font-semibold tracking-[-0.03em]">
             mirelab
@@ -55,16 +81,6 @@ export default function RootLayout() {
           )}
 
           <div className="ml-auto flex items-center gap-4">
-            <NavLink
-              to="/shelf"
-              className={({ isActive }) =>
-                isActive
-                  ? 'text-sm font-medium text-neutral-900'
-                  : 'text-sm text-neutral-500 hover:text-neutral-900'
-              }
-            >
-              내 서재
-            </NavLink>
             <UserSwitcher />
           </div>
         </div>
@@ -72,15 +88,30 @@ export default function RootLayout() {
         {current && <StudyNav study={current} />}
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12 sm:py-16">
-        <Outlet />
-      </main>
+      <div className="flex flex-1">
+        {/*
+          "내 기록" 드로어(WorkPage)는 항상 뷰포트 왼쪽 끝에 고정으로 붙는다.
+          여기서는 실제로 아무것도 그리지 않고, 화면이 넓을 때(xl 이상) 그
+          너비만큼 자리를 미리 비워둬서 <main> 이 오른쪽으로 밀리게 한다.
+        */}
+        <div
+          className={`w-0 flex-none transition-[width] duration-150 ease-out motion-reduce:transition-none ${
+            recordDrawerOpen ? 'xl:w-[28rem]' : ''
+          }`}
+        />
+        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-6 sm:py-8">
+          <Outlet context={recordDrawer} />
+        </main>
+      </div>
 
       <footer className="border-t border-neutral-200 px-6 py-5">
         <p className="mx-auto max-w-6xl text-xs text-neutral-400">
           목 데이터로 동작합니다. 새로고침하면 초기 상태로 돌아갑니다.
         </p>
       </footer>
+
+      {/* 스터디 안 어느 화면에서든 다음 모임으로 바로 들어가는 플로팅 카드 */}
+      <ThisSessionBanner />
     </div>
   )
 }
@@ -88,16 +119,17 @@ export default function RootLayout() {
 function StudyNav({ study }: { study: Study }) {
   const base = `/${study.slug}`
 
-  // 명예의 전당을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
+  // 홈(명예의 전당 + 책장)을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
   const items = study.hasWorks
     ? [
-        { to: base, label: '명예의 전당', end: true },
-        { to: `${base}/library`, label: '작품', end: false },
-        { to: `${base}/sessions`, label: '모임', end: true },
+        { to: base, label: '홈', end: true },
+        { to: `${base}/sessions`, label: '일정', end: true },
+        { to: `${base}/shelf`, label: '내 서재', end: false },
       ]
     : [
         { to: base, label: '홈', end: true },
-        { to: `${base}/sessions`, label: '모임', end: true },
+        { to: `${base}/sessions`, label: '일정', end: true },
+        { to: `${base}/shelf`, label: '내 서재', end: false },
       ]
 
   return (

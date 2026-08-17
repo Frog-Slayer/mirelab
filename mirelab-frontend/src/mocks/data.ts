@@ -9,10 +9,10 @@ import type {
   User,
   Session,
   Work,
+  WorkBlock,
 } from '@/types'
 import {
   Availability,
-  SlotAttach,
   SlotOwner,
   SlotScope,
   SlotType,
@@ -49,6 +49,8 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u3',
     reason: '다 같이 극장에서 본 뒤로 계속 얘기가 나와서',
+    description: '지구가 황폐해진 미래, 인류의 새 터전을 찾아 웜홀 너머로 떠난 탐사대의 이야기.',
+    actors: ['매튜 맥커너히', '앤 해서웨이', '제시카 차스테인'],
   },
   {
     id: 'w2',
@@ -60,6 +62,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u1',
     reason: '문명사를 한 번은 정리하고 넘어가고 싶었다',
+    description: '왜 어떤 문명은 정복하고 어떤 문명은 정복당했는가 — 지리와 환경으로 읽는 인류사.',
   },
   {
     id: 'w3',
@@ -71,6 +74,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u4',
     reason: '노벨상 받은 김에 제대로 읽어보자고',
+    description: '1980년 광주, 죽은 자와 산 자의 목소리로 번갈아 증언하는 소설.',
   },
   {
     id: 'w4',
@@ -82,6 +86,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u2',
     reason: '진화 얘기가 나올 때마다 인용되는 책이라',
+    description: '진화의 주인공은 개체가 아니라 유전자다 — 이기적 유전자 관점에서 본 생명 이야기.',
   },
   {
     id: 'w5',
@@ -93,6 +98,8 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u2',
     reason: '개봉 때 놓친 사람이 많아서',
+    description: '원자폭탄을 만든 물리학자 오펜하이머의 성공과 그 이후의 청문회를 그린 전기 영화.',
+    actors: ['킬리언 머피', '에밀리 블런트', '로버트 다우니 주니어'],
   },
   {
     id: 'w6',
@@ -104,6 +111,7 @@ export const works: Work[] = [
     status: WorkStatus.READING,
     addedBy: 'u1',
     reason: '총, 균, 쇠 다음으로 자연스럽게 이어져서',
+    description: '인지혁명부터 농업혁명, 과학혁명까지 — 호모 사피엔스가 세상을 지배하게 된 과정.',
   },
   {
     id: 'w7',
@@ -115,6 +123,8 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u4',
     reason: '1편만 보고 멈춘 사람이 셋이나 있어서',
+    description: '폴 아트레이데스가 프레멘과 함께 하코넨에 맞서 복수를 완성해가는 이야기.',
+    actors: ['티모시 샬라메', '젠데이아', '레베카 퍼거슨'],
   },
   {
     id: 'w8',
@@ -126,6 +136,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u3',
     reason: '과학책도 한 권쯤 섞고 싶었다',
+    description: '우주의 기원부터 생명의 진화까지, 과학의 눈으로 훑는 거대한 시공간 여행.',
   },
   {
     id: 'w9',
@@ -137,6 +148,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u3',
     reason: 'SF 고전을 하나는 짚고 가자는 얘기가 있었다',
+    description: '은하 제국의 몰락을 예견한 심리역사학자 셀던이 남긴 파운데이션 계획.',
   },
   {
     id: 'w10',
@@ -148,6 +160,7 @@ export const works: Work[] = [
     status: WorkStatus.DONE,
     addedBy: 'u2',
     reason: '가벼운 소설로 쉬어가는 회차',
+    description: '와타나베가 두 여인 사이에서 상실과 사랑을 배워가는 청춘의 기억.',
   },
   // 읽고 싶은 것들
   {
@@ -160,6 +173,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u1',
     reason: '사피엔스 마무리하면 바로 이어가자고',
+    description: '기아·질병·전쟁을 넘어선 인류가 다음으로 좇을 신이 되려는 욕망을 그린다.',
   },
   {
     id: 'w12',
@@ -171,6 +185,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u3',
     reason: '통계로 세상 보는 감각을 키우고 싶어서',
+    description: '우리가 세상을 실제보다 더 나쁘게 보는 열 가지 본능과, 데이터로 고치는 법.',
   },
   {
     id: 'w13',
@@ -182,6 +197,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u4',
     reason: '드라마 보고 원작이 궁금해졌다',
+    description: '일제강점기부터 현대까지, 이역만리 일본에서 뿌리내린 한 가족 4대의 이야기.',
   },
   {
     id: 'w14',
@@ -193,6 +209,8 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u2',
     reason: '영화도 한 편씩 섞어보자',
+    description: '반지하 가족이 부잣집에 하나둘 얹혀살게 되며 벌어지는 계급의 블랙코미디.',
+    actors: ['송강호', '이선균', '조여정', '최우식'],
   },
   {
     id: 'w15',
@@ -204,6 +222,7 @@ export const works: Work[] = [
     status: WorkStatus.CANDIDATE,
     addedBy: 'u1',
     reason: '토론 붙기 좋은 주제라',
+    description: '공리주의부터 자유지상주의까지, 정의를 둘러싼 철학적 딜레마를 사례로 풀어낸다.',
   },
   // 스터디와 무관한 개인 책 — 내 서재에만 있다
   {
@@ -214,6 +233,7 @@ export const works: Work[] = [
     author: '김교석',
     year: 2019,
     status: WorkStatus.DONE,
+    description: '좋아하는 걸 계속하는 삶에 대한 담담하고 다정한 에세이.',
   },
   {
     id: 'p2',
@@ -223,16 +243,16 @@ export const works: Work[] = [
     author: '제럴드 와인버그',
     year: 2004,
     status: WorkStatus.READING,
+    description: '문제 해결과 컨설팅 현장에서 통하는 원칙을 짧은 법칙들로 정리한 책.',
   },
 ]
 
+// 최신이 앞에 오는 순서로 둔다 — addSession 이 unshift 로 새 모임을 앞에 붙이는 것과 같은 순서다.
 export const sessions: Session[] = [
-  // 날짜가 아직 안 잡힌 회차 — 주기가 고정이 아니라서 흔한 상태다
+  // 날짜가 아직 안 잡힌 모임 — 주기가 고정이 아니라서 흔한 상태다
   {
     id: 'k6',
     studyId: 'st1',
-    no: 6,
-    title: '10~12장',
     workId: 'w6',
     meetAt: null,
     closed: false,
@@ -240,8 +260,6 @@ export const sessions: Session[] = [
   {
     id: 'k5',
     studyId: 'st1',
-    no: 5,
-    title: '7~9장',
     workId: 'w6',
     meetAt: '2026-08-17T20:00',
     closed: false,
@@ -249,8 +267,6 @@ export const sessions: Session[] = [
   {
     id: 'k4',
     studyId: 'st1',
-    no: 4,
-    title: '4~6장',
     workId: 'w6',
     meetAt: '2026-08-10T20:00',
     closed: true,
@@ -258,8 +274,6 @@ export const sessions: Session[] = [
   {
     id: 'k3',
     studyId: 'st1',
-    no: 3,
-    title: '1~3장',
     workId: 'w6',
     meetAt: '2026-08-03T20:00',
     closed: true,
@@ -267,8 +281,6 @@ export const sessions: Session[] = [
   {
     id: 'k2',
     studyId: 'st1',
-    no: 2,
-    title: '마무리',
     workId: 'w2',
     meetAt: '2026-07-27T20:00',
     closed: true,
@@ -276,8 +288,6 @@ export const sessions: Session[] = [
   {
     id: 'k1',
     studyId: 'st1',
-    no: 1,
-    title: '1부',
     workId: 'w2',
     meetAt: '2026-07-20T20:00',
     closed: true,
@@ -292,7 +302,6 @@ export const slotDefs: SlotDef[] = [
     name: '평점',
     type: SlotType.RATING,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.WORK,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -305,7 +314,6 @@ export const slotDefs: SlotDef[] = [
     name: '한줄평',
     type: SlotType.TEXT_SHORT,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.WORK,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -318,24 +326,10 @@ export const slotDefs: SlotDef[] = [
     name: '인상깊은 장면',
     type: SlotType.LIST,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
     order: 3,
-    hidden: false,
-  },
-  {
-    id: 's4',
-    studyId: 'st1',
-    name: '내 메모',
-    type: SlotType.TEXT_LONG,
-    scope: SlotScope.PERSONAL,
-    attach: SlotAttach.WORK,
-    visibility: Visibility.PRIVATE,
-    owner: SlotOwner.STUDY,
-    allowMemo: false,
-    order: 7,
     hidden: false,
   },
   {
@@ -344,7 +338,6 @@ export const slotDefs: SlotDef[] = [
     name: '줄거리',
     type: SlotType.SHARED_ITEMS,
     scope: SlotScope.SHARED,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: true,
@@ -357,7 +350,6 @@ export const slotDefs: SlotDef[] = [
     name: '오늘 나온 이야기',
     type: SlotType.SHARED_ITEMS,
     scope: SlotScope.SHARED,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: true,
@@ -370,7 +362,6 @@ export const slotDefs: SlotDef[] = [
     name: '발제문',
     type: SlotType.TEXT_LONG,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -383,7 +374,6 @@ export const slotDefs: SlotDef[] = [
     name: '다음 책 후보',
     type: SlotType.SHARED_ITEMS,
     scope: SlotScope.SHARED,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.SESSION,
     sessionId: 'k5',
@@ -397,7 +387,6 @@ export const slotDefs: SlotDef[] = [
     name: '내 요약',
     type: SlotType.TEXT_LONG,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -410,7 +399,6 @@ export const slotDefs: SlotDef[] = [
     name: '질문 · 토론거리',
     type: SlotType.LIST,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -423,7 +411,18 @@ export const slotDefs: SlotDef[] = [
     name: '인상깊은 구절',
     type: SlotType.LIST,
     scope: SlotScope.PERSONAL,
-    attach: SlotAttach.SESSION,
+    visibility: Visibility.ALWAYS,
+    owner: SlotOwner.STUDY,
+    allowMemo: false,
+    order: 5,
+    hidden: false,
+  },
+  {
+    id: 's12',
+    studyId: 'st1',
+    name: '아쉬웠던 점',
+    type: SlotType.LIST,
+    scope: SlotScope.PERSONAL,
     visibility: Visibility.ALWAYS,
     owner: SlotOwner.STUDY,
     allowMemo: false,
@@ -432,8 +431,8 @@ export const slotDefs: SlotDef[] = [
   },
 ]
 
-// 평점·한줄평·내 메모는 작품에, 요약·질문·구절은 모임에 붙는다.
-// 한 작품을 여러 범위로 나눠 읽어도 최종 평가는 한 번만 작성한다.
+// 모든 칸 값은 작품에 붙는다. 요약·질문·구절도 여러 회차에 걸쳐 썼지만
+// 하나의 작품 기록으로 이어진다 — 회차별로 다시 나뉘지 않는다.
 
 /** 작품별 [영서, 호남, 희남, 승우] 평점. 0.1 단위라 어중간한 값이 섞인다 */
 const workRatings: Record<string, number[]> = {
@@ -459,6 +458,12 @@ const ratingValues: SlotValue[] = Object.entries(workRatings).flatMap(([workId, 
     draft: false,
   })),
 )
+
+// 사피엔스(w6)는 아직 읽는 중이라 다 안 매겼다 — 토론은 완료 전에도 하니 평점도 미리 매길 수 있다.
+const inProgressRatingValues: SlotValue[] = [
+  { targetId: 'w6', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
+  { targetId: 'w6', slotDefId: 's1', userId: 'u3', value: { n: 4 }, draft: false },
+]
 
 const blurbValues: SlotValue[] = [
   {
@@ -493,14 +498,14 @@ const blurbValues: SlotValue[] = [
 
 const prepValues: SlotValue[] = [
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's10',
     userId: 'u1',
     value: { items: ['농업혁명이 개인에겐 재앙이었다는 주장, 어디까지 동의하나'] },
     draft: false,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's9',
     userId: 'u2',
     value: {
@@ -509,7 +514,7 @@ const prepValues: SlotValue[] = [
     draft: false,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's10',
     userId: 'u2',
     value: {
@@ -518,14 +523,14 @@ const prepValues: SlotValue[] = [
     draft: false,
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's11',
     userId: 'u2',
     value: { items: ['우리는 밀을 길들이지 않았다. 밀이 우리를 길들였다'] },
     draft: false,
   },
   {
-    targetId: 'k2',
+    targetId: 'w2',
     slotDefId: 's10',
     userId: 'u3',
     value: { items: ['지리가 전부라면 개인의 선택은 어디에 남나'] },
@@ -533,14 +538,30 @@ const prepValues: SlotValue[] = [
   },
 ]
 
+// 영서(u1)의 내 서재 평점 — 스터디 책은 `shelf:` 접두어를 붙여 스터디 쪽 평점과 별개로 둔다.
+const shelfRatingValues: SlotValue[] = [
+  { targetId: 'shelf:w1', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
+  { targetId: 'shelf:w2', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+  { targetId: 'shelf:w3', slotDefId: 's1', userId: 'u1', value: { n: 5 }, draft: false },
+  { targetId: 'shelf:w4', slotDefId: 's1', userId: 'u1', value: { n: 3.5 }, draft: false },
+  { targetId: 'shelf:w5', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+  { targetId: 'shelf:w7', slotDefId: 's1', userId: 'u1', value: { n: 3 }, draft: false },
+  { targetId: 'shelf:w8', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
+  { targetId: 'shelf:w9', slotDefId: 's1', userId: 'u1', value: { n: 2.5 }, draft: false },
+  { targetId: 'shelf:w10', slotDefId: 's1', userId: 'u1', value: { n: 3.5 }, draft: false },
+  { targetId: 'p1', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+]
+
 export const slotValues: SlotValue[] = [
   ...prepValues,
   ...ratingValues,
+  ...inProgressRatingValues,
   ...blurbValues,
+  ...shelfRatingValues,
 
-  // ─── 5번째 모임 (진행 중) ───
+  // ─── 사피엔스(w6) — 4·5회차에 걸쳐 쓴 것이지만 값은 작품 하나에 이어서 쌓인다 ───
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's3',
     userId: 'u2',
     value: { items: ['우리는 밀을 길들이지 않았다', '화폐는 상호 신뢰의 시스템'] },
@@ -548,18 +569,12 @@ export const slotValues: SlotValue[] = [
   },
   {
     targetId: 'w6',
-    slotDefId: 's4',
-    userId: 'u1',
-    value: { text: '3장은 좀 억지 같은데 모임에서 꺼낼지 고민' },
-    draft: true,
-  },
-  {
-    targetId: 'k5',
     slotDefId: 's5',
     userId: null,
     draft: false,
     value: {
       shared: [
+        { id: 'i6', text: '수렵채집 사회의 삶이 더 나았다는 근거' },
         { id: 'i1', text: '농업혁명은 생산량을 늘렸지만 개인의 삶은 오히려 나빠졌다' },
         { id: 'i2', text: '화폐는 상호 신뢰의 시스템으로 작동한다' },
         { id: 'i3', text: '제국은 문화를 흡수하며 확장한다' },
@@ -567,7 +582,7 @@ export const slotValues: SlotValue[] = [
     },
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's6',
     userId: null,
     draft: false,
@@ -576,34 +591,25 @@ export const slotValues: SlotValue[] = [
     },
   },
   {
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's8',
     userId: null,
     draft: false,
     value: { shared: [{ id: 'i5', text: '사피엔스 다음은 호모 데우스?' }] },
   },
-
-  // ─── 4회차 (마감됨) ───
   {
-    targetId: 'k4',
+    targetId: 'w6',
     slotDefId: 's3',
     userId: 'u1',
     value: { items: ['상상의 질서는 무너지지 않는다'] },
     draft: false,
-  },
-  {
-    targetId: 'k4',
-    slotDefId: 's5',
-    userId: null,
-    draft: false,
-    value: { shared: [{ id: 'i6', text: '수렵채집 사회의 삶이 더 나았다는 근거' }] },
   },
 ]
 
 export const memos: Memo[] = [
   {
     id: 'mo1',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     itemId: 'i1',
     userId: 'u2',
@@ -612,7 +618,7 @@ export const memos: Memo[] = [
   },
   {
     id: 'mo2',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     itemId: 'i1',
     userId: 'u3',
@@ -621,7 +627,7 @@ export const memos: Memo[] = [
   },
   {
     id: 'mo3',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's5',
     itemId: 'i2',
     userId: 'u1',
@@ -630,7 +636,7 @@ export const memos: Memo[] = [
   },
   {
     id: 'mo4',
-    targetId: 'k5',
+    targetId: 'w6',
     slotDefId: 's6',
     itemId: 'i4',
     userId: 'u1',
@@ -658,12 +664,25 @@ export const pollVotes: PollVote[] = [
   { pollId: 'p2', userId: 'u3', marks: { 0: Availability.YES, 1: Availability.YES } },
 ]
 
-export const studyEvents: StudyEvent[] = [
+export const studyEvents: StudyEvent[] = []
+
+// ─── 함께 쓰는 기록 ───────────────────────────────────────
+
+export const workBlocks: WorkBlock[] = [
   {
-    id: 'ev1',
-    studyId: 'st1',
-    at: '2026-08-24T19:00',
-    title: '뒤풀이',
-    note: '사피엔스 완독 기념',
+    id: 'blk1',
+    workId: 'w6',
+    authorId: 'u2',
+    title: '농업혁명 파트, 다들 어떻게 읽었나요',
+    body: '저자가 농업혁명을 "역사상 최대의 사기"라고 부르는 대목이 계속 걸려요. 다음 모임에서 이 부분 좀 더 얘기해보고 싶습니다.',
+    createdAt: '2026-08-10T21:14:00',
+  },
+  {
+    id: 'blk2',
+    workId: 'w6',
+    authorId: 'u3',
+    title: '참고할 만한 글',
+    body: '수렵채집 사회 관련해서 최근에 나온 반박 논문 하나 찾았어요 — 모임 채팅방에 링크 올려둘게요.',
+    createdAt: '2026-08-11T09:40:00',
   },
 ]

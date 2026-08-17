@@ -1,15 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import PickNote from '@/components/PickNote'
-import ThisSessionBanner from '@/components/ThisSessionBanner'
+import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
+import RankSticker from '@/components/RankSticker'
+import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
-import { getHallOfFame, type HallSort, type RankedWork } from '@/mocks/api'
+import { addWork, getHallOfFame, getLibrary, type LibraryEntry, type RankedWork } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
-import { WorkKind } from '@/types'
+import { WorkKind, WorkStatus } from '@/types'
 
 type Filter = 'ALL' | 'BOOK' | 'MOVIE'
 
@@ -19,26 +21,67 @@ const filters: Array<{ key: Filter; label: string }> = [
   { key: 'MOVIE', label: '영화' },
 ]
 
+const statusPriority: Record<string, number> = {
+  [WorkStatus.READING]: 0,
+  [WorkStatus.CANDIDATE]: 1,
+}
+
 export default function HallOfFamePage() {
+  const { user } = useCurrentUser()
   const { study, members } = useStudy()
+  const qc = useQueryClient()
   const [filter, setFilter] = useState<Filter>('ALL')
-  const [sort, setSort] = useState<HallSort>('rating')
+  const [adding, setAdding] = useState(false)
 
   const { data: works = [], isPending } = useQuery({
-    queryKey: ['hall', study?.id, sort],
-    queryFn: () => getHallOfFame(study!.id, sort),
+    queryKey: ['hall', study?.id],
+    queryFn: () => getHallOfFame(study!.id),
+    enabled: !!study,
+  })
+  const { data: allWorks = [] } = useQuery({
+    queryKey: ['library', study?.id],
+    queryFn: () => getLibrary(study!.id),
     enabled: !!study,
   })
 
-  if (!study) return null
+  const create = useMutation({ mutationFn: addWork, onSuccess: () => qc.invalidateQueries() })
+
+  if (!study || !user) return null
 
   const shown = works.filter((w) => filter === 'ALL' || w.kind === filter)
-  const [first, second, third, ...rest] = shown
+  const [first, second, third] = shown
+  // 1~3위는 카드로만 보여준다 — 책장에는 4위 이하부터. 나머지는 상태 상관없이 전부 책장에 둔다.
+  const podiumIds = new Set([first, second, third].filter(Boolean).map((w) => w!.id))
+  const byFilter = (work: LibraryEntry) => filter === 'ALL' || work.kind === filter
+
+  const toItem = (work: LibraryEntry): BookcaseItem => ({
+    id: work.id,
+    title: work.title,
+    author: work.author,
+    year: work.year,
+    kind: work.kind,
+    status: work.status,
+    href: `/${study.slug}/books/${work.id}`,
+    average: work.average,
+    voterCount: work.voterCount,
+    addedBy: work.addedBy,
+    reason: work.reason,
+    description: work.description,
+    actors: work.actors,
+  })
+
+  // 완료작은 위 칸에 별점순으로, 읽는 중·후보는 아래 칸에 — 책장 칸 자체를 나눈다.
+  const completedItems = allWorks
+    .filter((w) => byFilter(w) && !podiumIds.has(w.id) && w.status === WorkStatus.DONE)
+    .sort((a, b) => b.average - a.average)
+    .map(toItem)
+  const otherItems = allWorks
+    .filter((w) => byFilter(w) && w.status !== WorkStatus.DONE)
+    .sort((a, b) => statusPriority[a.status] - statusPriority[b.status])
+    .map(toItem)
 
   return (
     <div className="flex flex-col gap-10">
-      <ThisSessionBanner />
-
       <section className="flex flex-col gap-6">
         <div className="flex flex-wrap items-end justify-between gap-5 border-b border-neutral-200 pb-6">
           <div className="flex flex-col gap-1.5">
@@ -49,58 +92,56 @@ export default function HallOfFamePage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex rounded-lg bg-neutral-100 p-1">
-              {filters.map((f) => (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setFilter(f.key)}
-                  className={`cursor-pointer rounded-md px-3 py-1.5 text-xs transition-colors ${
-                    filter === f.key
-                      ? 'bg-white font-medium text-neutral-900 shadow-sm'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as HallSort)}
-              className="cursor-pointer rounded-lg border border-neutral-200 bg-white px-2.5 py-1.5 text-xs text-neutral-600 outline-none"
-            >
-              <option value="rating">별점순</option>
-              <option value="recent">최근순</option>
-            </select>
+          <div className="flex rounded-lg bg-neutral-100 p-1">
+            {filters.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={`cursor-pointer rounded-md px-3 py-1.5 text-xs transition-colors ${
+                  filter === f.key
+                    ? 'bg-white font-medium text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         </div>
 
         {isPending && <p className="text-sm text-neutral-400">불러오는 중…</p>}
 
-        {sort === 'rating' && first && (
-          <div className="grid gap-4 lg:grid-cols-[1.35fr_0.65fr]">
+        {first ? (
+          <div className="grid gap-4 lg:grid-cols-[6.5fr_3.5fr]">
             <Podium work={first} rank={1} slug={study.slug} users={members} featured />
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2">
               {second && <Podium work={second} rank={2} slug={study.slug} users={members} />}
               {third && <Podium work={third} rank={3} slug={study.slug} users={members} />}
             </div>
           </div>
+        ) : (
+          !isPending && <p className="text-sm text-neutral-400">아직 완료한 작품이 없습니다.</p>
         )}
+      </section>
 
-        <ol className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-          {(sort === 'rating' ? rest : shown).map((work, i) => (
-            <RankRow
-              key={work.id}
-              work={work}
-              rank={sort === 'rating' ? i + 4 : i + 1}
-              showRank={sort === 'rating'}
-              slug={study.slug}
-              users={members}
-            />
-          ))}
-        </ol>
+      <section className="flex flex-col gap-6">
+        <Bookcase
+          completed={completedItems}
+          others={otherItems}
+          users={members}
+          onAdd={() => setAdding(true)}
+        />
+        {adding && (
+          <AddDialog
+            initialKind={filter === 'ALL' ? undefined : filter}
+            onClose={() => setAdding(false)}
+            onSubmit={(input) => {
+              create.mutate({ ...input, studyId: study.id, addedBy: user.id })
+              setAdding(false)
+            }}
+          />
+        )}
       </section>
     </div>
   )
@@ -123,78 +164,143 @@ function Podium({
     <Link
       to={`/${slug}/books/${work.id}`}
       className={`group relative flex h-full rounded-xl border border-neutral-200 bg-white shadow-sm transition-colors hover:border-emerald-300 ${
-        featured ? 'min-h-72 items-center gap-7 p-7 sm:p-8' : 'min-h-36 gap-4 p-5'
+        featured ? 'min-h-72 items-start gap-7 p-7 sm:p-8' : 'min-h-36 gap-4 p-5'
       }`}
     >
-      <span className="absolute top-4 right-4 text-3xl font-semibold text-neutral-200 tabular-nums">
-        {rank}
-      </span>
-      <div className={featured ? 'w-32 flex-none sm:w-40' : 'w-16 flex-none'}>
+      <RankSticker
+        rank={rank as 1 | 2 | 3}
+        size={featured ? 'lg' : 'sm'}
+        className="-top-2 -left-2 -rotate-6"
+      />
+
+      <div className={`flex-none self-center ${featured ? 'w-32 sm:w-40' : 'w-16'}`}>
         <Cover work={work} size="lg" />
       </div>
-      <div className="flex min-w-0 flex-col gap-1.5">
-        <span className={`pr-6 leading-tight font-semibold ${featured ? 'text-2xl' : 'text-base'}`}>
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 self-stretch">
+        <span
+          className={`leading-tight font-semibold ${featured ? 'pr-20 text-2xl sm:pr-24' : 'pr-20 text-base'}`}
+        >
           {work.title}
         </span>
         <span className={featured ? 'text-sm text-neutral-500' : 'text-xs text-neutral-500'}>
           {work.author} · {work.year}
         </span>
-        <div className="flex items-center gap-3 pt-1">
-          <span className={`font-semibold tabular-nums ${featured ? 'text-3xl' : 'text-xl'}`}>
-            {formatRating(work.average)}
+        {work.actors && work.actors.length > 0 && (
+          <span className={`truncate text-neutral-400 ${featured ? 'text-xs' : 'text-[11px]'}`}>
+            출연 {work.actors.join(' · ')}
           </span>
-          <Stars value={work.average} size="sm" />
-        </div>
+        )}
+        {/* 길이가 들쭉날쭉해도 항상 같은 높이만큼 차지해서, 아래 선정 이유 위치가 안 흔들리게 한다 */}
+        <p
+          className={`text-neutral-600 ${featured ? 'line-clamp-3 min-h-[3.75rem] text-sm' : 'line-clamp-1 min-h-4 text-xs'}`}
+        >
+          {work.description}
+        </p>
         <div className="mt-auto pt-2">
           <PickNote addedBy={work.addedBy} reason={work.reason} users={users} />
         </div>
       </div>
+
+      {/* 평점은 본문 흐름과 무관하게 카드 우상단에 고정한다 — 1위는 두 줄, 2·3위는 한 줄 */}
+      {featured ? (
+        <div className="absolute top-7 right-7 flex flex-col items-end gap-1 sm:top-8 sm:right-8">
+          <span className="text-3xl font-semibold tabular-nums">{formatRating(work.average)}</span>
+          <Stars value={work.average} size="sm" />
+        </div>
+      ) : (
+        <div className="absolute top-5 right-5 flex items-center gap-1.5">
+          <span className="text-xl font-semibold tabular-nums">{formatRating(work.average)}</span>
+          <Stars value={work.average} size="sm" />
+        </div>
+      )}
     </Link>
   )
 }
 
-function RankRow({
-  work,
-  rank,
-  showRank,
-  slug,
-  users,
+function AddDialog({
+  initialKind,
+  onSubmit,
+  onClose,
 }: {
-  work: RankedWork
-  rank: number
-  showRank: boolean
-  slug: string
-  users: User[]
+  initialKind?: WorkKind
+  onSubmit: (input: { kind: WorkKind; title: string; author: string; reason: string }) => void
+  onClose: () => void
 }) {
+  const ref = useRef<HTMLDialogElement>(null)
+  useEffect(() => {
+    ref.current?.showModal()
+  }, [])
+
+  const [kind, setKind] = useState<WorkKind>(initialKind ?? WorkKind.BOOK)
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [reason, setReason] = useState('')
+
   return (
-    <li>
-      <Link
-        to={`/${slug}/books/${work.id}`}
-        className="group flex items-center gap-5 border-b border-neutral-100 px-4 py-4 transition-colors last:border-0 hover:bg-neutral-50"
+    <dialog
+      ref={ref}
+      onClose={onClose}
+      onClick={(e) => {
+        if (e.target === ref.current) ref.current?.close()
+      }}
+      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!title.trim()) return
+          onSubmit({ kind, title: title.trim(), author: author.trim(), reason: reason.trim() })
+        }}
+        className="flex flex-col gap-3 p-5"
       >
-        {showRank && (
-          <span className="w-8 text-right text-sm font-medium text-neutral-400 tabular-nums">
-            {rank}
-          </span>
-        )}
-        <Cover work={work} size="sm" />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-sm font-medium">
-            {work.title}
-            <span className="ml-2 text-xs font-normal text-neutral-400">
-              {work.kind === WorkKind.MOVIE ? '영화' : '책'}
-            </span>
-          </span>
-          <span className="truncate text-xs text-neutral-500">{work.author}</span>
-          <PickNote addedBy={work.addedBy} reason={work.reason} users={users} />
+        <div className="flex items-start justify-between gap-4">
+          <h2 className="text-base font-semibold">읽고 싶은 것 추가</h2>
+          <button
+            type="button"
+            onClick={() => ref.current?.close()}
+            className="app-button app-button-ghost app-icon-button"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
         </div>
-        <div className="flex items-center gap-2">
-          <Stars value={work.average} size="sm" />
-          <span className="w-8 text-right text-sm font-medium tabular-nums">
-            {formatRating(work.average)}
-          </span>
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as WorkKind)}
+            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
+          >
+            <option value={WorkKind.BOOK}>책</option>
+            <option value={WorkKind.MOVIE}>영화</option>
+          </select>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="제목"
+            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
+          <input
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
+            className="min-w-32 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
         </div>
-      </Link>
-    </li>
+        <div className="flex flex-wrap gap-2">
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="왜 고르셨나요 — 작품 기록에 함께 남습니다"
+            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
+          <button type="submit" className="app-button app-button-primary">
+            후보로 담기
+          </button>
+        </div>
+        <p className="text-xs text-neutral-500">
+          나중에는 제목만 치면 알라딘 · TMDB 에서 표지와 저자가 따라옵니다.
+        </p>
+      </form>
+    </dialog>
   )
 }

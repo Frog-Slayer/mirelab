@@ -21,3 +21,8 @@ export function formatDday(iso: string | null): string | null {
 export function formatRating(n: number): string {
   return n.toFixed(2)
 }
+
+export function formatDate(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}

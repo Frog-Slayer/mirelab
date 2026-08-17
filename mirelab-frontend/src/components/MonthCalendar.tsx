@@ -38,14 +38,14 @@ export default function MonthCalendar({ items, slug }: Props) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <h2 className="font-serif text-xl tabular-nums">
+        <h2 className="font-serif text-2xl tabular-nums">
           {year}년 {month + 1}월
         </h2>
         <div className="flex gap-1">
           <button
             type="button"
             onClick={() => move(-1)}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
+            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
             aria-label="이전 달"
           >
             ‹
@@ -53,14 +53,14 @@ export default function MonthCalendar({ items, slug }: Props) {
           <button
             type="button"
             onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
+            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
           >
             오늘
           </button>
           <button
             type="button"
             onClick={() => move(1)}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
+            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
             aria-label="다음 달"
           >
             ›
@@ -69,41 +69,44 @@ export default function MonthCalendar({ items, slug }: Props) {
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[36rem]">
+        <div className="min-w-[42rem] border-t border-l border-neutral-200">
           <div className="grid grid-cols-7 border-b border-neutral-200">
-            {SESSIONDAYS.map((w, i) => (
-              <div
-                key={w}
-                className={`py-1.5 text-center font-mono text-[10px] tracking-wider ${
-                  i === 0 ? 'text-rose-400' : 'text-neutral-400'
-                }`}
-              >
-                {w}
-              </div>
-            ))}
+            {SESSIONDAYS.map((w, i) => {
+              const weekend = i === 0 || i === 6
+              return (
+                <div
+                  key={w}
+                  className={`border-r border-neutral-200 py-2 text-center font-mono text-xs tracking-wider ${
+                    weekend ? 'bg-neutral-50 text-neutral-400' : 'text-neutral-500'
+                  }`}
+                >
+                  {w}
+                </div>
+              )
+            })}
           </div>
 
           <div className="grid grid-cols-7">
             {days.map((d) => {
               const inMonth = d.getMonth() === month
               const isToday = key(d) === key(today)
+              const isWeekend = d.getDay() === 0 || d.getDay() === 6
               const dayItems = byDay.get(key(d)) ?? []
+              const bg = !inMonth ? 'bg-neutral-50/60' : isWeekend ? 'bg-neutral-50' : ''
 
               return (
                 <div
                   key={key(d)}
-                  className={`min-h-20 border-r border-b border-neutral-100 p-1.5 ${
-                    inMonth ? '' : 'bg-neutral-50/60'
-                  }`}
+                  className={`min-h-24 border-r border-b border-neutral-200 p-2 ${bg}`}
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-end gap-1">
                     <span
-                      className={`inline-flex size-5 items-center justify-center rounded-full font-mono text-[11px] tabular-nums ${
+                      className={`inline-flex size-6 items-center justify-center rounded-full font-mono text-sm tabular-nums ${
                         isToday
                           ? 'bg-neutral-900 text-white'
                           : inMonth
-                            ? d.getDay() === 0
-                              ? 'text-rose-500'
+                            ? isWeekend
+                              ? 'text-neutral-400'
                               : 'text-neutral-700'
                             : 'text-neutral-300'
                       }`}
@@ -117,8 +120,7 @@ export default function MonthCalendar({ items, slug }: Props) {
                       const time = item.at.slice(11, 16)
                       const chip = (
                         <span className="block truncate">
-                          <span className="font-mono text-[9px] opacity-70">{time}</span>{' '}
-                          {item.title}
+                          <span className="font-mono text-xs opacity-70">{time}</span> {item.title}
                         </span>
                       )
                       const cls =
@@ -126,11 +128,11 @@ export default function MonthCalendar({ items, slug }: Props) {
                           ? 'border-emerald-600/40 bg-emerald-50 text-emerald-800'
                           : 'border-neutral-300 bg-neutral-100 text-neutral-600'
 
-                      return item.sessionId ? (
+                      return item.workId ? (
                         <Link
                           key={i}
-                          to={`/${slug}/w/${item.sessionId}`}
-                          className={`rounded-xs border px-1 py-0.5 text-[10px] leading-tight hover:brightness-95 ${cls}`}
+                          to={`/${slug}/books/${item.workId}`}
+                          className={`rounded-md border px-1.5 py-1 text-xs leading-tight hover:brightness-95 ${cls}`}
                           title={item.note}
                         >
                           {chip}
@@ -138,7 +140,7 @@ export default function MonthCalendar({ items, slug }: Props) {
                       ) : (
                         <span
                           key={i}
-                          className={`rounded-xs border px-1 py-0.5 text-[10px] leading-tight ${cls}`}
+                          className={`rounded-md border px-1.5 py-1 text-xs leading-tight ${cls}`}
                         >
                           {chip}
                         </span>

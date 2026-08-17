@@ -31,17 +31,9 @@ export const Visibility = {
 } as const
 export type Visibility = (typeof Visibility)[keyof typeof Visibility]
 
-/** 스터디 = 매 회차 등장, 회차 = 그 회차에만 (노션의 콜아웃 자리) */
+/** 스터디 = 매번 등장, 회차 = 그때뿐 (노션의 콜아웃 자리) */
 export const SlotOwner = { STUDY: 'STUDY', SESSION: 'SESSION' } as const
 export type SlotOwner = (typeof SlotOwner)[keyof typeof SlotOwner]
-
-/**
- * 칸이 무엇에 붙는가.
- * 평점·한줄평은 책 한 권에 한 번이고, 줄거리·오늘 나온 이야기는 회차마다다.
- * 한 권을 여러 회차에 걸쳐 읽으니 이 둘을 구분하지 않으면 별점을 회차 수만큼 매기게 된다.
- */
-export const SlotAttach = { SESSION: 'SESSION', WORK: 'WORK' } as const
-export type SlotAttach = (typeof SlotAttach)[keyof typeof SlotAttach]
 
 /** 일정 후보에 대한 각자의 표시 */
 export const Availability = { YES: 'YES', MAYBE: 'MAYBE', NO: 'NO' } as const
@@ -82,6 +74,10 @@ export interface Work {
   addedBy?: string
   /** 왜 골랐는지. 명예의 전당에서 함께 보여준다 */
   reason?: string
+  /** 알라딘 · TMDB 같은 외부 API 가 제공하는 줄거리. 지금은 자리만 잡아둔다 */
+  description?: string
+  /** 영화에서만 — 등장 배우. TMDB 연동 전까지는 비어 있다 */
+  actors?: string[]
 }
 
 export interface SlotDef {
@@ -90,7 +86,6 @@ export interface SlotDef {
   name: string
   type: SlotType
   scope: SlotScope
-  attach: SlotAttach
   visibility: Visibility
   owner: SlotOwner
   allowMemo: boolean
@@ -99,12 +94,13 @@ export interface SlotDef {
   sessionId?: string
 }
 
+/**
+ * 모임 — 만나는 일정 하나. 장 구분·순번은 두지 않는다: 기록은 전부 작품(Work)에
+ * 쌓이므로, 모임은 "언제 만나는가"만 안다.
+ */
 export interface Session {
   id: string
   studyId: string
-  no: number
-  /** 독서면 범위("4~6장"), 경제면 주제 */
-  title: string
   /** 작품을 다루는 스터디에서만 */
   workId?: string
   /**
@@ -118,6 +114,16 @@ export interface Session {
 export interface SharedItem {
   id: string
   text: string
+}
+
+/** 작품에 다 같이 남기는 자유 형식 기록. 게시판처럼 계속 쌓인다 */
+export interface WorkBlock {
+  id: string
+  workId: string
+  authorId: string
+  title: string
+  body: string
+  createdAt: string
 }
 
 export interface Memo {
@@ -134,7 +140,7 @@ export type SlotValueData =
   { n: number } | { text: string } | { items: string[] } | { shared: SharedItem[] }
 
 export interface SlotValue {
-  /** 붙는 대상의 id — 칸의 attach 에 따라 회차 id 이거나 작품 id 다 */
+  /** 붙는 대상의 id — 항상 작품(Work) id 다 */
   targetId: string
   slotDefId: string
   /** 공동 칸은 작성자가 없다 */
