@@ -159,6 +159,9 @@ export default function WorkPage() {
   return (
     <>
       <MyRecordDrawer
+        // BlockNote 에디터(내 요약)는 마운트 시점의 초기값만 읽으므로, 작품이 바뀌면
+        // 통째로 다시 마운트시켜 새 작품의 내용으로 초기화되게 한다.
+        key={workId}
         open={drawerOpen}
         summarySlot={summarySlot}
         otherSlots={otherPersonalSlots}

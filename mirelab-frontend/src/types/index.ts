@@ -16,7 +16,6 @@ export const SlotType = {
   TEXT_SHORT: 'TEXT_SHORT',
   TEXT_LONG: 'TEXT_LONG',
   LIST: 'LIST',
-  SHARED_ITEMS: 'SHARED_ITEMS',
 } as const
 export type SlotType = (typeof SlotType)[keyof typeof SlotType]
 
@@ -88,7 +87,6 @@ export interface SlotDef {
   scope: SlotScope
   visibility: Visibility
   owner: SlotOwner
-  allowMemo: boolean
   order: number
   hidden: boolean
   sessionId?: string
@@ -111,11 +109,6 @@ export interface Session {
   closed: boolean
 }
 
-export interface SharedItem {
-  id: string
-  text: string
-}
-
 /**
  * 작품에 다 같이 남기는 자유 형식 기록. 게시판처럼 계속 쌓인다.
  * 본문은 Yjs 공유 문서라 여기 안 실린다 — 실시간 서버(WebSocket)로 받는다.
@@ -129,18 +122,12 @@ export interface WorkBlock {
   createdAt: string
 }
 
-export interface Memo {
-  id: string
-  targetId: string
-  slotDefId: string
-  itemId: string
-  userId: string
-  text: string
-  isPrivate: boolean
-}
-
 export type SlotValueData =
-  { n: number } | { text: string } | { items: string[] } | { shared: SharedItem[] }
+  | { n: number }
+  | { text: string }
+  | { items: string[] }
+  /** BlockNote 리치 텍스트 — 블록 JSON을 그대로 담는다(예: 내 요약) */
+  | { blocks: unknown[] }
 
 export interface SlotValue {
   /** 붙는 대상의 id — 항상 작품(Work) id 다 */

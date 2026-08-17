@@ -1,7 +1,6 @@
 import type {
   Availability,
   MeetingPoll,
-  Memo,
   PollVote,
   SlotDef,
   SlotValue,
@@ -24,7 +23,6 @@ const db = {
   sessions: structuredClone(seed.sessions),
   slotDefs: structuredClone(seed.slotDefs),
   slotValues: structuredClone(seed.slotValues),
-  memos: structuredClone(seed.memos),
   polls: structuredClone(seed.meetingPolls),
   votes: structuredClone(seed.pollVotes),
   events: structuredClone(seed.studyEvents),
@@ -294,19 +292,6 @@ export function publish(targetId: string, userId: string): Promise<void> {
     if (v.targetId === targetId && v.userId === userId) v.draft = false
   }
   return delay(undefined)
-}
-
-// ─── 메모 ─────────────────────────────────────────────────
-
-export function addMemo(input: Omit<Memo, 'id'>): Promise<Memo> {
-  const memo: Memo = { ...input, id: nextId('mo') }
-  db.memos.push(memo)
-  return delay(memo, 60)
-}
-
-export function removeMemo(memoId: string): Promise<void> {
-  db.memos = db.memos.filter((m) => m.id !== memoId)
-  return delay(undefined, 60)
 }
 
 // ─── 내 기록 ───────────────────────────────────────────────
