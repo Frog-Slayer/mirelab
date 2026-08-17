@@ -1,7 +1,7 @@
-package com.mirelab.work
+package com.mirelab.domain.work
 
-import com.mirelab.study.Study
-import com.mirelab.user.User
+import com.mirelab.domain.study.Study
+import com.mirelab.domain.user.User
 import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
 import jakarta.persistence.ElementCollection

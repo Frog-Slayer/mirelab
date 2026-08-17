@@ -1,4 +1,4 @@
-package com.mirelab.slot
+package com.mirelab.domain.slot
 
 /**
  * 칸 타입 — 어떤 UI로 그리고 어떻게 저장하나.

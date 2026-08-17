@@ -1,7 +1,7 @@
-package com.mirelab.slot
+package com.mirelab.domain.slot
 
-import com.mirelab.session.Session
-import com.mirelab.study.Study
+import com.mirelab.domain.session.Session
+import com.mirelab.domain.study.Study
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType

@@ -1,5 +1,6 @@
-package com.mirelab.work
+package com.mirelab.infra.work
 
+import com.mirelab.domain.work.Work
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 

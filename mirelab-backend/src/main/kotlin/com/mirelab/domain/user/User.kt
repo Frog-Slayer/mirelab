@@ -1,4 +1,4 @@
-package com.mirelab.user
+package com.mirelab.domain.user
 
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue

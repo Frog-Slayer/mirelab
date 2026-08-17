@@ -1,6 +1,6 @@
-package com.mirelab.work
+package com.mirelab.domain.work
 
-import com.mirelab.user.User
+import com.mirelab.domain.user.User
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue

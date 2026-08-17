@@ -1,5 +1,6 @@
-package com.mirelab.study
+package com.mirelab.infra.study
 
+import com.mirelab.domain.study.Study
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 

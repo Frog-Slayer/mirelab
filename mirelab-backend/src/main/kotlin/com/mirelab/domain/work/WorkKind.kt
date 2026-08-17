@@ -1,4 +1,4 @@
-package com.mirelab.work
+package com.mirelab.domain.work
 
 enum class WorkKind {
     BOOK,

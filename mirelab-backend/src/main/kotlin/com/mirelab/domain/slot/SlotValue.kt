@@ -1,7 +1,7 @@
-package com.mirelab.slot
+package com.mirelab.domain.slot
 
-import com.mirelab.user.User
-import com.mirelab.work.Work
+import com.mirelab.domain.user.User
+import com.mirelab.domain.work.Work
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType

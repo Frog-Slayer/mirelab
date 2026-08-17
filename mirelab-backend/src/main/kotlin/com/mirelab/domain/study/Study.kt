@@ -1,4 +1,4 @@
-package com.mirelab.study
+package com.mirelab.domain.study
 
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

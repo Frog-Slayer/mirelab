@@ -1,7 +1,7 @@
-package com.mirelab.session
+package com.mirelab.domain.session
 
-import com.mirelab.study.Study
-import com.mirelab.work.Work
+import com.mirelab.domain.study.Study
+import com.mirelab.domain.work.Work
 import jakarta.persistence.Entity
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue

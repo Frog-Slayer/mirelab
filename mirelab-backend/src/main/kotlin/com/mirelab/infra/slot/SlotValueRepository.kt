@@ -1,5 +1,6 @@
-package com.mirelab.slot
+package com.mirelab.infra.slot
 
+import com.mirelab.domain.slot.SlotValue
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 

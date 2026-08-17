@@ -1,5 +1,6 @@
-package com.mirelab.session
+package com.mirelab.infra.session
 
+import com.mirelab.domain.session.Session
 import java.util.UUID
 import org.springframework.data.jpa.repository.JpaRepository
 

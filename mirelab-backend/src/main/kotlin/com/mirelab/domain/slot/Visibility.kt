@@ -1,4 +1,4 @@
-package com.mirelab.slot
+package com.mirelab.domain.slot
 
 enum class Visibility {
     ALWAYS,
