@@ -2,7 +2,7 @@ import { api } from '@/lib/api'
 import type { SlotDef, SlotValue } from '@/types'
 import { SlotScope } from '@/types'
 
-interface SlotDefResponse {
+export interface SlotDefResponse {
   id: string
   name: string
   type: SlotDef['type']
@@ -13,7 +13,7 @@ interface SlotDefResponse {
   hidden: boolean
 }
 
-interface SlotValueResponse {
+export interface SlotValueResponse {
   workId: string
   slotDefId: string
   userId: string
@@ -28,7 +28,7 @@ interface WorkSlotsResponse {
 
 // studyId·scope는 백엔드 응답에 없다 — 개인 칸만 다루니 scope는 항상 PERSONAL 로
 // 채워 넣고, studyId 는 화면 어디서도 안 읽어서 빈 값으로 둔다.
-function toSlotDef(r: SlotDefResponse): SlotDef {
+export function toSlotDef(r: SlotDefResponse): SlotDef {
   return {
     id: r.id,
     studyId: '',
@@ -43,7 +43,7 @@ function toSlotDef(r: SlotDefResponse): SlotDef {
   }
 }
 
-function toSlotValue(r: SlotValueResponse): SlotValue {
+export function toSlotValue(r: SlotValueResponse): SlotValue {
   return {
     targetId: r.workId,
     slotDefId: r.slotDefId,

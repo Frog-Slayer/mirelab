@@ -1,7 +1,7 @@
 import { ApiError, api } from '@/lib/api'
 import type { Study, User } from '@/types'
 
-interface StudyResponse {
+export interface StudyResponse {
   id: string
   slug: string
   name: string
@@ -9,7 +9,7 @@ interface StudyResponse {
 }
 
 // memberIds 는 어디서도 안 읽는다 — 실제 멤버 목록은 getStudyMembers 로 따로 받는다.
-function toStudy(r: StudyResponse): Study {
+export function toStudy(r: StudyResponse): Study {
   return { id: r.id, slug: r.slug, name: r.name, hasWorks: r.hasWorks, memberIds: [] }
 }
 
