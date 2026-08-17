@@ -10,6 +10,7 @@ data class CreateWorkRequest(
     val author: String,
     val addedBy: UUID?,
     val reason: String?,
+    val coverUrl: String? = null,
 )
 
 data class UpdateStatusRequest(val status: WorkStatus)

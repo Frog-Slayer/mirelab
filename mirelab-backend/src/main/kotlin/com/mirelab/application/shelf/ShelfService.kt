@@ -76,6 +76,7 @@ class ShelfService(
             author = input.author,
             year = Year.now().value,
             status = WorkStatus.READING,
+            coverUrl = input.coverUrl,
         )
         return workRepository.save(work).toResponse()
     }

@@ -27,6 +27,7 @@ export interface BookcaseItem {
   addedBy?: string
   reason?: string
   description?: string
+  coverUrl?: string
   actors?: string[]
 }
 

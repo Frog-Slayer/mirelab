@@ -15,6 +15,7 @@ import {
   type LibraryEntry,
   type RankedWork,
 } from '@/lib/workApi'
+import BookTitleField from '@/components/BookTitleField'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
 import { WorkKind, WorkStatus } from '@/types'
@@ -73,6 +74,7 @@ export default function HallOfFamePage() {
     addedBy: work.addedBy,
     reason: work.reason,
     description: work.description,
+    coverUrl: work.coverUrl,
     actors: work.actors,
   })
 
@@ -229,7 +231,13 @@ function AddDialog({
   onClose,
 }: {
   initialKind?: WorkKind
-  onSubmit: (input: { kind: WorkKind; title: string; author: string; reason: string }) => void
+  onSubmit: (input: {
+    kind: WorkKind
+    title: string
+    author: string
+    reason: string
+    coverUrl?: string
+  }) => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -241,6 +249,7 @@ function AddDialog({
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [reason, setReason] = useState('')
+  const [coverUrl, setCoverUrl] = useState('')
 
   return (
     <dialog
@@ -255,7 +264,13 @@ function AddDialog({
         onSubmit={(e) => {
           e.preventDefault()
           if (!title.trim()) return
-          onSubmit({ kind, title: title.trim(), author: author.trim(), reason: reason.trim() })
+          onSubmit({
+            kind,
+            title: title.trim(),
+            author: author.trim(),
+            reason: reason.trim(),
+            coverUrl: coverUrl || undefined,
+          })
         }}
         className="flex flex-col gap-3 p-5"
       >
@@ -279,11 +294,18 @@ function AddDialog({
             <option value={WorkKind.BOOK}>책</option>
             <option value={WorkKind.MOVIE}>영화</option>
           </select>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="제목"
-            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          <BookTitleField
+            kind={kind}
+            title={title}
+            onChange={(v) => {
+              setTitle(v)
+              setCoverUrl('')
+            }}
+            onPick={(book) => {
+              setTitle(book.title)
+              setAuthor(book.author)
+              setCoverUrl(book.cover)
+            }}
           />
           <input
             value={author}
@@ -303,9 +325,11 @@ function AddDialog({
             후보로 담기
           </button>
         </div>
-        <p className="text-xs text-neutral-500">
-          나중에는 제목만 치면 알라딘 · TMDB 에서 표지와 저자가 따라옵니다.
-        </p>
+        {kind === WorkKind.BOOK && (
+          <p className="text-xs text-neutral-500">
+            제목을 치면 알라딘 검색 결과에서 골라 표지·저자를 채울 수 있습니다.
+          </p>
+        )}
       </form>
     </dialog>
   )

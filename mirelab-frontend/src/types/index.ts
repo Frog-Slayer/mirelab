@@ -75,6 +75,8 @@ export interface Work {
   reason?: string
   /** 알라딘 · TMDB 같은 외부 API 가 제공하는 줄거리. 지금은 자리만 잡아둔다 */
   description?: string
+  /** 알라딘 · TMDB 같은 외부 API 가 제공하는 표지 이미지 URL */
+  coverUrl?: string
   /** 영화에서만 — 등장 배우. TMDB 연동 전까지는 비어 있다 */
   actors?: string[]
 }

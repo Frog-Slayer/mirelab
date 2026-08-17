@@ -1,15 +1,45 @@
+import { useEffect, useState } from 'react'
 import type { Work } from '@/types'
 import { WorkKind } from '@/types'
 
 interface Props {
-  work: Pick<Work, 'title' | 'kind'>
+  work: Pick<Work, 'title' | 'kind' | 'coverUrl'>
   size?: 'sm' | 'md' | 'lg'
 }
 
 const widths = { sm: 'w-12', md: 'w-20', lg: 'w-full' }
 
-// 표지는 나중에 알라딘 / TMDB 에서 받아온다. 지금은 자리만 잡아둔다.
+/**
+ * 알라딘이 공식적으로 주는 표지는 최대 200px(cover200)라 화질이 낮다. URL 경로의
+ * cover200 을 cover500 으로 바꾸면 비공식이지만 500px 원본이 대부분 존재해서
+ * 우선 시도하고, 없으면(드묾) onError 로 저장된 원래 URL로 되돌아간다.
+ */
+function upscale(url: string) {
+  return url.replace('/cover200/', '/cover500/')
+}
+
+// 영화는 아직 TMDB 연동 전이라 coverUrl 이 없다 — 그동안은 자리만 잡아둔 placeholder를 보여준다.
 export default function Cover({ work, size = 'md' }: Props) {
+  const [src, setSrc] = useState(() => (work.coverUrl ? upscale(work.coverUrl) : undefined))
+
+  useEffect(() => {
+    setSrc(work.coverUrl ? upscale(work.coverUrl) : undefined)
+  }, [work.coverUrl])
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={work.title}
+        onError={() => {
+          if (work.coverUrl && src !== work.coverUrl) setSrc(work.coverUrl)
+          else setSrc(undefined)
+        }}
+        className={`${widths[size]} aspect-2/3 flex-none rounded-md border border-neutral-200 object-cover`}
+      />
+    )
+  }
+
   return (
     <div
       className={`${widths[size]} aspect-2/3 flex-none overflow-hidden rounded-md border border-neutral-200 bg-neutral-100`}

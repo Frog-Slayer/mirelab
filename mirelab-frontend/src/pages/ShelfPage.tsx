@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
+import BookTitleField from '@/components/BookTitleField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
 import { addPersonalWork, getShelf, type ShelfEntry } from '@/lib/shelfApi'
@@ -71,6 +72,7 @@ export default function ShelfPage() {
     addedBy: item.entry.work.addedBy,
     reason: item.entry.work.reason,
     description: item.entry.work.description,
+    coverUrl: item.entry.work.coverUrl,
     actors: item.entry.work.actors,
   })
   // 완료작은 위 칸에, 읽는 중·후보는 아래 칸에 — 완료작 정렬은 내 평점순을 그대로 따른다.
@@ -192,13 +194,14 @@ function AddDialog({
   onSubmit,
   onClose,
 }: {
-  onSubmit: (input: { kind: WorkKind; title: string; author: string }) => void
+  onSubmit: (input: { kind: WorkKind; title: string; author: string; coverUrl?: string }) => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [kind, setKind] = useState<WorkKind>(WorkKind.BOOK)
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
+  const [coverUrl, setCoverUrl] = useState('')
 
   useEffect(() => {
     ref.current?.showModal()
@@ -217,7 +220,12 @@ function AddDialog({
         onSubmit={(e) => {
           e.preventDefault()
           if (!title.trim()) return
-          onSubmit({ kind, title: title.trim(), author: author.trim() })
+          onSubmit({
+            kind,
+            title: title.trim(),
+            author: author.trim(),
+            coverUrl: coverUrl || undefined,
+          })
         }}
         className="flex flex-col gap-3 p-5"
       >
@@ -242,11 +250,18 @@ function AddDialog({
             <option value={WorkKind.BOOK}>책</option>
             <option value={WorkKind.MOVIE}>영화</option>
           </select>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="제목"
-            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          <BookTitleField
+            kind={kind}
+            title={title}
+            onChange={(v) => {
+              setTitle(v)
+              setCoverUrl('')
+            }}
+            onPick={(book) => {
+              setTitle(book.title)
+              setAuthor(book.author)
+              setCoverUrl(book.cover)
+            }}
           />
           <input
             value={author}
