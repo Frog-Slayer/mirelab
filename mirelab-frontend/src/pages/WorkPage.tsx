@@ -16,19 +16,22 @@ import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import {
   addSession,
-  addWorkBlock,
   getHallOfFame,
   getWork,
-  getWorkBlocks,
   getWorkSlots,
   removeWork,
-  removeWorkBlock,
   saveValue,
   setWorkStatus,
-  updateWorkBlock,
   updateWorkReason,
 } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
+import {
+  addWorkBlock,
+  getWorkBlocks,
+  isWorkBlockApiReady,
+  removeWorkBlock,
+  updateWorkBlockTitle,
+} from '@/lib/workBlockApi'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -67,9 +70,11 @@ export default function WorkPage() {
     queryFn: () => getWorkSlots(study!.id, workId),
     enabled: !!study,
   })
+  const blockApiReady = isWorkBlockApiReady(workId)
   const { data: blocks = [] } = useQuery({
     queryKey: ['workBlocks', workId],
     queryFn: () => getWorkBlocks(workId),
+    enabled: blockApiReady,
   })
   // 명예의 전당과 같은 기준(장르 구분 없는 전체 순위)으로 계산해 어긋나지 않게 한다.
   const { data: hallOfFame } = useQuery({
@@ -109,7 +114,7 @@ export default function WorkPage() {
       setCreatingBlock(false)
     },
   })
-  const editBlock = useMutation({ mutationFn: updateWorkBlock, onSuccess: refresh })
+  const editBlock = useMutation({ mutationFn: updateWorkBlockTitle, onSuccess: refresh })
   const deleteBlock = useMutation({ mutationFn: removeWorkBlock, onSuccess: refresh })
 
   if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
@@ -359,36 +364,42 @@ export default function WorkPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-4">
-            {blocks.map((block) => (
-              <WorkBlockCard
-                key={block.id}
-                block={block}
-                author={members.find((m) => m.id === block.authorId)}
-                canEdit={block.authorId === user.id}
-                onSave={(title, body) => editBlock.mutate({ id: block.id, title, body })}
-                onDelete={() => deleteBlock.mutate(block.id)}
-              />
-            ))}
+          {blockApiReady ? (
+            <div className="flex flex-col gap-4">
+              {blocks.map((block) => (
+                <WorkBlockCard
+                  key={block.id}
+                  block={block}
+                  author={members.find((m) => m.id === block.authorId)}
+                  currentUser={user}
+                  canEdit={block.authorId === user.id}
+                  onSaveTitle={(title) => editBlock.mutate({ id: block.id, title })}
+                  onDelete={() => deleteBlock.mutate(block.id)}
+                />
+              ))}
 
-            {creatingBlock ? (
-              <BlockForm
-                onSave={(title, body) =>
-                  addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
-                }
-                onCancel={() => setCreatingBlock(false)}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setCreatingBlock(true)}
-                className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-4 text-lg text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
-                aria-label="새 블록 추가"
-              >
-                +
-              </button>
-            )}
-          </div>
+              {creatingBlock ? (
+                <BlockForm
+                  onSave={(title) => addBlock.mutate({ workId: work.id, authorId: user.id, title })}
+                  onCancel={() => setCreatingBlock(false)}
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCreatingBlock(true)}
+                  className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-4 text-lg text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
+                  aria-label="새 블록 추가"
+                >
+                  +
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-neutral-400">
+              이 작품은 아직 실시간 기록 백엔드로 옮겨지지 않았습니다 — 목 데이터라 여기서는 안
+              됩니다.
+            </p>
+          )}
         </section>
       </div>
     </>

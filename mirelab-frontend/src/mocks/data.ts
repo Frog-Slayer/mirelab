@@ -9,7 +9,6 @@ import type {
   User,
   Session,
   Work,
-  WorkBlock,
 } from '@/types'
 import {
   Availability,
@@ -22,10 +21,10 @@ import {
 } from '@/types'
 
 export const users: User[] = [
-  { id: 'u1', name: '영서', color: 'bg-emerald-500' },
-  { id: 'u2', name: '호남', color: 'bg-sky-500' },
-  { id: 'u3', name: '희남', color: 'bg-amber-500' },
-  { id: 'u4', name: '승우', color: 'bg-rose-500' },
+  { id: '11111111-1111-1111-1111-111111111111', name: '영서', color: 'bg-emerald-500' },
+  { id: '22222222-2222-2222-2222-222222222222', name: '호남', color: 'bg-sky-500' },
+  { id: '33333333-3333-3333-3333-333333333333', name: '희남', color: 'bg-amber-500' },
+  { id: '44444444-4444-4444-4444-444444444444', name: '승우', color: 'bg-rose-500' },
 ]
 
 export const studies: Study[] = [
@@ -34,7 +33,12 @@ export const studies: Study[] = [
     slug: 'reading',
     name: '독서 스터디',
     hasWorks: true,
-    memberIds: ['u1', 'u2', 'u3', 'u4'],
+    memberIds: [
+      '11111111-1111-1111-1111-111111111111',
+      '22222222-2222-2222-2222-222222222222',
+      '33333333-3333-3333-3333-333333333333',
+      '44444444-4444-4444-4444-444444444444',
+    ],
   },
 ]
 
@@ -47,7 +51,7 @@ export const works: Work[] = [
     author: '크리스토퍼 놀란',
     year: 2014,
     status: WorkStatus.DONE,
-    addedBy: 'u3',
+    addedBy: '33333333-3333-3333-3333-333333333333',
     reason: '다 같이 극장에서 본 뒤로 계속 얘기가 나와서',
     description: '지구가 황폐해진 미래, 인류의 새 터전을 찾아 웜홀 너머로 떠난 탐사대의 이야기.',
     actors: ['매튜 맥커너히', '앤 해서웨이', '제시카 차스테인'],
@@ -60,7 +64,7 @@ export const works: Work[] = [
     author: '재레드 다이아몬드',
     year: 1997,
     status: WorkStatus.DONE,
-    addedBy: 'u1',
+    addedBy: '11111111-1111-1111-1111-111111111111',
     reason: '문명사를 한 번은 정리하고 넘어가고 싶었다',
     description: '왜 어떤 문명은 정복하고 어떤 문명은 정복당했는가 — 지리와 환경으로 읽는 인류사.',
   },
@@ -72,7 +76,7 @@ export const works: Work[] = [
     author: '한강',
     year: 2014,
     status: WorkStatus.DONE,
-    addedBy: 'u4',
+    addedBy: '44444444-4444-4444-4444-444444444444',
     reason: '노벨상 받은 김에 제대로 읽어보자고',
     description: '1980년 광주, 죽은 자와 산 자의 목소리로 번갈아 증언하는 소설.',
   },
@@ -84,7 +88,7 @@ export const works: Work[] = [
     author: '리처드 도킨스',
     year: 1976,
     status: WorkStatus.DONE,
-    addedBy: 'u2',
+    addedBy: '22222222-2222-2222-2222-222222222222',
     reason: '진화 얘기가 나올 때마다 인용되는 책이라',
     description: '진화의 주인공은 개체가 아니라 유전자다 — 이기적 유전자 관점에서 본 생명 이야기.',
   },
@@ -96,20 +100,20 @@ export const works: Work[] = [
     author: '크리스토퍼 놀란',
     year: 2023,
     status: WorkStatus.DONE,
-    addedBy: 'u2',
+    addedBy: '22222222-2222-2222-2222-222222222222',
     reason: '개봉 때 놓친 사람이 많아서',
     description: '원자폭탄을 만든 물리학자 오펜하이머의 성공과 그 이후의 청문회를 그린 전기 영화.',
     actors: ['킬리언 머피', '에밀리 블런트', '로버트 다우니 주니어'],
   },
   {
-    id: 'w6',
+    id: 'd1111111-1111-1111-1111-111111111111',
     studyId: 'st1',
     kind: WorkKind.BOOK,
     title: '사피엔스',
     author: '유발 하라리',
     year: 2015,
     status: WorkStatus.READING,
-    addedBy: 'u1',
+    addedBy: '11111111-1111-1111-1111-111111111111',
     reason: '총, 균, 쇠 다음으로 자연스럽게 이어져서',
     description: '인지혁명부터 농업혁명, 과학혁명까지 — 호모 사피엔스가 세상을 지배하게 된 과정.',
   },
@@ -121,7 +125,7 @@ export const works: Work[] = [
     author: '드니 빌뇌브',
     year: 2024,
     status: WorkStatus.DONE,
-    addedBy: 'u4',
+    addedBy: '44444444-4444-4444-4444-444444444444',
     reason: '1편만 보고 멈춘 사람이 셋이나 있어서',
     description: '폴 아트레이데스가 프레멘과 함께 하코넨에 맞서 복수를 완성해가는 이야기.',
     actors: ['티모시 샬라메', '젠데이아', '레베카 퍼거슨'],
@@ -134,7 +138,7 @@ export const works: Work[] = [
     author: '칼 세이건',
     year: 1980,
     status: WorkStatus.DONE,
-    addedBy: 'u3',
+    addedBy: '33333333-3333-3333-3333-333333333333',
     reason: '과학책도 한 권쯤 섞고 싶었다',
     description: '우주의 기원부터 생명의 진화까지, 과학의 눈으로 훑는 거대한 시공간 여행.',
   },
@@ -146,7 +150,7 @@ export const works: Work[] = [
     author: '아이작 아시모프',
     year: 1951,
     status: WorkStatus.DONE,
-    addedBy: 'u3',
+    addedBy: '33333333-3333-3333-3333-333333333333',
     reason: 'SF 고전을 하나는 짚고 가자는 얘기가 있었다',
     description: '은하 제국의 몰락을 예견한 심리역사학자 셀던이 남긴 파운데이션 계획.',
   },
@@ -158,7 +162,7 @@ export const works: Work[] = [
     author: '무라카미 하루키',
     year: 1987,
     status: WorkStatus.DONE,
-    addedBy: 'u2',
+    addedBy: '22222222-2222-2222-2222-222222222222',
     reason: '가벼운 소설로 쉬어가는 회차',
     description: '와타나베가 두 여인 사이에서 상실과 사랑을 배워가는 청춘의 기억.',
   },
@@ -171,7 +175,7 @@ export const works: Work[] = [
     author: '유발 하라리',
     year: 2017,
     status: WorkStatus.CANDIDATE,
-    addedBy: 'u1',
+    addedBy: '11111111-1111-1111-1111-111111111111',
     reason: '사피엔스 마무리하면 바로 이어가자고',
     description: '기아·질병·전쟁을 넘어선 인류가 다음으로 좇을 신이 되려는 욕망을 그린다.',
   },
@@ -183,7 +187,7 @@ export const works: Work[] = [
     author: '한스 로슬링',
     year: 2019,
     status: WorkStatus.CANDIDATE,
-    addedBy: 'u3',
+    addedBy: '33333333-3333-3333-3333-333333333333',
     reason: '통계로 세상 보는 감각을 키우고 싶어서',
     description: '우리가 세상을 실제보다 더 나쁘게 보는 열 가지 본능과, 데이터로 고치는 법.',
   },
@@ -195,7 +199,7 @@ export const works: Work[] = [
     author: '이민진',
     year: 2017,
     status: WorkStatus.CANDIDATE,
-    addedBy: 'u4',
+    addedBy: '44444444-4444-4444-4444-444444444444',
     reason: '드라마 보고 원작이 궁금해졌다',
     description: '일제강점기부터 현대까지, 이역만리 일본에서 뿌리내린 한 가족 4대의 이야기.',
   },
@@ -207,7 +211,7 @@ export const works: Work[] = [
     author: '봉준호',
     year: 2019,
     status: WorkStatus.CANDIDATE,
-    addedBy: 'u2',
+    addedBy: '22222222-2222-2222-2222-222222222222',
     reason: '영화도 한 편씩 섞어보자',
     description: '반지하 가족이 부잣집에 하나둘 얹혀살게 되며 벌어지는 계급의 블랙코미디.',
     actors: ['송강호', '이선균', '조여정', '최우식'],
@@ -220,14 +224,14 @@ export const works: Work[] = [
     author: '마이클 샌델',
     year: 2010,
     status: WorkStatus.CANDIDATE,
-    addedBy: 'u1',
+    addedBy: '11111111-1111-1111-1111-111111111111',
     reason: '토론 붙기 좋은 주제라',
     description: '공리주의부터 자유지상주의까지, 정의를 둘러싼 철학적 딜레마를 사례로 풀어낸다.',
   },
   // 스터디와 무관한 개인 책 — 내 서재에만 있다
   {
     id: 'p1',
-    ownerId: 'u1',
+    ownerId: '11111111-1111-1111-1111-111111111111',
     kind: WorkKind.BOOK,
     title: '아무튼, 계속',
     author: '김교석',
@@ -237,7 +241,7 @@ export const works: Work[] = [
   },
   {
     id: 'p2',
-    ownerId: 'u1',
+    ownerId: '11111111-1111-1111-1111-111111111111',
     kind: WorkKind.BOOK,
     title: '컨설팅의 기술',
     author: '제럴드 와인버그',
@@ -253,28 +257,28 @@ export const sessions: Session[] = [
   {
     id: 'k6',
     studyId: 'st1',
-    workId: 'w6',
+    workId: 'd1111111-1111-1111-1111-111111111111',
     meetAt: null,
     closed: false,
   },
   {
     id: 'k5',
     studyId: 'st1',
-    workId: 'w6',
+    workId: 'd1111111-1111-1111-1111-111111111111',
     meetAt: '2026-08-17T20:00',
     closed: false,
   },
   {
     id: 'k4',
     studyId: 'st1',
-    workId: 'w6',
+    workId: 'd1111111-1111-1111-1111-111111111111',
     meetAt: '2026-08-10T20:00',
     closed: true,
   },
   {
     id: 'k3',
     studyId: 'st1',
-    workId: 'w6',
+    workId: 'd1111111-1111-1111-1111-111111111111',
     meetAt: '2026-08-03T20:00',
     closed: true,
   },
@@ -447,7 +451,12 @@ const workRatings: Record<string, number[]> = {
   w10: [3, 2.8, 3.6, 3.1],
 }
 
-const memberOrder = ['u1', 'u2', 'u3', 'u4']
+const memberOrder = [
+  '11111111-1111-1111-1111-111111111111',
+  '22222222-2222-2222-2222-222222222222',
+  '33333333-3333-3333-3333-333333333333',
+  '44444444-4444-4444-4444-444444444444',
+]
 
 const ratingValues: SlotValue[] = Object.entries(workRatings).flatMap(([workId, scores]) =>
   scores.map((n, i) => ({
@@ -461,36 +470,48 @@ const ratingValues: SlotValue[] = Object.entries(workRatings).flatMap(([workId, 
 
 // 사피엔스(w6)는 아직 읽는 중이라 다 안 매겼다 — 토론은 완료 전에도 하니 평점도 미리 매길 수 있다.
 const inProgressRatingValues: SlotValue[] = [
-  { targetId: 'w6', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
-  { targetId: 'w6', slotDefId: 's1', userId: 'u3', value: { n: 4 }, draft: false },
+  {
+    targetId: 'd1111111-1111-1111-1111-111111111111',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 4.5 },
+    draft: false,
+  },
+  {
+    targetId: 'd1111111-1111-1111-1111-111111111111',
+    slotDefId: 's1',
+    userId: '33333333-3333-3333-3333-333333333333',
+    value: { n: 4 },
+    draft: false,
+  },
 ]
 
 const blurbValues: SlotValue[] = [
   {
     targetId: 'w2',
     slotDefId: 's2',
-    userId: 'u1',
+    userId: '11111111-1111-1111-1111-111111111111',
     value: { text: '두껍지만 끝까지 밀고 간다' },
     draft: false,
   },
   {
     targetId: 'w2',
     slotDefId: 's2',
-    userId: 'u2',
+    userId: '22222222-2222-2222-2222-222222222222',
     value: { text: '지리 결정론이 과한 대목이 있다' },
     draft: false,
   },
   {
     targetId: 'w3',
     slotDefId: 's2',
-    userId: 'u1',
+    userId: '11111111-1111-1111-1111-111111111111',
     value: { text: '문장이 오래 남는다' },
     draft: false,
   },
   {
     targetId: 'w1',
     slotDefId: 's2',
-    userId: 'u3',
+    userId: '33333333-3333-3333-3333-333333333333',
     value: { text: '극장에서 다시 보고 싶다' },
     draft: false,
   },
@@ -498,41 +519,41 @@ const blurbValues: SlotValue[] = [
 
 const prepValues: SlotValue[] = [
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's10',
-    userId: 'u1',
+    userId: '11111111-1111-1111-1111-111111111111',
     value: { items: ['농업혁명이 개인에겐 재앙이었다는 주장, 어디까지 동의하나'] },
     draft: false,
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's9',
-    userId: 'u2',
+    userId: '22222222-2222-2222-2222-222222222222',
     value: {
       text: '수렵채집에서 농업으로 넘어가며 개인의 삶의 질은 오히려 나빠졌다는 게 1부의 핵심.',
     },
     draft: false,
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's10',
-    userId: 'u2',
+    userId: '22222222-2222-2222-2222-222222222222',
     value: {
       items: ['상상의 질서는 어떻게 유지되나', '화폐를 신뢰의 시스템이라 부르는 게 적절한가'],
     },
     draft: false,
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's11',
-    userId: 'u2',
+    userId: '22222222-2222-2222-2222-222222222222',
     value: { items: ['우리는 밀을 길들이지 않았다. 밀이 우리를 길들였다'] },
     draft: false,
   },
   {
     targetId: 'w2',
     slotDefId: 's10',
-    userId: 'u3',
+    userId: '33333333-3333-3333-3333-333333333333',
     value: { items: ['지리가 전부라면 개인의 선택은 어디에 남나'] },
     draft: false,
   },
@@ -540,16 +561,76 @@ const prepValues: SlotValue[] = [
 
 // 영서(u1)의 내 서재 평점 — 스터디 책은 `shelf:` 접두어를 붙여 스터디 쪽 평점과 별개로 둔다.
 const shelfRatingValues: SlotValue[] = [
-  { targetId: 'shelf:w1', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
-  { targetId: 'shelf:w2', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
-  { targetId: 'shelf:w3', slotDefId: 's1', userId: 'u1', value: { n: 5 }, draft: false },
-  { targetId: 'shelf:w4', slotDefId: 's1', userId: 'u1', value: { n: 3.5 }, draft: false },
-  { targetId: 'shelf:w5', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
-  { targetId: 'shelf:w7', slotDefId: 's1', userId: 'u1', value: { n: 3 }, draft: false },
-  { targetId: 'shelf:w8', slotDefId: 's1', userId: 'u1', value: { n: 4.5 }, draft: false },
-  { targetId: 'shelf:w9', slotDefId: 's1', userId: 'u1', value: { n: 2.5 }, draft: false },
-  { targetId: 'shelf:w10', slotDefId: 's1', userId: 'u1', value: { n: 3.5 }, draft: false },
-  { targetId: 'p1', slotDefId: 's1', userId: 'u1', value: { n: 4 }, draft: false },
+  {
+    targetId: 'shelf:w1',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 4.5 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w2',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 4 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w3',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 5 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w4',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 3.5 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w5',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 4 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w7',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 3 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w8',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 4.5 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w9',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 2.5 },
+    draft: false,
+  },
+  {
+    targetId: 'shelf:w10',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 3.5 },
+    draft: false,
+  },
+  {
+    targetId: 'p1',
+    slotDefId: 's1',
+    userId: '11111111-1111-1111-1111-111111111111',
+    value: { n: 4 },
+    draft: false,
+  },
 ]
 
 export const slotValues: SlotValue[] = [
@@ -561,14 +642,14 @@ export const slotValues: SlotValue[] = [
 
   // ─── 사피엔스(w6) — 4·5회차에 걸쳐 쓴 것이지만 값은 작품 하나에 이어서 쌓인다 ───
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's3',
-    userId: 'u2',
+    userId: '22222222-2222-2222-2222-222222222222',
     value: { items: ['우리는 밀을 길들이지 않았다', '화폐는 상호 신뢰의 시스템'] },
     draft: false,
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's5',
     userId: null,
     draft: false,
@@ -582,7 +663,7 @@ export const slotValues: SlotValue[] = [
     },
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's6',
     userId: null,
     draft: false,
@@ -591,16 +672,16 @@ export const slotValues: SlotValue[] = [
     },
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's8',
     userId: null,
     draft: false,
     value: { shared: [{ id: 'i5', text: '사피엔스 다음은 호모 데우스?' }] },
   },
   {
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's3',
-    userId: 'u1',
+    userId: '11111111-1111-1111-1111-111111111111',
     value: { items: ['상상의 질서는 무너지지 않는다'] },
     draft: false,
   },
@@ -609,37 +690,37 @@ export const slotValues: SlotValue[] = [
 export const memos: Memo[] = [
   {
     id: 'mo1',
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's5',
     itemId: 'i1',
-    userId: 'u2',
+    userId: '22222222-2222-2222-2222-222222222222',
     text: '인구압 얘기랑 순환논증 아닌가?',
     isPrivate: false,
   },
   {
     id: 'mo2',
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's5',
     itemId: 'i1',
-    userId: 'u3',
+    userId: '33333333-3333-3333-3333-333333333333',
     text: '4장에 반박 나옴',
     isPrivate: false,
   },
   {
     id: 'mo3',
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's5',
     itemId: 'i2',
-    userId: 'u1',
+    userId: '11111111-1111-1111-1111-111111111111',
     text: '실무랑 연결해서 생각해볼 것',
     isPrivate: true,
   },
   {
     id: 'mo4',
-    targetId: 'w6',
+    targetId: 'd1111111-1111-1111-1111-111111111111',
     slotDefId: 's6',
     itemId: 'i4',
-    userId: 'u1',
+    userId: '11111111-1111-1111-1111-111111111111',
     text: '다음 책 고를 때 이 논점 이어가기',
     isPrivate: false,
   },
@@ -659,30 +740,21 @@ export const meetingPolls: MeetingPoll[] = [
 ]
 
 export const pollVotes: PollVote[] = [
-  { pollId: 'p2', userId: 'u1', marks: { 0: Availability.YES, 1: Availability.MAYBE } },
-  { pollId: 'p2', userId: 'u2', marks: { 0: Availability.YES, 1: Availability.NO } },
-  { pollId: 'p2', userId: 'u3', marks: { 0: Availability.YES, 1: Availability.YES } },
+  {
+    pollId: 'p2',
+    userId: '11111111-1111-1111-1111-111111111111',
+    marks: { 0: Availability.YES, 1: Availability.MAYBE },
+  },
+  {
+    pollId: 'p2',
+    userId: '22222222-2222-2222-2222-222222222222',
+    marks: { 0: Availability.YES, 1: Availability.NO },
+  },
+  {
+    pollId: 'p2',
+    userId: '33333333-3333-3333-3333-333333333333',
+    marks: { 0: Availability.YES, 1: Availability.YES },
+  },
 ]
 
 export const studyEvents: StudyEvent[] = []
-
-// ─── 함께 쓰는 기록 ───────────────────────────────────────
-
-export const workBlocks: WorkBlock[] = [
-  {
-    id: 'blk1',
-    workId: 'w6',
-    authorId: 'u2',
-    title: '농업혁명 파트, 다들 어떻게 읽었나요',
-    body: '저자가 농업혁명을 "역사상 최대의 사기"라고 부르는 대목이 계속 걸려요. 다음 모임에서 이 부분 좀 더 얘기해보고 싶습니다.',
-    createdAt: '2026-08-10T21:14:00',
-  },
-  {
-    id: 'blk2',
-    workId: 'w6',
-    authorId: 'u3',
-    title: '참고할 만한 글',
-    body: '수렵채집 사회 관련해서 최근에 나온 반박 논문 하나 찾았어요 — 모임 채팅방에 링크 올려둘게요.',
-    createdAt: '2026-08-11T09:40:00',
-  },
-]

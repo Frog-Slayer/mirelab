@@ -21,6 +21,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // 함께 쓰는 기록의 실시간 편집(Yjs) 서버로 프록시 — /api 와 같은 이유로 같은 origin을 쓴다.
+      // 안 그러면 tailscale 같은 다른 호스트로 접속했을 때 브라우저가 자기 localhost로 붙으려 든다.
+      '/yjs': {
+        target: 'ws://localhost:1234',
+        ws: true,
+      },
     },
   },
 })

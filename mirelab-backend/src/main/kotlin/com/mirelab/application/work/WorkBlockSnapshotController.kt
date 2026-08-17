@@ -5,6 +5,7 @@ import java.util.UUID
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -35,6 +36,20 @@ class WorkBlockSnapshotController(private val workBlockRepository: WorkBlockRepo
     fun put(@PathVariable blockId: UUID, @RequestBody bytes: ByteArray): ResponseEntity<Void> {
         val block = workBlockRepository.findById(blockId).orElse(null) ?: return ResponseEntity.notFound().build()
         block.bodySnapshot = bytes
+        workBlockRepository.save(block)
+        return ResponseEntity.noContent().build()
+    }
+
+    /**
+     * 아직 아무 내용도 안 쓰인 문서는(빈 문단 하나뿐이어도) Yjs 인코딩 결과가 빈 바이트
+     * 배열이 아니다 — Node 가 "진짜 내용이 있나"를 판단해서, 없으면 POST 대신 이걸
+     * 불러 스냅샷을 지운다. hasContent 는 여전히 null 여부로만 판단해도 되게 해준다.
+     */
+    @Transactional
+    @DeleteMapping("/internal/blocks/{blockId}/snapshot")
+    fun clear(@PathVariable blockId: UUID): ResponseEntity<Void> {
+        val block = workBlockRepository.findById(blockId).orElse(null) ?: return ResponseEntity.notFound().build()
+        block.bodySnapshot = null
         workBlockRepository.save(block)
         return ResponseEntity.noContent().build()
     }

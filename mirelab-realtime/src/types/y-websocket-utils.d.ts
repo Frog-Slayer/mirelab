@@ -19,4 +19,7 @@ declare module 'y-websocket/bin/utils' {
   export function setPersistence(persistence: Persistence | null): void
   export function getPersistence(): Persistence | null
   export function getYDoc(docName: string, gc?: boolean): Doc
+
+  /** 지금 메모리에 열려 있는 방(room) 전부 — 주기 저장 때 순회한다 */
+  export const docs: Map<string, Doc>
 }
