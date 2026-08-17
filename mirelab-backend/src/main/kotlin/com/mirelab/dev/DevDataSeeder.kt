@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
 import org.springframework.boot.CommandLineRunner
+import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -21,7 +22,11 @@ import tools.jackson.databind.ObjectMapper
  * 엔티티는 @GeneratedValue(UUID) 라 프론트와 같은 고정 UUID 로 저장을 못 한다(Hibernate가
  * 미리 채워진 id 를 거부함 — repository.save 도, EntityManager.persist 도 둘 다 에러).
  * 그래서 이 시더만 JdbcTemplate 으로 SQL을 직접 낸다 — 엔티티·서비스 쪽은 손 안 댄다.
+ *
+ * "users 비어있으면 시드"만으로는 새로 프로비저닝한 운영 Postgres 도 구분을 못 하므로,
+ * dev 프로필에서만 등록되게 막는다(기본 활성 프로필은 application.properties 에서 dev).
  */
+@Profile("dev")
 @Component
 class DevDataSeeder(
     private val jdbcTemplate: JdbcTemplate,
