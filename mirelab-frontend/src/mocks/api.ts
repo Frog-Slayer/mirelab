@@ -367,22 +367,19 @@ export function addWorkBlock(input: {
   workId: string
   authorId: string
   title: string
-  body: string
 }): Promise<WorkBlock> {
   const created: WorkBlock = { ...input, id: nextId('blk'), createdAt: new Date().toISOString() }
   db.workBlocks.push(created)
   return delay(created)
 }
 
-export function updateWorkBlock(input: {
+export function updateWorkBlockTitle(input: {
   id: string
   title: string
-  body: string
 }): Promise<WorkBlock | null> {
   const block = db.workBlocks.find((b) => b.id === input.id)
   if (!block) return delay(null)
   block.title = input.title
-  block.body = input.body
   return delay(block)
 }
 

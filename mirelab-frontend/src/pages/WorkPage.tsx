@@ -25,7 +25,7 @@ import {
   removeWorkBlock,
   saveValue,
   setWorkStatus,
-  updateWorkBlock,
+  updateWorkBlockTitle,
   updateWorkReason,
 } from '@/mocks/api'
 import { formatRating } from '@/lib/format'
@@ -109,7 +109,7 @@ export default function WorkPage() {
       setCreatingBlock(false)
     },
   })
-  const editBlock = useMutation({ mutationFn: updateWorkBlock, onSuccess: refresh })
+  const editBlock = useMutation({ mutationFn: updateWorkBlockTitle, onSuccess: refresh })
   const deleteBlock = useMutation({ mutationFn: removeWorkBlock, onSuccess: refresh })
 
   if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
@@ -365,17 +365,16 @@ export default function WorkPage() {
                 key={block.id}
                 block={block}
                 author={members.find((m) => m.id === block.authorId)}
+                currentUser={user}
                 canEdit={block.authorId === user.id}
-                onSave={(title, body) => editBlock.mutate({ id: block.id, title, body })}
+                onSaveTitle={(title) => editBlock.mutate({ id: block.id, title })}
                 onDelete={() => deleteBlock.mutate(block.id)}
               />
             ))}
 
             {creatingBlock ? (
               <BlockForm
-                onSave={(title, body) =>
-                  addBlock.mutate({ workId: work.id, authorId: user.id, title, body })
-                }
+                onSave={(title) => addBlock.mutate({ workId: work.id, authorId: user.id, title })}
                 onCancel={() => setCreatingBlock(false)}
               />
             ) : (
