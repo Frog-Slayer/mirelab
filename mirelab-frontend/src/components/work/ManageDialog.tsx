@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import type { WorkStatus } from '@/types'
 import { WorkStatus as WorkStatusValues } from '@/types'
 
@@ -27,6 +28,7 @@ export default function ManageDialog({
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  useLockBodyScroll()
 
   return (
     <dialog

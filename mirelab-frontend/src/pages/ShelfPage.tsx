@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
-import BookTitleField from '@/components/BookTitleField'
+import BookLookupField from '@/components/BookLookupField'
+import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { useStudy } from '@/hooks/useStudy'
 import { addPersonalWork, getShelf, type ShelfEntry } from '@/lib/shelfApi'
 import { formatRating } from '@/lib/format'
@@ -213,6 +215,7 @@ function AddDialog({
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  useLockBodyScroll()
 
   return (
     <dialog
@@ -221,9 +224,14 @@ function AddDialog({
       onClick={(e) => {
         if (e.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(38rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
     >
       <form
+        onKeyDown={(e) => {
+          // 버튼을 눌러야만 제출한다 — 인풋에서 엔터로 실수 제출되는 걸 막는다
+          const tag = (e.target as HTMLElement).tagName
+          if (e.key === 'Enter' && tag !== 'TEXTAREA' && tag !== 'BUTTON') e.preventDefault()
+        }}
         onSubmit={(e) => {
           e.preventDefault()
           if (!title.trim()) return
@@ -249,7 +257,7 @@ function AddDialog({
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-2">
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as WorkKind)}
@@ -258,14 +266,27 @@ function AddDialog({
             <option value={WorkKind.BOOK}>책</option>
             <option value={WorkKind.MOVIE}>영화</option>
           </select>
-          <BookTitleField
+          <button type="submit" className="app-button app-button-primary ml-auto">
+            담기
+          </button>
+        </div>
+
+        <WorkPreviewCard
+          kind={kind}
+          title={title}
+          onTitleChange={setTitle}
+          author={author}
+          onAuthorChange={setAuthor}
+          description={description}
+          onDescriptionChange={setDescription}
+          coverUrl={coverUrl}
+          onClearCover={() => setCoverUrl('')}
+        />
+        {kind === WorkKind.BOOK && (
+          <BookLookupField
             kind={kind}
             title={title}
-            onChange={(v) => {
-              setTitle(v)
-              setCoverUrl('')
-              setDescription('')
-            }}
+            coverUrl={coverUrl}
             onPick={(book) => {
               setTitle(book.title)
               setAuthor(book.author)
@@ -273,16 +294,7 @@ function AddDialog({
               setDescription(book.description)
             }}
           />
-          <input
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
-            className="min-w-32 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
-          />
-          <button type="submit" className="app-button app-button-primary">
-            담기
-          </button>
-        </div>
+        )}
 
         <p className="text-xs text-neutral-500">
           스터디와 무관하게 혼자 읽는 책입니다. 스터디에서 읽은 책은 자동으로 들어옵니다.

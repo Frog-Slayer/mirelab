@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 
 /** "시작" 누르면 뜬다 — 언제 시작하는지 여기서 바로 회차를 하나 잡는다 */
 export default function StartDialog({
@@ -19,6 +20,7 @@ export default function StartDialog({
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  useLockBodyScroll()
 
   return (
     <dialog

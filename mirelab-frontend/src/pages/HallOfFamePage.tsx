@@ -7,6 +7,7 @@ import PickNote from '@/components/PickNote'
 import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
 import RankSticker from '@/components/RankSticker'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { useStudy } from '@/hooks/useStudy'
 import {
   addWork,
@@ -15,7 +16,8 @@ import {
   type LibraryEntry,
   type RankedWork,
 } from '@/lib/workApi'
-import BookTitleField from '@/components/BookTitleField'
+import BookLookupField from '@/components/BookLookupField'
+import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
 import { WorkKind, WorkStatus } from '@/types'
@@ -245,6 +247,7 @@ function AddDialog({
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  useLockBodyScroll()
 
   const [kind, setKind] = useState<WorkKind>(initialKind ?? WorkKind.BOOK)
   const [title, setTitle] = useState('')
@@ -260,9 +263,14 @@ function AddDialog({
       onClick={(e) => {
         if (e.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(34rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
     >
       <form
+        onKeyDown={(e) => {
+          // 버튼을 눌러야만 제출한다 — 인풋에서 엔터로 실수 제출되는 걸 막는다
+          const tag = (e.target as HTMLElement).tagName
+          if (e.key === 'Enter' && tag !== 'TEXTAREA' && tag !== 'BUTTON') e.preventDefault()
+        }}
         onSubmit={(e) => {
           e.preventDefault()
           if (!title.trim()) return
@@ -288,23 +296,32 @@ function AddDialog({
             ✕
           </button>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <select
-            value={kind}
-            onChange={(e) => setKind(e.target.value as WorkKind)}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
-          >
-            <option value={WorkKind.BOOK}>책</option>
-            <option value={WorkKind.MOVIE}>영화</option>
-          </select>
-          <BookTitleField
+        <select
+          value={kind}
+          onChange={(e) => setKind(e.target.value as WorkKind)}
+          className="cursor-pointer self-start rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
+        >
+          <option value={WorkKind.BOOK}>책</option>
+          <option value={WorkKind.MOVIE}>영화</option>
+        </select>
+        <WorkPreviewCard
+          kind={kind}
+          title={title}
+          onTitleChange={setTitle}
+          author={author}
+          onAuthorChange={setAuthor}
+          description={description}
+          onDescriptionChange={setDescription}
+          coverUrl={coverUrl}
+          onClearCover={() => setCoverUrl('')}
+          reason={reason}
+          onReasonChange={setReason}
+        />
+        {kind === WorkKind.BOOK && (
+          <BookLookupField
             kind={kind}
             title={title}
-            onChange={(v) => {
-              setTitle(v)
-              setCoverUrl('')
-              setDescription('')
-            }}
+            coverUrl={coverUrl}
             onPick={(book) => {
               setTitle(book.title)
               setAuthor(book.author)
@@ -312,29 +329,12 @@ function AddDialog({
               setDescription(book.description)
             }}
           />
-          <input
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
-            className="min-w-32 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <input
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="왜 고르셨나요 — 작품 기록에 함께 남습니다"
-            className="min-w-40 flex-1 rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
-          />
+        )}
+        <div className="flex justify-end">
           <button type="submit" className="app-button app-button-primary">
             후보로 담기
           </button>
         </div>
-        {kind === WorkKind.BOOK && (
-          <p className="text-xs text-neutral-500">
-            제목을 치면 알라딘 검색 결과에서 골라 표지·저자를 채울 수 있습니다.
-          </p>
-        )}
       </form>
     </dialog>
   )
