@@ -41,8 +41,13 @@ class WorkController(private val workService: WorkService) {
         if (workService.updateReason(workId, body.userId, body.reason)) ResponseEntity.noContent().build()
         else ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build()
 
+    @PatchMapping("/api/works/{workId}")
+    fun updateInfo(@PathVariable workId: UUID, @RequestBody body: UpdateWorkInfoRequest): ResponseEntity<Void> =
+        if (workService.updateInfo(workId, body)) ResponseEntity.noContent().build()
+        else ResponseEntity.notFound().build()
+
     @DeleteMapping("/api/works/{workId}")
     fun remove(@PathVariable workId: UUID): ResponseEntity<Void> =
         if (workService.remove(workId)) ResponseEntity.noContent().build()
-        else ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build()
+        else ResponseEntity.notFound().build()
 }

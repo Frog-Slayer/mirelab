@@ -67,3 +67,18 @@ export function updateWorkReason(input: {
 }): Promise<void> {
   return api.patch(`/works/${input.workId}/reason`, { userId: input.userId, reason: input.reason })
 }
+
+export function updateWorkInfo(input: {
+  workId: string
+  title: string
+  author: string
+  description?: string
+  coverUrl?: string
+}): Promise<void> {
+  return api.patch(`/works/${input.workId}`, {
+    title: input.title,
+    author: input.author,
+    description: input.description,
+    coverUrl: input.coverUrl,
+  })
+}

@@ -7,8 +7,10 @@ import { WorkKind } from '@/types'
  * 제목을 입력하면 디바운스를 걸어 자동으로 알라딘에 검색을 보내 표지·줄거리 등 판본
  * 정보를 가져온다. 결과는 드롭다운이 아니라 큼직한 그리드로 펼쳐서 보여준다 — 실제로
  * 반영되는 건 사용자가 그중 하나를 클릭했을 때뿐이라, 타이핑 자체는 아무것도 안 지운다.
- * 이미 표지를 골랐으면(coverUrl 있음) 그 뒤로 제목을 고쳐도 다시 검색하지 않는다 —
- * 표지를 지워야(coverUrl 빈 값) 다시 검색이 켜진다. 영화는 아직 검색 대상이 아니다.
+ * 이 컴포넌트에서 방금 판본을 골랐으면 그 뒤로 제목을 고쳐도 다시 검색하지 않는다 —
+ * 표지를 지우거나 직접 고쳐야 다시 검색이 켜진다. (이미 등록된 작품을 수정할 때처럼
+ * coverUrl 이 처음부터 채워져 있는 경우는 "방금 고른 것"이 아니라서 검색을 막지 않는다.)
+ * 영화는 아직 검색 대상이 아니다.
  */
 export default function BookLookupField({
   kind,
@@ -22,12 +24,14 @@ export default function BookLookupField({
   onPick: (book: BookSearchResult) => void
 }) {
   const [debouncedTitle, setDebouncedTitle] = useState('')
+  const [lastPicked, setLastPicked] = useState<string | null>(null)
+  const frozen = lastPicked !== null && lastPicked === coverUrl
 
   useEffect(() => {
-    if (coverUrl) return
+    if (frozen) return
     const t = setTimeout(() => setDebouncedTitle(title.trim()), 300)
     return () => clearTimeout(t)
-  }, [title, coverUrl])
+  }, [title, frozen])
 
   const {
     data: suggestions = [],
@@ -36,10 +40,10 @@ export default function BookLookupField({
   } = useQuery({
     queryKey: ['book-search', debouncedTitle],
     queryFn: () => searchBooks(debouncedTitle),
-    enabled: kind === WorkKind.BOOK && !coverUrl && debouncedTitle.length >= 2,
+    enabled: kind === WorkKind.BOOK && !frozen && debouncedTitle.length >= 2,
   })
 
-  if (kind !== WorkKind.BOOK || coverUrl || debouncedTitle.length < 2) return null
+  if (kind !== WorkKind.BOOK || frozen || debouncedTitle.length < 2) return null
 
   return (
     <div className="flex flex-col gap-2">
@@ -54,7 +58,10 @@ export default function BookLookupField({
             <li key={book.isbn13 || `${book.title}-${index}`} className="flex-none">
               <button
                 type="button"
-                onClick={() => onPick(book)}
+                onClick={() => {
+                  setLastPicked(book.cover)
+                  onPick(book)
+                }}
                 className="flex max-w-28 flex-none cursor-pointer flex-col items-center gap-1.5 rounded-sm border border-transparent p-2 text-center hover:border-neutral-200 hover:bg-neutral-50"
               >
                 {book.cover ? (

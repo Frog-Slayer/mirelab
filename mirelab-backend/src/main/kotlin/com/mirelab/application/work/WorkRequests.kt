@@ -17,3 +17,10 @@ data class CreateWorkRequest(
 data class UpdateStatusRequest(val status: WorkStatus)
 
 data class UpdateReasonRequest(val userId: UUID, val reason: String)
+
+data class UpdateWorkInfoRequest(
+    val title: String,
+    val author: String,
+    val description: String? = null,
+    val coverUrl: String? = null,
+)
