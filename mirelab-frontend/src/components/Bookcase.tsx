@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import PickNote from '@/components/PickNote'
@@ -159,14 +160,55 @@ export function Bookcase({
   )
 }
 
-/** 칸 하나 — 폭이 남는 한 줄을 최대한 채우고, 다 못 들어가면 자연스럽게 다음 줄로 넘어간다 */
+const PLANK_CLASS =
+  'h-4 border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]'
+
+/**
+ * 칸 하나 — 폭이 남는 한 줄을 최대한 채우고, 다 못 들어가면 자연스럽게 다음 줄로
+ * 넘어간다. 줄바꿈이 실제로 몇 번 일어나는지는 미리 알 수 없어서(책마다 폭이 다르고
+ * 화면 폭도 다르니), 렌더링된 위치를 재서 줄이 바뀐 지점마다 선반을 하나씩 끼워 넣는다.
+ */
 function ShelfCompartment({ children }: { children: React.ReactNode }) {
+  const listRef = useRef<HTMLOListElement>(null)
+  const [rowBreaks, setRowBreaks] = useState<number[]>([])
+
+  useLayoutEffect(() => {
+    const list = listRef.current
+    if (!list) return
+
+    const measure = () => {
+      const items = Array.from(list.children) as HTMLElement[]
+      // items-end 로 바닥을 맞추므로, 같은 줄이면 아래쪽 끝(offsetTop+offsetHeight)이 같다.
+      const rowBottoms = [...new Set(items.map((item) => item.offsetTop + item.offsetHeight))].sort(
+        (a, b) => a - b,
+      )
+      // 마지막 줄 아래는 칸 자체의 선반이 이미 있으니 그 앞줄들만 선반을 추가한다.
+      setRowBreaks(rowBottoms.slice(0, -1))
+    }
+
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(list)
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div>
-      <ol className="flex min-h-56 flex-wrap items-end gap-2.5 bg-[#a89b8c] bg-[linear-gradient(90deg,rgba(54,35,21,0.1)_1px,transparent_1px)] bg-size-[14px_14px] px-5 pt-7 pb-1.5">
+    <div className="relative">
+      <ol
+        ref={listRef}
+        className="flex min-h-56 flex-wrap items-end gap-x-2.5 gap-y-6 bg-[#a89b8c] bg-[linear-gradient(90deg,rgba(54,35,21,0.1)_1px,transparent_1px)] bg-size-[14px_14px] px-5 pt-7 pb-1.5"
+      >
         {children}
       </ol>
-      <div className="h-4 border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]" />
+      {rowBreaks.map((bottom) => (
+        <div
+          key={bottom}
+          aria-hidden
+          className={`pointer-events-none absolute inset-x-0 ${PLANK_CLASS}`}
+          style={{ top: bottom + 4 }}
+        />
+      ))}
+      <div className={PLANK_CLASS} />
     </div>
   )
 }
