@@ -62,7 +62,7 @@ class WorkService(
             kind = input.kind,
             title = input.title,
             author = input.author,
-            year = Year.now().value,
+            year = input.year ?: Year.now().value,
             status = WorkStatus.CANDIDATE,
             addedBy = addedBy,
             reason = input.reason,
@@ -90,7 +90,21 @@ class WorkService(
         val work = workRepository.findById(workId).orElse(null) ?: return false
         workBlockRepository.deleteAll(workBlockRepository.findByWorkIdOrderByCreatedAt(workId))
         slotValueRepository.deleteByWorkId(workId)
-        sessionRepository.deleteAll(sessionRepository.findByWorkId(workId))
+        val sessions = sessionRepository.findByWorkId(workId)
+        val sessionIds = sessions.mapNotNull { it.id }
+        // 회차 전용 콜아웃 칸(owner=SESSION)이 이 회차를 참조하고 있으면, session_id 가
+        // NOT NULL 은 아니지만 그대로 두면 FK 위반으로 회차 삭제가 실패한다 — 먼저 떼어낸다.
+        // 칸 정의는 지우지 않고 숨기는 게 이 프로젝트의 컨벤션이라(과거 기록 보존), 여기서도
+        // 지우는 대신 session 을 null 로 돌리고 hidden 처리한다.
+        if (sessionIds.isNotEmpty()) {
+            val danglingSlotDefs = slotDefRepository.findBySessionIdIn(sessionIds)
+            danglingSlotDefs.forEach {
+                it.session = null
+                it.hidden = true
+            }
+            slotDefRepository.saveAll(danglingSlotDefs)
+        }
+        sessionRepository.deleteAll(sessions)
         workRepository.delete(work)
         return true
     }
@@ -113,6 +127,7 @@ class WorkService(
         work.author = input.author
         work.description = input.description
         work.coverUrl = input.coverUrl
+        input.year?.let { work.year = it }
         workRepository.save(work)
         return true
     }

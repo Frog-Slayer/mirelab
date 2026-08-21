@@ -25,7 +25,9 @@ export default function BookLookupField({
 }) {
   const [debouncedTitle, setDebouncedTitle] = useState('')
   const [lastPicked, setLastPicked] = useState<string | null>(null)
-  const frozen = lastPicked !== null && lastPicked === coverUrl
+  // 표지가 없는 결과(book.cover === '')를 고른 경우까지 얼려버리면, coverUrl도 ''라
+  // WorkPreviewCard의 지우기 버튼조차 안 뜨는 상태로 갇힌다 — 표지가 있을 때만 얼린다.
+  const frozen = !!lastPicked && lastPicked === coverUrl
 
   useEffect(() => {
     if (frozen) return
