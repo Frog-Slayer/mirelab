@@ -1,2 +1,5 @@
 node_modules/
 dist/
+
+# 백엔드와 나눠 쓰는 INTERNAL_SECRET 이 들어간다
+.env

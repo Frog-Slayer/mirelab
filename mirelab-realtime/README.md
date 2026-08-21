@@ -9,9 +9,12 @@
 
 ```bash
 npm install
-npm run dev     # tsx watch
+cp .env.example .env   # INTERNAL_SECRET 을 채운다
+npm run dev            # .env 를 자동으로 읽는다
 npm run build && npm start
 ```
+
+`npm start`(프로덕션)는 `.env` 를 읽지 않는다 — 환경변수로 넘긴다.
 
 ## 환경변수
 
