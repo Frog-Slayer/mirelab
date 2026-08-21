@@ -98,7 +98,7 @@ export default function RootLayout() {
             )}
             <button
               type="button"
-              onClick={() => void logout()}
+              onClick={() => void logout().then(() => navigate('/'))}
               className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-900"
             >
               로그아웃
