@@ -26,6 +26,20 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-mirelab}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?}
       ALADIN_TTB_KEY: ${ALADIN_TTB_KEY:?ALADIN_TTB_KEY를 .env에 설정하세요}
+
+      # 브라우저가 접근하는 공개 주소. 구글에 등록한 리디렉션 URI 와 여기서 만들어지는 값이
+      # 글자 그대로 같아야 해서, 틀린 값으로 조용히 뜨지 않게 기본값을 두지 않는다.
+      MIRELAB_FRONTEND_URL: ${MIRELAB_PUBLIC_BASE_URL:?MIRELAB_PUBLIC_BASE_URL을 .env에 설정하세요}
+      MIRELAB_PUBLIC_BASE_URL: ${MIRELAB_PUBLIC_BASE_URL:?MIRELAB_PUBLIC_BASE_URL을 .env에 설정하세요}
+      # https 로 서비스하면 반드시 true — 아니면 refresh 쿠키가 평문으로 오간다
+      MIRELAB_COOKIE_SECURE: ${MIRELAB_COOKIE_SECURE:-true}
+      MIRELAB_ADMIN_EMAIL: ${MIRELAB_ADMIN_EMAIL:?MIRELAB_ADMIN_EMAIL을 .env에 설정하세요}
+
+      MIRELAB_JWT_SECRET: ${MIRELAB_JWT_SECRET:?MIRELAB_JWT_SECRET을 .env에 설정하세요}
+      MIRELAB_INTERNAL_SECRET: ${MIRELAB_INTERNAL_SECRET:?MIRELAB_INTERNAL_SECRET을 .env에 설정하세요}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID를 .env에 설정하세요}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET을 .env에 설정하세요}
     depends_on:
       db:
         condition: service_healthy
@@ -37,6 +51,8 @@ services:
       target: prod
     environment:
       SPRING_BASE_URL: http://backend:8080
+      # backend 와 같은 값이어야 한다 — 다르면 스냅샷 저장·접속 인가가 전부 403 이 된다
+      INTERNAL_SECRET: ${MIRELAB_INTERNAL_SECRET:?MIRELAB_INTERNAL_SECRET을 .env에 설정하세요}
     depends_on:
       - backend
     restart: unless-stopped
