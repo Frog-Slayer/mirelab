@@ -51,7 +51,8 @@ class AccessRequestService(
         accessRequestRepository.findByStatusOrderByRequestedAtAsc(AccessRequestStatus.PENDING)
 
     @Transactional(readOnly = true)
-    fun all(): List<AccessRequest> = accessRequestRepository.findAll().sortedByDescending { it.requestedAt }
+    fun all(): List<AccessRequest> =
+        accessRequestRepository.findAllExcludingGrantedUserRole(Role.ADMIN)
 
     @Transactional(readOnly = true)
     fun countPending(): Int = pending().size

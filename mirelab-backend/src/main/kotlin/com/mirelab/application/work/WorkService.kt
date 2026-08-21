@@ -3,20 +3,21 @@ package com.mirelab.application.work
 import com.mirelab.application.session.toResponse
 import com.mirelab.domain.slot.SlotType
 import com.mirelab.domain.slot.SlotValueContext
+import com.mirelab.domain.user.Role
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkStatus
 import com.mirelab.infra.session.SessionRepository
 import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
-import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.study.StudyMemberRepository
+import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkBlockRepository
 import com.mirelab.infra.work.WorkRepository
 import java.time.Year
 import java.util.UUID
-import org.springframework.stereotype.Service
 import org.springframework.http.HttpStatus
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
@@ -34,18 +35,20 @@ class WorkService(
     /** 완료작만 별점순 — 스터디의 첫 화면 */
     fun hallOfFame(slug: String): List<RankedWorkResponse> {
         val study = studyRepository.findBySlug(slug) ?: return emptyList()
+        val memberIds = effectiveMemberIds(requireNotNull(study.id))
         return workRepository.findByStudyId(study.id!!)
             .filter { it.status == WorkStatus.DONE }
-            .map { rank(it, study.id!!) }
+            .map { rank(it, study.id!!, memberIds) }
             .sortedByDescending { it.average }
     }
 
     /** 후보·읽는 중까지 포함한 전체 책장 */
     fun library(slug: String): List<LibraryEntryResponse> {
         val study = studyRepository.findBySlug(slug) ?: return emptyList()
+        val memberIds = effectiveMemberIds(requireNotNull(study.id))
         return workRepository.findByStudyId(study.id!!).map { work ->
             val sessionCount = sessionRepository.findByWorkId(work.id!!).size
-            rank(work, study.id!!).toLibraryEntry(sessionCount)
+            rank(work, study.id!!, memberIds).toLibraryEntry(sessionCount)
         }
     }
 
@@ -54,7 +57,7 @@ class WorkService(
         val studyId = work.study?.id ?: return null
         val sessions = sessionRepository.findByWorkId(workId)
             .sortedWith(compareBy(nullsLast()) { it.meetAt })
-        return WorkDetailResponse(rank(work, studyId), sessions.map { it.toResponse() })
+        return WorkDetailResponse(rank(work, studyId, effectiveMemberIds(studyId)), sessions.map { it.toResponse() })
     }
 
     @Transactional
@@ -62,7 +65,10 @@ class WorkService(
         val study = studyRepository.findBySlug(slug) ?: return null
         val addedBy = userRepository.findById(addedById).orElse(null)
             ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 사용자를 찾을 수 없습니다")
-        if (!studyMemberRepository.existsByStudyIdAndUserId(requireNotNull(study.id), addedById)) {
+        if (
+            addedBy.role != Role.ADMIN &&
+            !studyMemberRepository.existsByStudyIdAndUserId(requireNotNull(study.id), addedById)
+        ) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "이 스터디의 멤버만 책을 추가할 수 있습니다")
         }
         val work = Work(
@@ -146,11 +152,20 @@ class WorkService(
             ?.id
 
     // 명예의 전당 순위는 스터디 공식 기록(STUDY)만 센다 — 내 서재 개인 평점은 안 섞인다.
-    private fun rank(work: Work, studyId: UUID): RankedWorkResponse {
+    private fun effectiveMemberIds(studyId: UUID): Set<UUID> =
+        studyMemberRepository.findByStudyId(studyId).mapNotNullTo(mutableSetOf()) { it.user.id }.apply {
+            addAll(userRepository.findAllByRole(Role.ADMIN).mapNotNull { it.id })
+        }
+
+    private fun rank(work: Work, studyId: UUID, memberIds: Set<UUID>): RankedWorkResponse {
         val slotId = ratingSlotId(studyId)
         val values = if (slotId != null) {
             slotValueRepository.findByWorkIdAndContext(work.id!!, SlotValueContext.STUDY)
-                .filter { it.slotDef.id == slotId && !it.draft }
+                .filter {
+                    it.slotDef.id == slotId &&
+                        !it.draft &&
+                        it.user.id?.let(memberIds::contains) == true
+                }
         } else {
             emptyList()
         }

@@ -2,6 +2,9 @@ package com.mirelab.application.work
 
 import com.mirelab.domain.work.Work
 import com.mirelab.infra.study.StudyMemberRepository
+import com.mirelab.infra.study.StudyRepository
+import com.mirelab.infra.user.UserRepository
+import com.mirelab.domain.user.Role
 import java.util.UUID
 import org.springframework.stereotype.Service
 
@@ -12,11 +15,21 @@ import org.springframework.stereotype.Service
  * 판정하면 한쪽만 조여지는 일이 생긴다 — 그래서 규칙을 여기 하나로 둔다.
  */
 @Service
-class WorkAccessChecker(private val studyMemberRepository: StudyMemberRepository) {
+class WorkAccessChecker(
+    private val studyMemberRepository: StudyMemberRepository,
+    private val studyRepository: StudyRepository,
+    private val userRepository: UserRepository,
+) {
 
     /** 내가 속한 스터디들 — 여러 작품을 연달아 볼 때는 이걸 한 번 받아 재사용한다 */
-    fun myStudyIds(userId: UUID): Set<UUID> =
-        studyMemberRepository.findByUserId(userId).map { it.study.id!! }.toSet()
+    fun myStudyIds(userId: UUID): Set<UUID> {
+        val user = userRepository.findById(userId).orElse(null) ?: return emptySet()
+        return if (user.role == Role.ADMIN) {
+            studyRepository.findAll().mapNotNull { it.id }.toSet()
+        } else {
+            studyMemberRepository.findByUserId(userId).mapNotNull { it.study.id }.toSet()
+        }
+    }
 
     /** 내가 개인으로 담은 작품이거나, 내가 속한 스터디의 작품이면 접근 가능 */
     fun canAccess(work: Work, userId: UUID, myStudyIds: Set<UUID>): Boolean =

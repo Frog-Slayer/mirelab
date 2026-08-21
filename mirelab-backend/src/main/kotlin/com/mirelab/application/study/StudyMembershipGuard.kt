@@ -4,6 +4,8 @@ import com.mirelab.infra.study.StudyMemberRepository
 import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.work.WorkBlockRepository
 import com.mirelab.infra.work.WorkRepository
+import com.mirelab.infra.user.UserRepository
+import com.mirelab.domain.user.Role
 import java.util.UUID
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
@@ -17,6 +19,7 @@ class StudyMembershipGuard(
     private val studyMemberRepository: StudyMemberRepository,
     private val workRepository: WorkRepository,
     private val workBlockRepository: WorkBlockRepository,
+    private val userRepository: UserRepository,
 ) {
     @Transactional(readOnly = true)
     fun requireStudy(slug: String, userId: UUID) {
@@ -46,6 +49,7 @@ class StudyMembershipGuard(
     }
 
     private fun requireMembership(studyId: UUID, userId: UUID) {
+        if (userRepository.findById(userId).orElse(null)?.role == Role.ADMIN) return
         if (!studyMemberRepository.existsByStudyIdAndUserId(studyId, userId)) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "이 스터디의 멤버만 접근할 수 있습니다")
         }

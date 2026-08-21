@@ -15,16 +15,15 @@ import org.springframework.transaction.annotation.Transactional
 /**
  * admin 계정이 반드시 하나 있게 보장한다. 매 부팅마다 돌고, 이미 맞으면 아무것도 안 한다.
  *
- * 왜 [DevDataSeeder] 만으로 안 되는가 — 시더는 dev 프로필 전용이고 "users 가 비었을 때만"
- * 돈다. 그래서 두 경우에 admin 이 없는 상태로 서비스가 뜬다:
+ * [DevDataSeeder]는 스터디·슬롯 같은 구조만 만들고 사용자는 만들지 않는다. 따라서 개발과
+ * 운영 모두에서 별도로 admin 계정을 보장해야 한다:
  *
  * 1. 운영 첫 배포 — 시더가 아예 안 돈다. 사용자가 0명이면 로그인할 사람도, 가입 신청을
  *    승인할 사람도 없어서 아무도 들어올 수 없는 잠긴 서비스가 된다.
  * 2. 인증을 붙이기 전에 이미 시딩된 DB — email/role 컬럼이 나중에 NULL 로 덧붙어서,
  *    admin 이어야 할 사람의 email 이 비어 있다.
  *
- * [Order] 로 시더보다 뒤에 둔다. 먼저 돌면 이 러너가 만든 행 때문에 시더의 "users 가 비었나"
- * 가드가 걸려서 dev 데모 데이터가 통째로 안 들어간다.
+ * 개발에서는 구조 시더 다음에 실행되도록 순서만 명시한다.
  */
 @Order(ADMIN_BOOTSTRAP_ORDER)
 @Component

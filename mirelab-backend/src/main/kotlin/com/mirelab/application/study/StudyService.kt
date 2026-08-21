@@ -3,6 +3,7 @@ package com.mirelab.application.study
 import com.mirelab.application.user.UserResponse
 import com.mirelab.application.user.toResponse
 import com.mirelab.domain.study.StudyMember
+import com.mirelab.domain.user.Role
 import com.mirelab.infra.study.StudyMemberRepository
 import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.user.UserRepository
@@ -19,20 +20,33 @@ class StudyService(
     private val userRepository: UserRepository,
 ) {
     /** 내가 속한 스터디들 — 헤더의 스터디 전환기에 쓴다 */
-    fun findMine(userId: UUID): List<StudyResponse> =
-        studyMemberRepository.findByUserId(userId).map { it.study.toResponse() }
+    @Transactional(readOnly = true)
+    fun findMine(userId: UUID): List<StudyResponse> {
+        val user = userRepository.findById(userId).orElse(null) ?: return emptyList()
+        val studies = if (user.role == Role.ADMIN) {
+            studyRepository.findAll()
+        } else {
+            studyMemberRepository.findByUserId(userId).map { it.study }
+        }
+        return studies.map { it.toResponse() }.sortedBy { it.name }
+    }
 
     fun findBySlug(slug: String): StudyResponse? = studyRepository.findBySlug(slug)?.toResponse()
 
+    @Transactional(readOnly = true)
     fun findAll(): List<StudyResponse> = studyRepository.findAll().map { it.toResponse() }.sortedBy { it.name }
 
+    @Transactional(readOnly = true)
     fun studyIdsForUser(userId: UUID): List<UUID> =
         studyMemberRepository.findByUserId(userId).mapNotNull { it.study.id }
 
     /** 그 스터디에 속한 사람들 — 평점표·서명 등에 쓴다 */
+    @Transactional(readOnly = true)
     fun listMembers(slug: String): List<UserResponse> {
         val study = studyRepository.findBySlug(slug) ?: return emptyList()
-        return studyMemberRepository.findByStudyId(study.id!!).map { it.user.toResponse() }
+        val assigned = studyMemberRepository.findByStudyId(study.id!!).map { it.user }
+        val admins = userRepository.findAll().filter { it.role == Role.ADMIN }
+        return (assigned + admins).distinctBy { it.id }.map { it.toResponse() }
     }
 
     /** 관리 화면에서 고른 목록을 해당 사용자의 멤버십 전체 상태로 맞춘다. */

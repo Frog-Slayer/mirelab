@@ -139,7 +139,6 @@ function MemberRow({
         <span className={`size-2 flex-none rounded-full ${member.color}`} aria-hidden />
         <span className="text-neutral-800">{member.name}</span>
         <span className="truncate text-neutral-400">
-          {/* 이메일이 없으면 로그인 계정이 안 붙은 데모 데이터 주인이다 */}
           {member.email ?? '로그인 계정 없음'}
         </span>
         {member.role === 'ADMIN' && <span className="text-xs text-neutral-500">관리자</span>}
