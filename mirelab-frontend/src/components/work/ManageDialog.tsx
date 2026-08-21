@@ -1,32 +1,52 @@
 import { useEffect, useRef, useState } from 'react'
+import BookLookupField from '@/components/BookLookupField'
+import WorkPreviewCard from '@/components/WorkPreviewCard'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import type { WorkStatus } from '@/types'
-import { WorkStatus as WorkStatusValues } from '@/types'
+import { WorkKind, WorkStatus as WorkStatusValues } from '@/types'
 
 export default function ManageDialog({
+  kind,
   title,
+  author,
+  description,
+  coverUrl,
   status,
-  deletable,
-  lockReason,
+  onSaveInfo,
   onChangeStatus,
   onDelete,
   onClose,
 }: {
+  kind: WorkKind
   title: string
+  author: string
+  description: string
+  coverUrl: string
   status: WorkStatus
-  deletable: boolean
-  lockReason: string
+  onSaveInfo: (info: {
+    title: string
+    author: string
+    description?: string
+    coverUrl?: string
+  }) => void
   onChangeStatus: (next: WorkStatus) => void
   onDelete: () => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDialogElement>(null)
+  const [draftTitle, setDraftTitle] = useState(title)
+  const [draftAuthor, setDraftAuthor] = useState(author)
+  const [draftDescription, setDraftDescription] = useState(description)
+  const [draftCoverUrl, setDraftCoverUrl] = useState(coverUrl)
   const [next, setNext] = useState<WorkStatus>(status)
-  const [confirming, setConfirming] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const requiredPhrase = `${title} 절대 안 읽을 거임!!`
 
   // <dialog> 를 쓰면 Esc 와 포커스 가둠을 브라우저가 해준다
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  useLockBodyScroll()
 
   return (
     <dialog
@@ -35,7 +55,7 @@ export default function ManageDialog({
       onClick={(e) => {
         if (e.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(26rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
     >
       <div className="flex flex-col gap-5 p-5">
         <div className="flex items-start justify-between gap-4">
@@ -51,6 +71,50 @@ export default function ManageDialog({
         </div>
 
         <div className="flex flex-col gap-2">
+          <span className="text-xs font-medium text-neutral-500">정보 수정</span>
+          <WorkPreviewCard
+            kind={kind}
+            title={draftTitle}
+            onTitleChange={setDraftTitle}
+            author={draftAuthor}
+            onAuthorChange={setDraftAuthor}
+            description={draftDescription}
+            onDescriptionChange={setDraftDescription}
+            coverUrl={draftCoverUrl}
+            onClearCover={() => setDraftCoverUrl('')}
+          />
+          {kind === WorkKind.BOOK && (
+            <BookLookupField
+              kind={kind}
+              title={draftTitle}
+              coverUrl={draftCoverUrl}
+              onPick={(book) => {
+                setDraftTitle(book.title)
+                setDraftAuthor(book.author)
+                setDraftCoverUrl(book.cover)
+                setDraftDescription(book.description)
+              }}
+            />
+          )}
+          <button
+            type="button"
+            disabled={!draftTitle.trim()}
+            onClick={() => {
+              onSaveInfo({
+                title: draftTitle.trim(),
+                author: draftAuthor.trim(),
+                description: draftDescription || undefined,
+                coverUrl: draftCoverUrl || undefined,
+              })
+              ref.current?.close()
+            }}
+            className="app-button app-button-primary self-end"
+          >
+            정보 저장
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-neutral-200 pt-4">
           <span className="text-xs font-medium text-neutral-500">상태</span>
           <div className="flex gap-2">
             <select
@@ -78,39 +142,28 @@ export default function ManageDialog({
 
         <div className="flex flex-col gap-2 border-t border-neutral-200 pt-4">
           <span className="text-xs font-medium text-neutral-500">삭제</span>
-
-          {!deletable ? (
-            <p className="text-xs text-neutral-500">{lockReason}.</p>
-          ) : confirming ? (
-            <div className="flex items-center gap-2">
-              <span className="flex-1 text-xs text-neutral-600">정말 지울까요?</span>
-              <button
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="app-button app-button-secondary"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onDelete()
-                  ref.current?.close()
-                }}
-                className="app-button app-button-danger"
-              >
-                지우기
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="app-button app-button-secondary self-start hover:text-rose-700"
-            >
-              작품에서 지우기
-            </button>
-          )}
+          <p className="text-xs text-neutral-500">
+            계속하려면 아래에{' '}
+            <span className="font-medium text-neutral-700">{requiredPhrase}</span> 를 정확히
+            입력하세요.
+          </p>
+          <input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={requiredPhrase}
+            className="rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          />
+          <button
+            type="button"
+            disabled={confirmText !== requiredPhrase}
+            onClick={() => {
+              onDelete()
+              ref.current?.close()
+            }}
+            className="app-button app-button-danger self-start"
+          >
+            영구 삭제
+          </button>
         </div>
       </div>
     </dialog>

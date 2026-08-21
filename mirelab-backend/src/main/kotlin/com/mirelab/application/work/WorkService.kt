@@ -66,6 +66,8 @@ class WorkService(
             status = WorkStatus.CANDIDATE,
             addedBy = addedBy,
             reason = input.reason,
+            coverUrl = input.coverUrl,
+            description = input.description,
         )
         return workRepository.save(work).toResponse()
     }
@@ -79,17 +81,16 @@ class WorkService(
     }
 
     /**
-     * 후보 상태이고, 모임·별점·함께 쓰는 기록이 없을 때만 지운다 — 화면에서도 막지만
-     * 여기서도 막는다. WorkBlock.work 는 cascade 없는 FK 라, 블록을 안 걸러내면
-     * workRepository.delete 가 참조 무결성 위반으로 그냥 실패해버린다.
+     * 삭제는 항상 허용한다 — 확인은 프론트에서 삭제 문구 입력으로 이미 걸러진다.
+     * WorkBlock/SlotValue 는 cascade 없는 NOT NULL FK 라 먼저 안 지우면 참조 무결성
+     * 위반으로 실패하므로, 자식부터 순서대로 지운 뒤 Work 를 지운다.
      */
     @Transactional
     fun remove(workId: UUID): Boolean {
         val work = workRepository.findById(workId).orElse(null) ?: return false
-        if (work.status != WorkStatus.CANDIDATE) return false
-        if (sessionRepository.findByWorkId(workId).isNotEmpty()) return false
-        if (hasVotes(work)) return false
-        if (workBlockRepository.findByWorkIdOrderByCreatedAt(workId).isNotEmpty()) return false
+        workBlockRepository.deleteAll(workBlockRepository.findByWorkIdOrderByCreatedAt(workId))
+        slotValueRepository.deleteByWorkId(workId)
+        sessionRepository.deleteAll(sessionRepository.findByWorkId(workId))
         workRepository.delete(work)
         return true
     }
@@ -104,16 +105,22 @@ class WorkService(
         return true
     }
 
+    /** 제목·저자·줄거리·표지는 서지 정보 교정이라 선정 이유와 달리 아무나 고칠 수 있다 */
+    @Transactional
+    fun updateInfo(workId: UUID, input: UpdateWorkInfoRequest): Boolean {
+        val work = workRepository.findById(workId).orElse(null) ?: return false
+        work.title = input.title
+        work.author = input.author
+        work.description = input.description
+        work.coverUrl = input.coverUrl
+        workRepository.save(work)
+        return true
+    }
+
     private fun ratingSlotId(studyId: UUID): UUID? =
         slotDefRepository.findByStudyIdOrderBySortOrder(studyId)
             .firstOrNull { it.type == SlotType.RATING && !it.hidden }
             ?.id
-
-    private fun hasVotes(work: Work): Boolean {
-        val slotId = ratingSlotId(work.study?.id ?: return false) ?: return false
-        return slotValueRepository.findByWorkIdAndContext(work.id!!, SlotValueContext.STUDY)
-            .any { it.slotDef.id == slotId && !it.draft }
-    }
 
     // 명예의 전당 순위는 스터디 공식 기록(STUDY)만 센다 — 내 서재 개인 평점은 안 섞인다.
     private fun rank(work: Work, studyId: UUID): RankedWorkResponse {

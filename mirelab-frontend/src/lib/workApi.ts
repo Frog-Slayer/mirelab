@@ -27,6 +27,8 @@ export function addWork(input: {
   author: string
   addedBy: string
   reason?: string
+  coverUrl?: string
+  description?: string
 }): Promise<Work> {
   return api.post(`/studies/${input.slug}/works`, {
     kind: input.kind,
@@ -34,6 +36,8 @@ export function addWork(input: {
     author: input.author,
     addedBy: input.addedBy,
     reason: input.reason,
+    coverUrl: input.coverUrl,
+    description: input.description,
   })
 }
 
@@ -62,4 +66,19 @@ export function updateWorkReason(input: {
   reason: string
 }): Promise<void> {
   return api.patch(`/works/${input.workId}/reason`, { userId: input.userId, reason: input.reason })
+}
+
+export function updateWorkInfo(input: {
+  workId: string
+  title: string
+  author: string
+  description?: string
+  coverUrl?: string
+}): Promise<void> {
+  return api.patch(`/works/${input.workId}`, {
+    title: input.title,
+    author: input.author,
+    description: input.description,
+    coverUrl: input.coverUrl,
+  })
 }

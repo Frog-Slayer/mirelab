@@ -75,10 +75,18 @@ export function addPersonalWork(input: {
   kind: WorkKind
   title: string
   author: string
+  coverUrl?: string
+  description?: string
 }): Promise<Work> {
   return api.post(
     '/me/shelf',
-    { kind: input.kind, title: input.title, author: input.author },
+    {
+      kind: input.kind,
+      title: input.title,
+      author: input.author,
+      coverUrl: input.coverUrl,
+      description: input.description,
+    },
     { headers: { 'X-User-Id': input.ownerId } },
   )
 }

@@ -25,7 +25,14 @@ import {
   removeWorkBlock,
   updateWorkBlockTitle,
 } from '@/lib/workBlockApi'
-import { getHallOfFame, getWork, removeWork, setWorkStatus, updateWorkReason } from '@/lib/workApi'
+import {
+  getHallOfFame,
+  getWork,
+  removeWork,
+  setWorkStatus,
+  updateWorkInfo,
+  updateWorkReason,
+} from '@/lib/workApi'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -89,6 +96,10 @@ export default function WorkPage() {
     mutationFn: (reason: string) => updateWorkReason({ workId, userId: user!.id, reason }),
     onSuccess: refresh,
   })
+  const editInfo = useMutation({
+    mutationFn: updateWorkInfo,
+    onSuccess: refresh,
+  })
   const startReading = useMutation({
     mutationFn: addSession,
     onSuccess: () => {
@@ -117,7 +128,7 @@ export default function WorkPage() {
   if (!isPending && data === null) return <NotFoundPage />
   if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
 
-  const { work, sessions } = data
+  const { work } = data
   const slots = workSlots?.slots ?? []
   const values = workSlots?.values ?? []
   const myValueOf = (slotId: string) =>
@@ -126,15 +137,6 @@ export default function WorkPage() {
 
   const hallIndex = hallOfFame?.findIndex((w) => w.id === work.id) ?? -1
   const hallRank = hallIndex >= 0 && hallIndex < 9 ? ((hallIndex + 1) as Rank) : null
-
-  const hasRecords = sessions.length > 0 || work.voterCount > 0
-  const deletable = work.status === WorkStatus.CANDIDATE && !hasRecords
-  const lockReason =
-    work.status !== WorkStatus.CANDIDATE
-      ? '후보 상태에서만 지울 수 있습니다'
-      : sessions.length > 0
-        ? `모임 ${sessions.length}개가 걸려 있습니다`
-        : '별점 기록이 남아 있습니다'
 
   // 평점·한줄평은 "내 기록" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
   const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
@@ -204,7 +206,7 @@ export default function WorkPage() {
               type="button"
               onClick={() => setManageOpen(true)}
               className="app-button app-button-secondary app-icon-button"
-              aria-label="상태 바꾸기 · 삭제"
+              aria-label="정보 수정 · 상태 바꾸기 · 삭제"
             >
               …
             </button>
@@ -347,10 +349,13 @@ export default function WorkPage() {
 
         {manageOpen && (
           <ManageDialog
+            kind={work.kind}
             title={work.title}
+            author={work.author}
+            description={work.description ?? ''}
+            coverUrl={work.coverUrl ?? ''}
             status={work.status}
-            deletable={deletable}
-            lockReason={lockReason}
+            onSaveInfo={(info) => editInfo.mutate({ workId: work.id, ...info })}
             onChangeStatus={(next) => changeStatus.mutate(next)}
             onDelete={() => drop.mutate()}
             onClose={() => setManageOpen(false)}

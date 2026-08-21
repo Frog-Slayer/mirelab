@@ -18,6 +18,7 @@ data class WorkResponse(
     val addedBy: UUID?,
     val reason: String?,
     val description: String?,
+    val coverUrl: String?,
     val actors: List<String>,
 )
 
@@ -33,6 +34,7 @@ fun Work.toResponse() = WorkResponse(
     addedBy = addedBy?.id,
     reason = reason,
     description = description,
+    coverUrl = coverUrl,
     actors = actors,
 )
 
@@ -49,6 +51,7 @@ data class RankedWorkResponse(
     val addedBy: UUID?,
     val reason: String?,
     val description: String?,
+    val coverUrl: String?,
     val actors: List<String>,
     /** userId(문자열) → 평점 */
     val ratings: Map<String, Double>,
@@ -68,6 +71,7 @@ fun Work.toRanked(ratings: Map<String, Double>, average: Double): RankedWorkResp
     addedBy = addedBy?.id,
     reason = reason,
     description = description,
+    coverUrl = coverUrl,
     actors = actors,
     ratings = ratings,
     average = average,
@@ -87,6 +91,7 @@ data class LibraryEntryResponse(
     val addedBy: UUID?,
     val reason: String?,
     val description: String?,
+    val coverUrl: String?,
     val actors: List<String>,
     val ratings: Map<String, Double>,
     val average: Double,
@@ -106,6 +111,7 @@ fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
     addedBy = addedBy,
     reason = reason,
     description = description,
+    coverUrl = coverUrl,
     actors = actors,
     ratings = ratings,
     average = average,

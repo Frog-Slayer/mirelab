@@ -73,6 +73,10 @@ class Work(
     @Lob
     var description: String? = null,
 
+    /** 알라딘·TMDB 같은 외부 API 가 제공하는 표지 이미지 URL */
+    @Column(name = "cover_url")
+    var coverUrl: String? = null,
+
     /** 영화에서만 — 등장 배우. TMDB 연동 전까지는 비어 있다 */
     @ElementCollection
     @CollectionTable(name = "work_actors", joinColumns = [JoinColumn(name = "work_id")])

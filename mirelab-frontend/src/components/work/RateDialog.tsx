@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import SlotField from '@/components/slots/SlotField'
+import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import type { SlotDef, SlotValue } from '@/types'
 
 /** 멤버별 평점의 내 카드를 누르면 뜬다 — 평점·한줄평을 한 곳에서 입력한다 */
@@ -22,6 +23,7 @@ export default function RateDialog({
   useEffect(() => {
     ref.current?.showModal()
   }, [])
+  useLockBodyScroll()
 
   return (
     <dialog

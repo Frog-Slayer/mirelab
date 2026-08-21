@@ -16,4 +16,7 @@ interface SlotValueRepository : JpaRepository<SlotValue, UUID> {
         userId: UUID,
         context: SlotValueContext,
     ): SlotValue?
+
+    /** 작품을 통째로 지울 때 컨텍스트(STUDY/SHELF) 상관없이 값 전부 지운다 */
+    fun deleteByWorkId(workId: UUID)
 }
