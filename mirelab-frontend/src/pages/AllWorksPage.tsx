@@ -146,7 +146,7 @@ function AllWorksTable({
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[1000px] border-collapse text-left text-sm">
           <thead className="bg-neutral-50 text-xs text-neutral-500">
             <tr>
               <th scope="col" className="px-5 py-2 text-center font-medium">
@@ -181,6 +181,12 @@ function AllWorksTable({
                 className="border-l border-neutral-200 px-5 py-2 text-center font-medium"
               >
                 담은 사람
+              </th>
+              <th
+                scope="col"
+                className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
+              >
+                선정 사유
               </th>
             </tr>
           </thead>
@@ -227,6 +233,15 @@ function AllWorksTable({
                 </td>
                 <td className="border-l border-neutral-200 px-5 py-2 text-center text-neutral-500">
                   {work.addedBy ? (userName.get(work.addedBy) ?? '알 수 없음') : '—'}
+                </td>
+                <td className="border-l border-neutral-200 px-4 py-2 text-left text-neutral-600">
+                  {work.reason ? (
+                    <div className="max-w-72 truncate" title={work.reason}>
+                      {work.reason}
+                    </div>
+                  ) : (
+                    <span className="text-neutral-400">—</span>
+                  )}
                 </td>
               </tr>
             ))}
