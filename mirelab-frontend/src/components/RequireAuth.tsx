@@ -26,7 +26,7 @@ export function RequireAdmin() {
   const { status, isAdmin } = useCurrentUser()
 
   if (status === 'loading') return <Splash label="불러오는 중…" />
-  if (!isAdmin) return <Navigate to="/" replace />
+  if (!isAdmin) return <Navigate to="/app" replace />
 
   return <Outlet />
 }

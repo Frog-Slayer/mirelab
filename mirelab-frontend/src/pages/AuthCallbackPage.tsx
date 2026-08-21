@@ -13,7 +13,7 @@ export default function AuthCallbackPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (status === 'authenticated') navigate('/', { replace: true })
+    if (status === 'authenticated') navigate('/app', { replace: true })
     else if (status === 'anonymous') navigate('/login?error=oauth_failed', { replace: true })
   }, [status, navigate])
 

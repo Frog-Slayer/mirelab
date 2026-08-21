@@ -11,12 +11,14 @@ import LoginPage from '@/pages/LoginPage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import SignupPage from '@/pages/SignupPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import LandingPage from '@/pages/LandingPage'
 import RequireStudyMember, { StudyHomeRedirect } from '@/components/RequireStudyMember'
 
 /** 스터디 slug 로 쓸 수 없는 이름 — 전역 경로와 부딪힌다 */
-export const RESERVED_SLUGS = ['diary', 'settings', 'login', 'signup', 'api', 'admin', 'new']
+export const RESERVED_SLUGS = ['app', 'diary', 'settings', 'login', 'signup', 'api', 'admin', 'new']
 
 export const router = createBrowserRouter([
+  { path: '/', element: <LandingPage /> },
   // 로그인 관련 화면은 RootLayout 밖 — 헤더에 스터디 전환기와 로그아웃이 있어서,
   // 아직 로그인하지 않은 사람에게 보여줄 것이 없다.
   { path: '/login', element: <LoginPage /> },
@@ -26,10 +28,9 @@ export const router = createBrowserRouter([
     element: <RequireAuth />,
     children: [
       {
-        path: '/',
         element: <RootLayout />,
         children: [
-          { index: true, element: <StudyHomeRedirect /> },
+          { path: 'app', element: <StudyHomeRedirect /> },
           // 전역 관리 화면. RESERVED_SLUGS 에 'admin' 이 있어 스터디 slug 와 안 부딪힌다.
           { path: 'admin/members', element: <RequireAdmin />, children: [
             { index: true, element: <AdminMembersPage /> },
