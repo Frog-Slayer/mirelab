@@ -74,7 +74,7 @@ class ShelfService(
             kind = input.kind,
             title = input.title,
             author = input.author,
-            year = Year.now().value,
+            year = input.year ?: Year.now().value,
             status = WorkStatus.READING,
             coverUrl = input.coverUrl,
             description = input.description,

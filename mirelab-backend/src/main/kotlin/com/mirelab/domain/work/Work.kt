@@ -13,7 +13,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.Lob
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OrderColumn
 import jakarta.persistence.Table
@@ -41,7 +40,8 @@ class Work(
     @JoinColumn(name = "owner_id")
     var owner: User? = null,
 
-    // H2 가 네이티브 enum DDL 문법을 못 읽어서, varchar 로 저장하도록 강제한다.
+    // PostgreSQL 네이티브 enum 타입은 값이 늘어날 때마다 마이그레이션이 필요해 번거로우니,
+    // varchar 로 저장하도록 강제한다(테스트에서 쓰는 H2도 이 방식이 호환된다).
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false)
@@ -51,7 +51,7 @@ class Work(
 
     var author: String,
 
-    // "year" 도 H2 예약어라 컬럼명을 그대로 못 쓴다.
+    // "year" 는 예약어와 겹칠 여지가 있어 컬럼명을 그대로 안 쓴다.
     @Column(name = "published_year")
     var year: Int,
 
@@ -69,8 +69,12 @@ class Work(
     @Column(length = 500)
     var reason: String? = null,
 
-    /** 알라딘·TMDB 같은 외부 API 가 제공하는 줄거리. 지금은 자리만 잡아둔다 */
-    @Lob
+    /**
+     * 알라딘·TMDB 같은 외부 API 가 제공하는 줄거리. 지금은 자리만 잡아둔다.
+     * @Lob 을 쓰면 PostgreSQL에서 (문자열이라도) large object/OID 로 매핑돼버리니
+     * LONGVARCHAR 로 지정해 PostgreSQL은 text, H2는 clob 인 평범한 텍스트 컬럼을 쓴다.
+     */
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     var description: String? = null,
 
     /** 알라딘·TMDB 같은 외부 API 가 제공하는 표지 이미지 URL */

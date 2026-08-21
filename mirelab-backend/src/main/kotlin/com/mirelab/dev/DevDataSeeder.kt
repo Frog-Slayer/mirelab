@@ -1,6 +1,5 @@
 package com.mirelab.dev
 
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -17,8 +16,8 @@ import tools.jackson.databind.ObjectMapper
  * dev용 시드 데이터. 프론트 목(mocks/data.ts)과 값을 맞췄다.
  *
  * ddl-auto 로 스키마를 맡기고 있어서 data.sql 로는 감당이 안 됐다 — data.sql 은 매번
- * 새로 실행되는데, DB 가 영구적으로 바뀌면(H2 파일 모드·Postgres) 재시작할 때마다
- * 중복 키로 깨진다. 그래서 "비어있을 때만 시드" 가드를 두고 여기서 채운다.
+ * 새로 실행되는데, Postgres 는 컨테이너를 내렸다 올려도 볼륨에 데이터가 그대로 남아
+ * 재시작할 때마다 중복 키로 깨진다. 그래서 "비어있을 때만 시드" 가드를 두고 여기서 채운다.
  *
  * 엔티티는 @GeneratedValue(UUID) 라 프론트와 같은 고정 UUID 로 저장을 못 한다(Hibernate가
  * 미리 채워진 id 를 거부함 — repository.save 도, EntityManager.persist 도 둘 다 에러).
@@ -263,7 +262,11 @@ class DevDataSeeder(
         for ((id, workId, meetAt) in sessions) {
             jdbcTemplate.update(
                 "insert into sessions (id, study_id, work_id, meet_at, closed) values (?, ?, ?, ?, ?)",
-                id, Ids.STUDY, workId, meetAt?.let { it.atZone(ZoneId.of("Asia/Seoul")).toInstant() }, id in closedIds,
+                id, Ids.STUDY, workId,
+                // PostgreSQL 드라이버는 java.time.Instant 를 raw JDBC setObject()로 바로 못
+                // 받는다(타입 추론 불가) — Timestamp 로 감싸야 H2·Postgres 둘 다 통과한다.
+                meetAt?.let { java.sql.Timestamp.from(it.atZone(ZoneId.of("Asia/Seoul")).toInstant()) },
+                id in closedIds,
             )
         }
     }

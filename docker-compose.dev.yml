@@ -1,0 +1,72 @@
+name: mirelab-dev
+
+services:
+  db:
+    build:
+      context: ./postgres
+    environment:
+      POSTGRES_DB: mirelab
+      POSTGRES_USER: mirelab
+      POSTGRES_PASSWORD: mirelab
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mirelab -d mirelab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: ./mirelab-backend
+      target: dev
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mirelab
+      SPRING_DATASOURCE_USERNAME: mirelab
+      SPRING_DATASOURCE_PASSWORD: mirelab
+      ALADIN_TTB_KEY: ${ALADIN_TTB_KEY:-}
+    volumes:
+      - ./mirelab-backend:/app
+      - backend_gradle_cache:/gradle-cache
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  realtime:
+    build:
+      context: ./mirelab-realtime
+      target: dev
+    environment:
+      SPRING_BASE_URL: http://backend:8080
+      PORT: "1234"
+    volumes:
+      - ./mirelab-realtime:/app
+      - /app/node_modules
+    ports:
+      - "1234:1234"
+    depends_on:
+      - backend
+
+  frontend:
+    build:
+      context: ./mirelab-frontend
+      target: dev
+    environment:
+      BACKEND_PROXY_TARGET: http://backend:8080
+      REALTIME_PROXY_TARGET: ws://realtime:1234
+    volumes:
+      - ./mirelab-frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+      - realtime
+
+volumes:
+  pgdata:
+  backend_gradle_cache:

@@ -6,6 +6,7 @@ import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { useStudy } from '@/hooks/useStudy'
+import { parseYearFromPubDate } from '@/lib/bookApi'
 import { addPersonalWork, getShelf, type ShelfEntry } from '@/lib/shelfApi'
 import { formatRating } from '@/lib/format'
 import type { SlotDef } from '@/types'
@@ -202,6 +203,7 @@ function AddDialog({
     author: string
     coverUrl?: string
     description?: string
+    year?: number
   }) => void
   onClose: () => void
 }) {
@@ -211,6 +213,7 @@ function AddDialog({
   const [author, setAuthor] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
   const [description, setDescription] = useState('')
+  const [year, setYear] = useState<number>()
 
   useEffect(() => {
     ref.current?.showModal()
@@ -241,6 +244,7 @@ function AddDialog({
             author: author.trim(),
             coverUrl: coverUrl || undefined,
             description: description || undefined,
+            year,
           })
         }}
         className="flex flex-col gap-3 p-5"
@@ -277,6 +281,8 @@ function AddDialog({
           onTitleChange={setTitle}
           author={author}
           onAuthorChange={setAuthor}
+          year={year}
+          onYearChange={setYear}
           description={description}
           onDescriptionChange={setDescription}
           coverUrl={coverUrl}
@@ -292,6 +298,7 @@ function AddDialog({
               setAuthor(book.author)
               setCoverUrl(book.cover)
               setDescription(book.description)
+              setYear(parseYearFromPubDate(book.pubDate))
             }}
           />
         )}

@@ -471,8 +471,8 @@ function BookPreview({
           <Cover work={item} size="sm" />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="truncate text-sm font-semibold text-neutral-900">{item.title}</span>
-          <span className="truncate text-xs text-neutral-500">
+          <span className="text-sm font-semibold text-neutral-900">{item.title}</span>
+          <span className="text-xs text-neutral-500">
             {item.author} · {item.year}
           </span>
           {!!item.voterCount && (
@@ -484,7 +484,7 @@ function BookPreview({
             </div>
           )}
           {item.description && <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>}
-          <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />
+          <PickNote addedBy={item.addedBy} reason={item.reason} users={users} truncate={false} />
         </div>
       </div>
     </div>

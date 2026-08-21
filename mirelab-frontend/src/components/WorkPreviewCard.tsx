@@ -12,6 +12,8 @@ export default function WorkPreviewCard({
   onTitleChange,
   author,
   onAuthorChange,
+  year,
+  onYearChange,
   description,
   onDescriptionChange,
   coverUrl,
@@ -24,6 +26,9 @@ export default function WorkPreviewCard({
   onTitleChange: (value: string) => void
   author: string
   onAuthorChange: (value: string) => void
+  /** 출간·개봉 연도 — 판본 찾기로 고르면 자동으로 채워지지만 직접 고칠 수도 있다 */
+  year?: number
+  onYearChange: (value: number | undefined) => void
   description: string
   onDescriptionChange: (value: string) => void
   coverUrl: string
@@ -78,12 +83,22 @@ export default function WorkPreviewCard({
             placeholder="제목"
             className="w-full rounded-sm border-none bg-transparent px-0 text-3xl leading-tight font-semibold tracking-[-0.03em] outline-none placeholder:text-neutral-300 sm:text-4xl"
           />
-          <input
-            value={author}
-            onChange={(e) => onAuthorChange(e.target.value)}
-            placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
-            className="w-full rounded-sm border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
-          />
+          <div className="flex items-center gap-1.5">
+            <input
+              value={author}
+              onChange={(e) => onAuthorChange(e.target.value)}
+              placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
+              className="min-w-0 flex-1 rounded-sm border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
+            />
+            <span className="text-base text-neutral-300">·</span>
+            <input
+              value={year ?? ''}
+              onChange={(e) => onYearChange(e.target.value ? Number(e.target.value) : undefined)}
+              placeholder="연도"
+              inputMode="numeric"
+              className="w-14 flex-none rounded-sm border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
+            />
+          </div>
           <textarea
             ref={descriptionRef}
             value={description}

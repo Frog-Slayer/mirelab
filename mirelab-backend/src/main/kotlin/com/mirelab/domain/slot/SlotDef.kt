@@ -33,7 +33,8 @@ class SlotDef(
 
     var name: String,
 
-    // H2 가 네이티브 enum DDL 문법을 못 읽어서, varchar 로 저장하도록 강제한다.
+    // PostgreSQL 네이티브 enum 타입은 값이 늘어날 때마다 마이그레이션이 필요해 번거로우니,
+    // varchar 로 저장하도록 강제한다(테스트에서 쓰는 H2도 이 방식이 호환된다).
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false)

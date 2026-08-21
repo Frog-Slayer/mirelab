@@ -22,7 +22,6 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-h2console")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
@@ -34,9 +33,11 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("tools.jackson.module:jackson-module-kotlin")
     compileOnly("org.projectlombok:lombok")
-    runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.projectlombok:lombok")
+    // 운영/개발 런타임은 Postgres 컨테이너를 쓰지만, 테스트는 Docker 없이도 돌아가야
+    // 하니 가벼운 임베디드 H2로만 남겨둔다 (src/test/resources/application.properties).
+    testRuntimeOnly("com.h2database:h2")
     testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     testImplementation("org.springframework.boot:spring-boot-starter-jdbc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
@@ -62,14 +63,7 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-
-    // 테스트는 실제 비밀값 없이 스프링 컨텍스트만 뜨면 된다. src/test/resources 에
-    // application.properties 를 두면 메인 것을 가려버려서(classpath 에서 이름당 하나만 잡힌다)
-    // 나머지 설정이 통째로 사라진다 — 그래서 환경변수로만 덮는다.
-    environment("MIRELAB_JWT_SECRET", "test-only-secret-at-least-32-bytes-long!!")
-    environment("MIRELAB_INTERNAL_SECRET", "test-only-internal-secret")
-    environment("GOOGLE_CLIENT_ID", "test-client-id")
-    environment("GOOGLE_CLIENT_SECRET", "test-client-secret")
+    // 테스트용 설정값은 src/test/resources/application.properties 에 모아둔다 (그 파일 머리말 참고)
 }
 
 // 로컬 실행(./gradlew bootRun)에서만 dev 프로필을 명시적으로 켠다 — DevDataSeeder 는
