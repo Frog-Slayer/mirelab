@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import BookLookupField from '@/components/BookLookupField'
 import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
+import { parseYearFromPubDate } from '@/lib/bookApi'
 import type { WorkStatus } from '@/types'
 import { WorkKind, WorkStatus as WorkStatusValues } from '@/types'
 
@@ -11,6 +12,7 @@ export default function ManageDialog({
   author,
   description,
   coverUrl,
+  year,
   status,
   onSaveInfo,
   onChangeStatus,
@@ -22,12 +24,14 @@ export default function ManageDialog({
   author: string
   description: string
   coverUrl: string
+  year: number
   status: WorkStatus
   onSaveInfo: (info: {
     title: string
     author: string
     description?: string
     coverUrl?: string
+    year?: number
   }) => void
   onChangeStatus: (next: WorkStatus) => void
   onDelete: () => void
@@ -38,6 +42,7 @@ export default function ManageDialog({
   const [draftAuthor, setDraftAuthor] = useState(author)
   const [draftDescription, setDraftDescription] = useState(description)
   const [draftCoverUrl, setDraftCoverUrl] = useState(coverUrl)
+  const [draftYear, setDraftYear] = useState<number | undefined>(year)
   const [next, setNext] = useState<WorkStatus>(status)
   const [confirmText, setConfirmText] = useState('')
   const requiredPhrase = `${title} 절대 안 읽을 거임!!`
@@ -78,6 +83,8 @@ export default function ManageDialog({
             onTitleChange={setDraftTitle}
             author={draftAuthor}
             onAuthorChange={setDraftAuthor}
+            year={draftYear}
+            onYearChange={setDraftYear}
             description={draftDescription}
             onDescriptionChange={setDraftDescription}
             coverUrl={draftCoverUrl}
@@ -93,6 +100,8 @@ export default function ManageDialog({
                 setDraftAuthor(book.author)
                 setDraftCoverUrl(book.cover)
                 setDraftDescription(book.description)
+                const pickedYear = parseYearFromPubDate(book.pubDate)
+                if (pickedYear) setDraftYear(pickedYear)
               }}
             />
           )}
@@ -105,6 +114,8 @@ export default function ManageDialog({
                 author: draftAuthor.trim(),
                 description: draftDescription || undefined,
                 coverUrl: draftCoverUrl || undefined,
+                // 연도 입력을 지운 채로 저장하면 원래 값을 유지한다 — 값 자체가 없어지면 안 된다
+                year: draftYear ?? year,
               })
               ref.current?.close()
             }}

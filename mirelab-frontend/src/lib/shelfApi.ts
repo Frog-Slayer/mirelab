@@ -77,6 +77,7 @@ export function addPersonalWork(input: {
   author: string
   coverUrl?: string
   description?: string
+  year?: number
 }): Promise<Work> {
   return api.post(
     '/me/shelf',
@@ -86,6 +87,7 @@ export function addPersonalWork(input: {
       author: input.author,
       coverUrl: input.coverUrl,
       description: input.description,
+      year: input.year,
     },
     { headers: { 'X-User-Id': input.ownerId } },
   )

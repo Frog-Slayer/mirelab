@@ -344,7 +344,7 @@ Vite 8 · React 19 · TypeScript · React Router · TanStack Query · Tailwind v
 
 ### 백엔드 스택
 
-Kotlin 2.3 · Spring Boot 4.1 · JPA · Postgres (개발 중 H2)
+Kotlin 2.3 · Spring Boot 4.1 · JPA · Postgres (dev/prod 공통, Docker Compose로 띄운다 — 테스트만 H2)
 
 ---
 
