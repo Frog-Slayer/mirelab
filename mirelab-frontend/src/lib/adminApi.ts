@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
-import type { AccessRequest, AccessRequestStatus, AdminUser } from '@/types'
+import type { AccessRequest, AccessRequestStatus, AdminUser, Study } from '@/types'
+import { toStudy, type StudyResponse } from '@/lib/studyApi'
 
 /** 대기부터 가입 완료까지 전체 가입 신청 이력 */
 export function getAccessRequests(): Promise<AccessRequest[]> {
@@ -8,6 +9,14 @@ export function getAccessRequests(): Promise<AccessRequest[]> {
 
 export function getMembers(): Promise<AdminUser[]> {
   return api.get('/admin/users')
+}
+
+export async function getStudies(): Promise<Study[]> {
+  return (await api.get<StudyResponse[]>('/admin/studies')).map(toStudy)
+}
+
+export function replaceUserStudies(userId: string, studyIds: string[]): Promise<void> {
+  return api.put(`/admin/users/${userId}/studies`, { studyIds })
 }
 
 /** 승인 뒤 이름·색은 신청자가 다음 로그인에서 직접 정한다 */

@@ -130,7 +130,7 @@ export default function RootLayout() {
       </footer>
 
       {/* 스터디 안 어느 화면에서든 다음 모임으로 바로 들어가는 플로팅 카드 */}
-      <ThisSessionBanner />
+      <ThisSessionBanner study={current} />
     </div>
   )
 }

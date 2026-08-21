@@ -1,5 +1,6 @@
 package com.mirelab.application.work
 
+import com.mirelab.application.study.StudyMembershipGuard
 import com.mirelab.auth.AuthPrincipal
 import java.util.UUID
 import org.springframework.http.ResponseEntity
@@ -13,30 +14,49 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-class WorkBlockController(private val workBlockService: WorkBlockService) {
+class WorkBlockController(
+    private val workBlockService: WorkBlockService,
+    private val membershipGuard: StudyMembershipGuard,
+) {
 
     @GetMapping("/api/works/{workId}/blocks")
-    fun list(@PathVariable workId: UUID): List<WorkBlockResponse> = workBlockService.list(workId)
+    fun list(
+        @PathVariable workId: UUID,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+    ): List<WorkBlockResponse> {
+        membershipGuard.requireWork(workId, principal.userId)
+        return workBlockService.list(workId)
+    }
 
     @PostMapping("/api/works/{workId}/blocks")
     fun create(
         @PathVariable workId: UUID,
         @AuthenticationPrincipal principal: AuthPrincipal,
         @RequestBody body: CreateWorkBlockRequest,
-    ): ResponseEntity<WorkBlockResponse> =
-        workBlockService.create(workId, principal.userId, body)?.let { ResponseEntity.ok(it) }
+    ): ResponseEntity<WorkBlockResponse> {
+        membershipGuard.requireWork(workId, principal.userId)
+        return workBlockService.create(workId, principal.userId, body)?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
+    }
 
     @PatchMapping("/api/blocks/{blockId}")
     fun updateTitle(
         @PathVariable blockId: UUID,
+        @AuthenticationPrincipal principal: AuthPrincipal,
         @RequestBody body: UpdateWorkBlockTitleRequest,
-    ): ResponseEntity<Void> =
-        if (workBlockService.updateTitle(blockId, body.title)) ResponseEntity.noContent().build()
+    ): ResponseEntity<Void> {
+        membershipGuard.requireBlock(blockId, principal.userId)
+        return if (workBlockService.updateTitle(blockId, body.title)) ResponseEntity.noContent().build()
         else ResponseEntity.notFound().build()
+    }
 
     @DeleteMapping("/api/blocks/{blockId}")
-    fun remove(@PathVariable blockId: UUID): ResponseEntity<Void> =
-        if (workBlockService.remove(blockId)) ResponseEntity.noContent().build()
+    fun remove(
+        @PathVariable blockId: UUID,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+    ): ResponseEntity<Void> {
+        membershipGuard.requireBlock(blockId, principal.userId)
+        return if (workBlockService.remove(blockId)) ResponseEntity.noContent().build()
         else ResponseEntity.notFound().build()
+    }
 }

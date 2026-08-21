@@ -9,18 +9,22 @@ import com.mirelab.infra.session.SessionRepository
 import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
 import com.mirelab.infra.study.StudyRepository
+import com.mirelab.infra.study.StudyMemberRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkBlockRepository
 import com.mirelab.infra.work.WorkRepository
 import java.time.Year
 import java.util.UUID
 import org.springframework.stereotype.Service
+import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class WorkService(
     private val workRepository: WorkRepository,
     private val studyRepository: StudyRepository,
+    private val studyMemberRepository: StudyMemberRepository,
     private val userRepository: UserRepository,
     private val sessionRepository: SessionRepository,
     private val slotDefRepository: SlotDefRepository,
@@ -57,6 +61,10 @@ class WorkService(
     fun create(slug: String, addedById: UUID, input: CreateWorkRequest): WorkResponse? {
         val study = studyRepository.findBySlug(slug) ?: return null
         val addedBy = userRepository.findById(addedById).orElse(null)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인 사용자를 찾을 수 없습니다")
+        if (!studyMemberRepository.existsByStudyIdAndUserId(requireNotNull(study.id), addedById)) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "이 스터디의 멤버만 책을 추가할 수 있습니다")
+        }
         val work = Work(
             study = study,
             kind = input.kind,

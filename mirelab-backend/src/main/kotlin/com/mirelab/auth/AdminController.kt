@@ -2,6 +2,8 @@ package com.mirelab.auth
 
 import com.mirelab.application.user.AdminUserResponse
 import com.mirelab.application.user.toAdminResponse
+import com.mirelab.application.study.StudyResponse
+import com.mirelab.application.study.StudyService
 import com.mirelab.domain.auth.AccessRequest
 import com.mirelab.domain.auth.AccessRequestStatus
 import com.mirelab.infra.user.UserRepository
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.PutMapping
 
 data class AccessRequestResponse(
     val id: UUID,
@@ -29,6 +32,7 @@ fun AccessRequest.toResponse() =
     AccessRequestResponse(id!!, email, googleName, pictureUrl, requestedAt, status)
 
 data class ChangeAccessRequestStatus(val status: AccessRequestStatus)
+data class ReplaceUserStudies(val studyIds: Set<UUID>)
 
 /** 접근 제어는 SecurityConfig 의 `/api/admin` 하위 매처 → hasRole("ADMIN") 이 담당한다 */
 @RestController
@@ -36,6 +40,7 @@ data class ChangeAccessRequestStatus(val status: AccessRequestStatus)
 class AdminController(
     private val accessRequestService: AccessRequestService,
     private val userRepository: UserRepository,
+    private val studyService: StudyService,
 ) {
 
     @GetMapping("/access-requests")
@@ -44,7 +49,20 @@ class AdminController(
 
     @GetMapping("/users")
     fun users(): List<AdminUserResponse> =
-        userRepository.findAll().map { it.toAdminResponse() }
+        userRepository.findAll().map { user ->
+            user.toAdminResponse(studyService.studyIdsForUser(requireNotNull(user.id)))
+        }
+
+    @GetMapping("/studies")
+    fun studies(): List<StudyResponse> = studyService.findAll()
+
+    @PutMapping("/users/{userId}/studies")
+    fun replaceUserStudies(
+        @PathVariable userId: UUID,
+        @RequestBody body: ReplaceUserStudies,
+    ): ResponseEntity<Void> =
+        if (studyService.replaceMemberships(userId, body.studyIds)) ResponseEntity.noContent().build()
+        else ResponseEntity.notFound().build()
 
     @PostMapping("/access-requests/{requestId}/approve")
     fun approve(

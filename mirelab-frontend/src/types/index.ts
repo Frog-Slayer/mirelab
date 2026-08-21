@@ -74,6 +74,7 @@ export interface AccessRequest {
 /** admin 화면에서만 쓰는 확장 — 로그인 계정이 붙었는지 보려면 이메일이 필요하다 */
 export interface AdminUser extends User {
   email: string | null
+  studyIds: string[]
 }
 
 export interface Study {

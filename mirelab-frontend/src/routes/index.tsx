@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router'
+import { createBrowserRouter } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
 import RequireAuth, { RequireAdmin } from '@/components/RequireAuth'
 import SchedulePage from '@/pages/SchedulePage'
@@ -11,6 +11,7 @@ import LoginPage from '@/pages/LoginPage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import SignupPage from '@/pages/SignupPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import RequireStudyMember, { StudyHomeRedirect } from '@/components/RequireStudyMember'
 
 /** 스터디 slug 로 쓸 수 없는 이름 — 전역 경로와 부딪힌다 */
 export const RESERVED_SLUGS = ['diary', 'settings', 'login', 'signup', 'api', 'admin', 'new']
@@ -28,7 +29,7 @@ export const router = createBrowserRouter([
         path: '/',
         element: <RootLayout />,
         children: [
-          { index: true, element: <Navigate to="/reading" replace /> },
+          { index: true, element: <StudyHomeRedirect /> },
           // 전역 관리 화면. RESERVED_SLUGS 에 'admin' 이 있어 스터디 slug 와 안 부딪힌다.
           { path: 'admin/members', element: <RequireAdmin />, children: [
             { index: true, element: <AdminMembersPage /> },
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
             // 동적보다 먼저 매칭하므로 전역 경로를 나중에 추가해도 안전하지만,
             // slug 를 사용자가 정하게 되면 RESERVED_SLUGS 로 막아야 한다.
             path: ':studySlug',
+            element: <RequireStudyMember />,
             children: [
               { index: true, element: <HallOfFamePage /> },
               { path: 'sessions', element: <SchedulePage /> },

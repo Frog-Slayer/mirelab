@@ -10,4 +10,6 @@ interface StudyMemberRepository : JpaRepository<StudyMember, UUID> {
 
     /** 그 스터디에 속한 사람들 */
     fun findByStudyId(studyId: UUID): List<StudyMember>
+
+    fun existsByStudyIdAndUserId(studyId: UUID, userId: UUID): Boolean
 }

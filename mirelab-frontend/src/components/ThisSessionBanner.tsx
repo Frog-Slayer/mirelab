@@ -3,15 +3,14 @@ import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import { getCurrentSession } from '@/lib/scheduleApi'
-import { useStudy } from '@/hooks/useStudy'
 import { formatDday, formatMeetAt } from '@/lib/format'
+import type { Study } from '@/types'
 
 /**
  * 지금 진행 중인 모임으로 들어가는 입구. 닫으면 작은 알약 버튼으로 접힌다 —
  * 다시 펴는 법을 안 남기면 아예 못 찾는다. 다른 모임이 다음 차례가 되면 자동으로 다시 펼쳐진다.
  */
-export default function ThisSessionBanner() {
-  const { study } = useStudy()
+export default function ThisSessionBanner({ study }: { study: Study | null }) {
   const [closedId, setClosedId] = useState<string | null>(null)
 
   const { data: current } = useQuery({

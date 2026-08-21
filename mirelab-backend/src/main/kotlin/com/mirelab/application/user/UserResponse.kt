@@ -20,6 +20,8 @@ data class AdminUserResponse(
     val color: String,
     val role: Role,
     val email: String?,
+    val studyIds: List<UUID>,
 )
 
-fun User.toAdminResponse() = AdminUserResponse(id!!, name, color, role, email)
+fun User.toAdminResponse(studyIds: List<UUID> = emptyList()) =
+    AdminUserResponse(id!!, name, color, role, email, studyIds)

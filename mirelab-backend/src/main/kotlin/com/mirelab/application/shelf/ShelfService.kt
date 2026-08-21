@@ -19,8 +19,10 @@ import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkRepository
 import java.time.Year
 import java.util.UUID
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 /**
  * 내 서재 — 혼자 읽은 책과 스터디 작품을 합친 개인 관점. 스터디에서 온 책은 그
@@ -86,6 +88,14 @@ class ShelfService(
     @Transactional
     fun saveValue(userId: UUID, workId: UUID, input: ShelfSlotValueInput): SlotValueResponse {
         val work = workRepository.findById(workId).orElseThrow()
+        val myStudyIds = myStudyIds(userId)
+        if (!workAccessChecker.canAccess(work, userId, myStudyIds)) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근할 수 없는 작품입니다")
+        }
+        val allowedSlotIds = slotDefsFor(work, myStudyIds).mapNotNull { it.id }.toSet()
+        if (input.slotDefId !in allowedSlotIds) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이 작품에서 사용할 수 없는 기록 항목입니다")
+        }
         val context = contextFor(work)
         val existing = slotValueRepository.findByWorkIdAndSlotDefIdAndUserIdAndContext(
             workId, input.slotDefId, userId, context,

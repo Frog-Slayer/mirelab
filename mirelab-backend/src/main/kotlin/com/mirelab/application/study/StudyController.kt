@@ -11,17 +11,31 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/studies")
-class StudyController(private val studyService: StudyService) {
+class StudyController(
+    private val studyService: StudyService,
+    private val membershipGuard: StudyMembershipGuard,
+) {
 
     @GetMapping("/mine")
     fun mine(@AuthenticationPrincipal principal: AuthPrincipal): List<StudyResponse> =
         studyService.findMine(principal.userId)
 
     @GetMapping("/{slug}")
-    fun bySlug(@PathVariable slug: String): ResponseEntity<StudyResponse> =
-        studyService.findBySlug(slug)?.let { ResponseEntity.ok(it) }
+    fun bySlug(
+        @PathVariable slug: String,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+    ): ResponseEntity<StudyResponse> {
+        membershipGuard.requireStudy(slug, principal.userId)
+        return studyService.findBySlug(slug)?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
+    }
 
     @GetMapping("/{slug}/members")
-    fun members(@PathVariable slug: String): List<UserResponse> = studyService.listMembers(slug)
+    fun members(
+        @PathVariable slug: String,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+    ): List<UserResponse> {
+        membershipGuard.requireStudy(slug, principal.userId)
+        return studyService.listMembers(slug)
+    }
 }
