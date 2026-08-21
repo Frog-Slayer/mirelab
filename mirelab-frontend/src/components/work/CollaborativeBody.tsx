@@ -79,5 +79,5 @@ function Editor({ conn, user }: { conn: YjsConnection; user: User }) {
     [conn],
   )
 
-  return <BlockNoteView editor={editor} />
+  return <BlockNoteView editor={editor} theme="light" className="work-block-editor" />
 }

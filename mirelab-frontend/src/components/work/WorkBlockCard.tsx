@@ -27,11 +27,11 @@ export default function WorkBlockCard({
   const [title, setTitle] = useState(block.title)
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4">
-      <div className="flex items-start justify-between gap-4">
+    <article className="flex flex-col rounded-xl border border-neutral-200 bg-white px-5 py-5">
+      <div className="flex items-start justify-between gap-4 px-4 sm:px-[54px]">
         {editingTitle ? (
           <form
-            className="flex flex-1 items-center gap-2"
+            className="flex min-w-0 flex-1 items-start gap-2"
             onSubmit={(e) => {
               e.preventDefault()
               if (!title.trim()) return
@@ -43,7 +43,7 @@ export default function WorkBlockCard({
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="flex-1 rounded-sm border border-neutral-200 px-2 py-1 text-sm font-semibold outline-none focus:border-neutral-400"
+              className="work-block-h1 min-w-0 flex-1 border-b border-transparent bg-transparent px-0 pb-1 outline-none placeholder:text-neutral-300 focus:border-neutral-300"
             />
             <button type="submit" className="app-button app-button-primary">
               저장
@@ -61,7 +61,9 @@ export default function WorkBlockCard({
           </form>
         ) : (
           <>
-            <h3 className="text-sm font-semibold">{block.title}</h3>
+            <h2 className="work-block-h1">
+              {block.title}
+            </h2>
             {canEdit &&
               (confirming ? (
                 <div className="flex flex-none items-center gap-2 text-xs">
@@ -99,16 +101,16 @@ export default function WorkBlockCard({
         )}
       </div>
 
-      <div className="rounded-md border border-neutral-100">
+      <div className="mt-3 min-h-24">
         <CollaborativeBody blockId={block.id} user={currentUser} />
       </div>
 
-      <div className="flex items-center gap-1.5 text-xs text-neutral-400">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-neutral-100 px-4 pt-3 text-xs text-neutral-400 sm:px-[54px]">
         {author && <span className={`size-1.5 rounded-full ${author.color}`} aria-hidden />}
         <span>{author?.name ?? '알 수 없음'}</span>
         <span aria-hidden>·</span>
         <span>{formatDate(block.createdAt)}</span>
       </div>
-    </div>
+    </article>
   )
 }
