@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import UserSwitcher from '@/components/UserSwitcher'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
@@ -9,7 +8,7 @@ import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
 export default function RootLayout() {
-  const { user } = useCurrentUser()
+  const { user, isAdmin, logout } = useCurrentUser()
   const { studySlug } = useParams()
   const navigate = useNavigate()
   const [recordDrawerOpen, setRecordDrawerOpen] = useState(false)
@@ -32,7 +31,7 @@ export default function RootLayout() {
 
   const { data: studies = [] } = useQuery({
     queryKey: ['myStudies', user?.id],
-    queryFn: () => getMyStudies(user!.id),
+    queryFn: () => getMyStudies(),
     enabled: !!user,
   })
 
@@ -81,7 +80,29 @@ export default function RootLayout() {
           )}
 
           <div className="ml-auto flex items-center gap-4">
-            <UserSwitcher />
+            {isAdmin && (
+              <NavLink
+                to="/admin/members"
+                className={({ isActive }) =>
+                  `text-sm ${isActive ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-900'}`
+                }
+              >
+                멤버 관리
+              </NavLink>
+            )}
+            {user && (
+              <span className="flex items-center gap-2 text-sm text-neutral-700">
+                <span className={`size-2 rounded-full ${user.color}`} aria-hidden />
+                {user.name}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-900"
+            >
+              로그아웃
+            </button>
           </div>
         </div>
 
@@ -105,9 +126,7 @@ export default function RootLayout() {
       </div>
 
       <footer className="border-t border-neutral-200 px-6 py-5">
-        <p className="mx-auto max-w-6xl text-xs text-neutral-400">
-          목 데이터로 동작합니다. 새로고침하면 초기 상태로 돌아갑니다.
-        </p>
+        <p className="mx-auto max-w-6xl text-xs text-neutral-400">mirelab</p>
       </footer>
 
       {/* 스터디 안 어느 화면에서든 다음 모임으로 바로 들어가는 플로팅 카드 */}

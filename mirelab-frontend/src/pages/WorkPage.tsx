@@ -71,7 +71,7 @@ export default function WorkPage() {
   })
   const { data: workSlots } = useQuery({
     queryKey: ['workSlots', workId, user?.id],
-    queryFn: () => getWorkSlots(workId, user!.id),
+    queryFn: () => getWorkSlots(workId),
     enabled: !!user,
   })
   const blockApiReady = isWorkBlockApiReady(workId)
@@ -93,7 +93,7 @@ export default function WorkPage() {
     onSuccess: refresh,
   })
   const editReason = useMutation({
-    mutationFn: (reason: string) => updateWorkReason({ workId, userId: user!.id, reason }),
+    mutationFn: (reason: string) => updateWorkReason({ workId, reason }),
     onSuccess: refresh,
   })
   const editInfo = useMutation({
@@ -169,7 +169,7 @@ export default function WorkPage() {
         otherSlots={otherPersonalSlots}
         myValueOf={myValueOf}
         onSaveSlot={(slotDefId, value) =>
-          save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
+          save.mutate({ targetId: work.id, slotDefId, value, draft: false })
         }
         onToggle={() => setDrawerOpen((v) => !v)}
       />
@@ -331,7 +331,7 @@ export default function WorkPage() {
               ratingValue={myValueOf(ratingSlot.id)?.value}
               blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
               onSaveSlot={(slotDefId, value) =>
-                save.mutate({ targetId: work.id, slotDefId, userId: user.id, value, draft: false })
+                save.mutate({ targetId: work.id, slotDefId, value, draft: false })
               }
               onClose={() => setRatingOpen(false)}
             />
@@ -386,7 +386,7 @@ export default function WorkPage() {
 
               {creatingBlock ? (
                 <BlockForm
-                  onSave={(title) => addBlock.mutate({ workId: work.id, authorId: user.id, title })}
+                  onSave={(title) => addBlock.mutate({ workId: work.id, title })}
                   onCancel={() => setCreatingBlock(false)}
                 />
               ) : (

@@ -2,13 +2,10 @@ package com.mirelab.auth
 
 import com.mirelab.application.user.UserResponse
 import com.mirelab.application.user.toResponse
-import com.mirelab.infra.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -23,7 +20,6 @@ data class AuthResult(
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(
-    private val userRepository: UserRepository,
     private val refreshTokenService: RefreshTokenService,
     private val jwtService: JwtService,
     private val authCookies: AuthCookies,
@@ -66,10 +62,4 @@ class AuthController(
 
         return ResponseEntity.noContent().build()
     }
-
-    @GetMapping("/me")
-    fun me(@AuthenticationPrincipal principal: AuthPrincipal): UserResponse =
-        userRepository.findById(principal.userId)
-            .map { it.toResponse() }
-            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "없는 사용자입니다") }
 }

@@ -32,7 +32,7 @@ export default function ShelfPage() {
 
   const { data: shelf } = useQuery({
     queryKey: ['shelf', user?.id],
-    queryFn: () => getShelf(user!.id),
+    queryFn: () => getShelf(),
     enabled: !!user,
   })
 
@@ -98,7 +98,7 @@ export default function ShelfPage() {
         <AddDialog
           onClose={() => setAdding(false)}
           onSubmit={(input) => {
-            create.mutate({ ...input, ownerId: user.id })
+            create.mutate(input)
             setAdding(false)
           }}
         />

@@ -12,7 +12,6 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository
-import org.springframework.security.web.header.writers.frameoptions.XFrameOptionsHeaderWriter
 import org.springframework.security.web.AuthenticationEntryPoint
 
 /**
@@ -41,11 +40,8 @@ class SecurityConfig(
             .httpBasic { it.disable() }
             .logout { it.disable() } // 로그아웃은 refresh 행까지 지워야 해서 AuthController 가 직접 한다
             .securityContext { it.securityContextRepository(RequestAttributeSecurityContextRepository()) }
-            .headers { headers ->
-                headers.addHeaderWriter(
-                    XFrameOptionsHeaderWriter(XFrameOptionsHeaderWriter.XFrameOptionsMode.SAMEORIGIN),
-                )
-            }
+            // h2-console 이 프레임을 쓴다 — 기본값 DENY 를 덮어야 콘솔이 열린다
+            .headers { headers -> headers.frameOptions { it.sameOrigin() } }
             .authorizeHttpRequests { authorize ->
                 authorize
                     .requestMatchers(*PUBLIC_PATHS).permitAll()

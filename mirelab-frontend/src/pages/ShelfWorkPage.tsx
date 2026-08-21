@@ -27,7 +27,7 @@ export default function ShelfWorkPage() {
 
   const { data, isPending } = useQuery({
     queryKey: ['shelfEntry', user?.id, workId],
-    queryFn: () => getShelfEntry(user!.id, workId),
+    queryFn: () => getShelfEntry(workId),
     enabled: !!user,
   })
 
@@ -106,7 +106,6 @@ export default function ShelfWorkPage() {
                     save.mutate({
                       targetId,
                       slotDefId: ratingSlot.id,
-                      userId: user.id,
                       value,
                       draft: false,
                     })
@@ -121,7 +120,6 @@ export default function ShelfWorkPage() {
                     save.mutate({
                       targetId,
                       slotDefId: blurbSlot.id,
-                      userId: user.id,
                       value,
                       draft: false,
                     })
@@ -151,7 +149,6 @@ export default function ShelfWorkPage() {
                     save.mutate({
                       targetId,
                       slotDefId: summarySlot.id,
-                      userId: user.id,
                       value,
                       draft: false,
                     })
@@ -175,7 +172,6 @@ export default function ShelfWorkPage() {
                     save.mutate({
                       targetId,
                       slotDefId: slot.id,
-                      userId: user.id,
                       value,
                       draft: false,
                     })

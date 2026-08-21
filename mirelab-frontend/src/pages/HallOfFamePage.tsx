@@ -147,7 +147,7 @@ export default function HallOfFamePage() {
             initialKind={filter === 'ALL' ? undefined : filter}
             onClose={() => setAdding(false)}
             onSubmit={(input) => {
-              create.mutate({ ...input, slug: study.slug, addedBy: user.id })
+              create.mutate({ ...input, slug: study.slug })
               setAdding(false)
             }}
           />

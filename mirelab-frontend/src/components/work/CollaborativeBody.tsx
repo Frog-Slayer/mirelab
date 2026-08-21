@@ -5,6 +5,7 @@ import { useCreateBlockNote } from '@blocknote/react'
 import { withCollaboration } from '@blocknote/core/yjs'
 import { BlockNoteView } from '@blocknote/shadcn'
 import '@blocknote/shadcn/style.css'
+import { getAccessToken, onAccessTokenChange } from '@/lib/api'
 import type { User } from '@/types'
 
 // /api 와 같은 이유로 same-origin 기본값을 쓴다 — "localhost"를 박아두면 tailscale 같은
@@ -22,6 +23,24 @@ const COLOR_HEX: Record<string, string> = {
   'bg-rose-500': '#f43f5e',
 }
 
+/**
+ * 실시간 서버에 넘기는 접속 파라미터 — 릴레이가 이 토큰으로 백엔드에 "이 사람이 이 방에
+ * 들어와도 되나" 를 물어본다.
+ *
+ * 객체 하나를 공유하고 내용만 갈아끼우는 이유: y-websocket 은 재접속할 때마다
+ * `provider.params` 를 다시 읽어 URL 을 만든다. 그래서 토큰이 갱신된 뒤 끊겼다 붙으면
+ * 새 토큰이 저절로 실린다 — provider 를 다시 만들 필요가 없다.
+ */
+const connectionParams: Record<string, string> = {}
+
+function syncToken(token: string | null) {
+  if (token) connectionParams.token = token
+  else delete connectionParams.token
+}
+
+syncToken(getAccessToken())
+onAccessTokenChange(syncToken)
+
 interface YjsConnection {
   doc: Y.Doc
   provider: WebsocketProvider
@@ -36,7 +55,7 @@ export default function CollaborativeBody({ blockId, user }: { blockId: string; 
 
   useEffect(() => {
     const doc = new Y.Doc()
-    const provider = new WebsocketProvider(REALTIME_URL, blockId, doc)
+    const provider = new WebsocketProvider(REALTIME_URL, blockId, doc, { params: connectionParams })
     setConn({ doc, provider })
     return () => {
       provider.destroy()

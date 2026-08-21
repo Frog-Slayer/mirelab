@@ -46,6 +46,33 @@ export interface User {
   id: string
   name: string
   color: string
+  role: Role
+}
+
+/** admin 은 가입 신청을 승인하는 사람. 화면에서는 "멤버 관리" 진입 여부만 갈린다 */
+export const Role = { ADMIN: 'ADMIN', MEMBER: 'MEMBER' } as const
+export type Role = (typeof Role)[keyof typeof Role]
+
+export const AccessRequestStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const
+export type AccessRequestStatus = (typeof AccessRequestStatus)[keyof typeof AccessRequestStatus]
+
+/** 등록 안 된 구글 계정의 로그인 시도 — admin 이 승인하면 그때 User 가 만들어진다 */
+export interface AccessRequest {
+  id: string
+  email: string
+  googleName: string
+  pictureUrl: string | null
+  requestedAt: string
+  status: AccessRequestStatus
+}
+
+/** admin 화면에서만 쓰는 확장 — 로그인 계정이 붙었는지 보려면 이메일이 필요하다 */
+export interface AdminUser extends User {
+  email: string | null
 }
 
 export interface Study {

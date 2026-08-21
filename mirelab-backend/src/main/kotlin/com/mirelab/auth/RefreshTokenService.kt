@@ -3,6 +3,7 @@ package com.mirelab.auth
 import com.mirelab.domain.auth.RefreshToken
 import com.mirelab.domain.user.User
 import com.mirelab.infra.auth.RefreshTokenRepository
+import com.mirelab.infra.user.UserRepository
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Duration
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class RefreshTokenService(
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val userRepository: UserRepository,
     @Value("\${mirelab.refresh-token-ttl}") private val refreshTokenTtl: Duration,
 ) {
     private val random = SecureRandom()
@@ -40,7 +42,12 @@ class RefreshTokenService(
 
         val existing = refreshTokenRepository.findByUserId(userId)
         if (existing == null) {
-            refreshTokenRepository.save(RefreshToken(user = user, tokenHash = hash(raw), expiresAt = expiresAt))
+            // 넘어온 user 는 다른 트랜잭션에서 온 detached 인스턴스일 수 있다 —
+            // FK 만 쓰면 되니 이 트랜잭션이 관리하는 참조로 바꿔서 넣는다.
+            val managed = userRepository.getReferenceById(userId)
+            refreshTokenRepository.save(
+                RefreshToken(user = managed, tokenHash = hash(raw), expiresAt = expiresAt),
+            )
         } else {
             existing.rotate(hash(raw), expiresAt)
         }
