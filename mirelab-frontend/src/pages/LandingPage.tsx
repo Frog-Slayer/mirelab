@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { useCurrentUser } from '@/hooks/currentUser'
 
 const FEATURES = [
@@ -21,8 +21,11 @@ const FEATURES = [
 
 export default function LandingPage() {
   const { status } = useCurrentUser()
-  const signedIn = status === 'authenticated'
-  const destination = signedIn ? '/app' : '/login'
+
+  if (status === 'loading') return null
+  if (status === 'authenticated') return <Navigate to="/app" replace />
+
+  const destination = '/login'
 
   return (
     <div className="min-h-full overflow-hidden bg-[#f4f1e9] text-[#18251d]">
@@ -38,7 +41,7 @@ export default function LandingPage() {
           to={destination}
           className="rounded-full border border-emerald-950/15 bg-white/55 px-4 py-2 text-sm font-medium backdrop-blur transition-colors hover:bg-white"
         >
-          {signedIn ? '스터디로 이동' : '로그인'}
+          로그인
         </Link>
       </header>
 
@@ -63,14 +66,12 @@ export default function LandingPage() {
                 to={destination}
                 className="inline-flex min-h-12 items-center gap-3 rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(6,78,59,0.2)] transition-transform hover:-translate-y-0.5"
               >
-                {signedIn ? '내 스터디로 가기' : '구글로 시작하기'}
+                구글로 시작하기
                 <span aria-hidden>→</span>
               </Link>
-              {!signedIn && (
-                <p className="text-xs leading-5 text-[#778078]">
-                  첫 로그인 후 가입 신청 · 관리자 승인으로 참여합니다
-                </p>
-              )}
+              <p className="text-xs leading-5 text-[#778078]">
+                첫 로그인 후 가입 신청 · 관리자 승인으로 참여합니다
+              </p>
             </div>
           </div>
 
