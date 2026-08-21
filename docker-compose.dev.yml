@@ -36,6 +36,7 @@ services:
       MIRELAB_PUBLIC_BASE_URL: ${MIRELAB_PUBLIC_BASE_URL:-http://localhost:5173}
       MIRELAB_COOKIE_SECURE: ${MIRELAB_COOKIE_SECURE:-false}
       MIRELAB_ADMIN_EMAIL: ${MIRELAB_ADMIN_EMAIL:-pj0642@gmail.com}
+      MIRELAB_ADMIN_NAME: ${MIRELAB_ADMIN_NAME:-영서}
 
       # dev 는 값이 없어도 스택이 뜨는 게 우선이라 더미 기본값을 둔다(HS256 최소 32바이트).
       MIRELAB_JWT_SECRET: ${MIRELAB_JWT_SECRET:-dev-only-jwt-secret-at-least-32-bytes!!}

@@ -7,6 +7,7 @@ import java.util.UUID
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
+import org.springframework.core.annotation.Order
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -26,6 +27,9 @@ import tools.jackson.databind.ObjectMapper
  * "users 비어있으면 시드"만으로는 새로 프로비저닝한 운영 Postgres 도 구분을 못 하므로,
  * dev 프로필에서만 등록되게 막는다(기본 활성 프로필은 application.properties 에서 dev).
  */
+// AdminBootstrap 보다 먼저 돌아야 한다 — 그쪽이 먼저 사용자를 만들면 아래 "users 가 비었나"
+// 가드에 걸려서 데모 데이터가 통째로 안 들어간다.
+@Order(DEV_SEEDER_ORDER)
 @Profile("dev")
 @Component
 class DevDataSeeder(
@@ -397,3 +401,6 @@ class DevDataSeeder(
         }
     }
 }
+
+/** AdminBootstrap(=[ADMIN_BOOTSTRAP_ORDER]) 보다 앞 */
+const val DEV_SEEDER_ORDER = 1
