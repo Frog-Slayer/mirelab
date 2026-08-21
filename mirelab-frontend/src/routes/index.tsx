@@ -3,6 +3,7 @@ import RootLayout from '@/components/layout/RootLayout'
 import RequireAuth, { RequireAdmin } from '@/components/RequireAuth'
 import SchedulePage from '@/pages/SchedulePage'
 import HallOfFamePage from '@/pages/HallOfFamePage'
+import AllWorksPage from '@/pages/AllWorksPage'
 import WorkPage from '@/pages/WorkPage'
 import ShelfPage from '@/pages/ShelfPage'
 import ShelfWorkPage from '@/pages/ShelfWorkPage'
@@ -32,9 +33,11 @@ export const router = createBrowserRouter([
         children: [
           { path: 'app', element: <StudyHomeRedirect /> },
           // 전역 관리 화면. RESERVED_SLUGS 에 'admin' 이 있어 스터디 slug 와 안 부딪힌다.
-          { path: 'admin/members', element: <RequireAdmin />, children: [
-            { index: true, element: <AdminMembersPage /> },
-          ] },
+          {
+            path: 'admin/members',
+            element: <RequireAdmin />,
+            children: [{ index: true, element: <AdminMembersPage /> }],
+          },
           {
             // 스터디 slug 가 최상위를 차지한다. React Router 는 정적 세그먼트를
             // 동적보다 먼저 매칭하므로 전역 경로를 나중에 추가해도 안전하지만,
@@ -43,6 +46,7 @@ export const router = createBrowserRouter([
             element: <RequireStudyMember />,
             children: [
               { index: true, element: <HallOfFamePage /> },
+              { path: 'books', element: <AllWorksPage /> },
               { path: 'sessions', element: <SchedulePage /> },
               { path: 'books/:workId', element: <WorkPage /> },
               // 내 서재 — 스터디 안에 있지만 개인화된 저장 공간이라 개인 기준으로 보여준다.

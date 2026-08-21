@@ -4,11 +4,11 @@ import { WorkKind } from '@/types'
 
 interface Props {
   work: Pick<Work, 'title' | 'kind' | 'coverUrl'>
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
   className?: string
 }
 
-const widths = { sm: 'w-12', md: 'w-20', lg: 'w-full' }
+const widths = { xxs: 'w-6', xs: 'w-9', sm: 'w-12', md: 'w-20', lg: 'w-full' }
 
 /**
  * 알라딘이 공식적으로 주는 표지는 최대 200px(cover200)라 화질이 낮다. URL 경로의
@@ -45,11 +45,17 @@ export default function Cover({ work, size = 'md', className = '' }: Props) {
     <div
       className={`${widths[size]} aspect-2/3 flex-none overflow-hidden rounded-md border border-neutral-200 bg-neutral-100 ${className}`}
     >
-      <div className="flex h-full flex-col justify-between p-2">
-        <span className="text-xs font-medium text-neutral-400">
-          {work.kind === WorkKind.MOVIE ? '영화' : '책'}
-        </span>
-        {size !== 'sm' && (
+      <div
+        className={`flex h-full flex-col justify-between ${size === 'xxs' ? '' : size === 'xs' ? 'p-1' : 'p-2'}`}
+      >
+        {size !== 'xxs' && (
+          <span
+            className={`${size === 'xs' ? 'text-[9px]' : 'text-xs'} font-medium text-neutral-400`}
+          >
+            {work.kind === WorkKind.MOVIE ? '영화' : '책'}
+          </span>
+        )}
+        {size !== 'xxs' && size !== 'xs' && size !== 'sm' && (
           <span className="line-clamp-4 text-xs leading-tight font-medium text-neutral-500">
             {work.title}
           </span>
