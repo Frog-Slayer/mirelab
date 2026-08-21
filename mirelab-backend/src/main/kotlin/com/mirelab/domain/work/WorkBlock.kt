@@ -7,11 +7,12 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
-import jakarta.persistence.Lob
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 
 /**
  * 작품에 다 같이 남기는 자유 형식 기록. 게시판처럼 계속 쌓인다.
@@ -37,7 +38,9 @@ class WorkBlock(
 
     var title: String,
 
-    @Lob
+    // @Lob 을 쓰면 PostgreSQL에서 large object/OID 로 매핑돼버린다 — VARBINARY 로 지정해
+    // PostgreSQL은 bytea, 테스트에서 쓰는 H2는 평범한 바이너리 컬럼을 쓴다(SlotValue.value 와 같은 이유).
+    @JdbcTypeCode(SqlTypes.VARBINARY)
     var bodySnapshot: ByteArray? = null,
 
     val createdAt: Instant,
