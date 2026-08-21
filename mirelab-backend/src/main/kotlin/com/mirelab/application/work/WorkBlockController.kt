@@ -1,7 +1,9 @@
 package com.mirelab.application.work
 
+import com.mirelab.auth.AuthPrincipal
 import java.util.UUID
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -19,9 +21,11 @@ class WorkBlockController(private val workBlockService: WorkBlockService) {
     @PostMapping("/api/works/{workId}/blocks")
     fun create(
         @PathVariable workId: UUID,
+        @AuthenticationPrincipal principal: AuthPrincipal,
         @RequestBody body: CreateWorkBlockRequest,
     ): ResponseEntity<WorkBlockResponse> =
-        workBlockService.create(workId, body)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+        workBlockService.create(workId, principal.userId, body)?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
 
     @PatchMapping("/api/blocks/{blockId}")
     fun updateTitle(

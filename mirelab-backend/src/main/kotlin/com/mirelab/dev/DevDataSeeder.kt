@@ -5,6 +5,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
 import org.springframework.jdbc.core.JdbcTemplate
@@ -31,6 +32,8 @@ import tools.jackson.databind.ObjectMapper
 class DevDataSeeder(
     private val jdbcTemplate: JdbcTemplate,
     private val objectMapper: ObjectMapper,
+    /** admin 계정의 구글 이메일 — 이 값으로 로그인한 사람이 가입 신청을 승인한다 */
+    @Value("\${mirelab.admin-email}") private val adminEmail: String,
 ) : CommandLineRunner {
 
     // ─── 고정 id ────────────────────────────────────────────
@@ -94,7 +97,10 @@ class DevDataSeeder(
     }
 
     private fun seedUsersAndStudy() {
-        insertUser(Ids.YEONGSEO, "영서", "bg-emerald-500")
+        // 영서만 로그인 계정이 붙는다(admin). 나머지 셋은 데모 데이터의 주인일 뿐이라
+        // 이메일이 없다 — 이메일이 비어 있으면 어떤 구글 계정도 이 행으로 들어올 수 없다.
+        // 실제 멤버는 각자 로그인해서 가입 신청을 남기고, 영서가 승인할 때 새로 만들어진다.
+        insertUser(Ids.YEONGSEO, "영서", "bg-emerald-500", email = adminEmail, role = "ADMIN")
         insertUser(Ids.HONAM, "호남", "bg-sky-500")
         insertUser(Ids.HEENAM, "희남", "bg-amber-500")
         insertUser(Ids.SEUNGWOO, "승우", "bg-rose-500")
@@ -111,8 +117,11 @@ class DevDataSeeder(
         }
     }
 
-    private fun insertUser(id: UUID, name: String, color: String) {
-        jdbcTemplate.update("insert into users (id, name, color) values (?, ?, ?)", id, name, color)
+    private fun insertUser(id: UUID, name: String, color: String, email: String? = null, role: String = "MEMBER") {
+        jdbcTemplate.update(
+            "insert into users (id, name, color, email, role) values (?, ?, ?, ?, ?)",
+            id, name, color, email, role,
+        )
     }
 
     private data class WorkSeed(

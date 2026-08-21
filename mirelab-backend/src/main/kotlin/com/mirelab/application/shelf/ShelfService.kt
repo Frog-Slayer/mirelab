@@ -3,6 +3,7 @@ package com.mirelab.application.shelf
 import com.mirelab.application.slot.SlotValueResponse
 import com.mirelab.application.slot.toResponse
 import com.mirelab.application.study.toResponse
+import com.mirelab.application.work.WorkAccessChecker
 import com.mirelab.application.work.WorkResponse
 import com.mirelab.application.work.toResponse
 import com.mirelab.domain.slot.SlotDef
@@ -14,7 +15,6 @@ import com.mirelab.domain.work.WorkKind
 import com.mirelab.domain.work.WorkStatus
 import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
-import com.mirelab.infra.study.StudyMemberRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkRepository
 import java.time.Year
@@ -31,10 +31,10 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class ShelfService(
     private val workRepository: WorkRepository,
-    private val studyMemberRepository: StudyMemberRepository,
     private val slotDefRepository: SlotDefRepository,
     private val slotValueRepository: SlotValueRepository,
     private val userRepository: UserRepository,
+    private val workAccessChecker: WorkAccessChecker,
 ) {
     fun list(userId: UUID): ShelfResponse {
         val myStudyIds = myStudyIds(userId)
@@ -109,8 +109,7 @@ class ShelfService(
         return slotValueRepository.save(entity).toResponse()
     }
 
-    private fun myStudyIds(userId: UUID): Set<UUID> =
-        studyMemberRepository.findByUserId(userId).map { it.study.id!! }.toSet()
+    private fun myStudyIds(userId: UUID): Set<UUID> = workAccessChecker.myStudyIds(userId)
 
     /** 내가 속한 스터디들의 작품 + 내가 개인으로 담은 작품 */
     private fun worksFor(userId: UUID, myStudyIds: Set<UUID>): List<Work> {
@@ -120,7 +119,7 @@ class ShelfService(
     }
 
     private fun isMine(work: Work, userId: UUID, myStudyIds: Set<UUID>): Boolean =
-        work.owner?.id == userId || (work.study?.id != null && work.study!!.id in myStudyIds)
+        workAccessChecker.canAccess(work, userId, myStudyIds)
 
     /** 내가 속한 스터디들의 개인 칸 정의 — 목이라 스터디가 여러 개면 전부 합친다. 개인 책의 기록 항목으로 쓴다 */
     private fun personalSlotDefs(myStudyIds: Set<UUID>): List<SlotDef> =

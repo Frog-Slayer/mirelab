@@ -54,9 +54,9 @@ class WorkService(
     }
 
     @Transactional
-    fun create(slug: String, input: CreateWorkRequest): WorkResponse? {
+    fun create(slug: String, addedById: UUID, input: CreateWorkRequest): WorkResponse? {
         val study = studyRepository.findBySlug(slug) ?: return null
-        val addedBy = input.addedBy?.let { userRepository.findById(it).orElse(null) }
+        val addedBy = userRepository.findById(addedById).orElse(null)
         val work = Work(
             study = study,
             kind = input.kind,

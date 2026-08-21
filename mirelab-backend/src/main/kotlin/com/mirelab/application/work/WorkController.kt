@@ -1,8 +1,10 @@
 package com.mirelab.application.work
 
+import com.mirelab.auth.AuthPrincipal
 import java.util.UUID
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
@@ -23,9 +25,11 @@ class WorkController(private val workService: WorkService) {
     @PostMapping("/api/studies/{slug}/works")
     fun create(
         @PathVariable slug: String,
+        @AuthenticationPrincipal principal: AuthPrincipal,
         @RequestBody body: CreateWorkRequest,
     ): ResponseEntity<WorkResponse> =
-        workService.create(slug, body)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+        workService.create(slug, principal.userId, body)?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
 
     @GetMapping("/api/works/{workId}")
     fun detail(@PathVariable workId: UUID): ResponseEntity<WorkDetailResponse> =
@@ -37,8 +41,12 @@ class WorkController(private val workService: WorkService) {
         else ResponseEntity.notFound().build()
 
     @PatchMapping("/api/works/{workId}/reason")
-    fun updateReason(@PathVariable workId: UUID, @RequestBody body: UpdateReasonRequest): ResponseEntity<Void> =
-        if (workService.updateReason(workId, body.userId, body.reason)) ResponseEntity.noContent().build()
+    fun updateReason(
+        @PathVariable workId: UUID,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @RequestBody body: UpdateReasonRequest,
+    ): ResponseEntity<Void> =
+        if (workService.updateReason(workId, principal.userId, body.reason)) ResponseEntity.noContent().build()
         else ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build()
 
     @PatchMapping("/api/works/{workId}")

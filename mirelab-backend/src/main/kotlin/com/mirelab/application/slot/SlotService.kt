@@ -49,11 +49,11 @@ class SlotService(
     }
 
     @Transactional
-    fun saveValue(workId: UUID, input: SlotValueInput): SlotValueResponse {
+    fun saveValue(workId: UUID, userId: UUID, input: SlotValueInput): SlotValueResponse {
         val existing = slotValueRepository.findByWorkIdAndSlotDefIdAndUserIdAndContext(
             workId,
             input.slotDefId,
-            input.userId,
+            userId,
             SlotValueContext.STUDY,
         )
         val entity = if (existing != null) {
@@ -63,7 +63,7 @@ class SlotService(
         } else {
             val work = workRepository.findById(workId).orElseThrow()
             val slotDef = slotDefRepository.findById(input.slotDefId).orElseThrow()
-            val user = userRepository.findById(input.userId).orElseThrow()
+            val user = userRepository.findById(userId).orElseThrow()
             SlotValue(work = work, slotDef = slotDef, user = user, value = input.value, draft = input.draft ?: true)
         }
         return slotValueRepository.save(entity).toResponse()
@@ -72,7 +72,6 @@ class SlotService(
 
 data class SlotValueInput(
     val slotDefId: UUID,
-    val userId: UUID,
     val value: Map<String, Any?>,
     val draft: Boolean?,
 )
