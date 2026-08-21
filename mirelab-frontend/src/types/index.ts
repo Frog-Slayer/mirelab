@@ -55,12 +55,13 @@ export type Role = (typeof Role)[keyof typeof Role]
 
 export const AccessRequestStatus = {
   PENDING: 'PENDING',
+  PROFILE_REQUIRED: 'PROFILE_REQUIRED',
   APPROVED: 'APPROVED',
   REJECTED: 'REJECTED',
 } as const
 export type AccessRequestStatus = (typeof AccessRequestStatus)[keyof typeof AccessRequestStatus]
 
-/** 등록 안 된 구글 계정의 로그인 시도 — admin 이 승인하면 그때 User 가 만들어진다 */
+/** 등록 안 된 구글 계정의 로그인 시도 — admin 승인 뒤 본인이 정보를 입력하면 User가 만들어진다 */
 export interface AccessRequest {
   id: string
   email: string

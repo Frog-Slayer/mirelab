@@ -235,7 +235,7 @@ from slot_value where slot_def_id = ?
 
 - **로그인**: 구글 OAuth2. 성공 핸들러가 refresh 토큰을 httpOnly 쿠키에 심고 프론트를 `/auth/callback` 으로 보낸다. 프론트는 거기서 `POST /api/auth/refresh` 를 한 번 불러 access token 을 받는다 — 그래서 "최초 로그인" 과 "새로고침 자동 로그인" 이 같은 경로다.
 - **토큰**: access 는 30분, 메모리(모듈 변수)에만. refresh 는 30일, 불투명 랜덤 문자열이고 DB 에는 SHA-256 해시만 둔다. 갱신할 때마다 회전한다(사용자당 한 행).
-- **가입**: 등록 안 된 구글 계정은 거부하지 않고 `access_requests` 에 신청으로 쌓는다. admin(`pj0642@gmail.com`)이 `/admin/members` 에서 이름·색을 정해 승인하면 그때 `User` 가 만들어진다. 승인 전에는 로그인 화면에서 "승인 대기" 안내를 본다.
+- **가입**: 등록 안 된 구글 계정은 거부하지 않고 `access_requests` 에 신청으로 쌓는다. admin(`pj0642@gmail.com`)이 `/admin/members` 에서 승인하면 `PROFILE_REQUIRED`가 되고, 신청자가 다음 구글 로그인에서 이름·색을 직접 입력할 때 `User`가 만들어지며 `APPROVED`가 된다. 승인 전에는 로그인 화면에서 "승인 대기" 안내를 본다.
 - **시드 멤버**: 데모 데이터의 주인인 호남·희남·승우 행은 `email` 이 비어 있어 로그인 계정이 아니다. 실제 멤버는 승인으로 새로 생긴다.
 - **실시간 서버**: 접속 URL 쿼리로 access token 을 받아, 백엔드 `POST /internal/blocks/{id}/authorize` 에 한 번 물어보고 방을 열어준다. `/internal` 하위는 공유 시크릿 헤더(`X-Internal-Secret`)로 막혀 있다.
 - 프론트는 여전히 `useCurrentUser()` 훅 하나로 감싸져 있다.

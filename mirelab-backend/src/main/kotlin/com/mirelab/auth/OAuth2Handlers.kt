@@ -1,5 +1,6 @@
 package com.mirelab.auth
 
+import com.mirelab.domain.auth.AccessRequestStatus
 import com.mirelab.infra.user.UserRepository
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -26,6 +27,8 @@ class OAuth2SuccessHandler(
     @Value("\${mirelab.frontend-url}") private val frontendUrl: String,
     private val userRepository: UserRepository,
     private val accessRequestService: AccessRequestService,
+    private val signupTokenService: SignupTokenService,
+    private val signupCookies: SignupCookies,
     private val refreshTokenService: RefreshTokenService,
     private val authCookies: AuthCookies,
 ) : AuthenticationSuccessHandler {
@@ -47,22 +50,33 @@ class OAuth2SuccessHandler(
         }
 
         val user = userRepository.findByEmail(email)
+        val existingRequest = accessRequestService.findByEmail(email)
 
-        if (user == null) {
+        if (user != null && (existingRequest == null || existingRequest.status == AccessRequestStatus.APPROVED)) {
+            authCookies.write(response, refreshTokenService.issue(user))
+            logger.info("로그인 성공: {} ({})", user.name, email)
+            response.sendRedirect("$frontendUrl/auth/callback")
+            return
+        }
+
+        val status = if (user == null) {
             accessRequestService.record(
                 email = email,
                 googleName = oauth2User.getAttribute<String>("name")?.takeIf { it.isNotBlank() } ?: email,
                 pictureUrl = oauth2User.getAttribute("picture"),
             )
-            logger.info("가입 신청 접수: {}", email)
-            redirect(response, "status", "pending")
-            return
+        } else {
+            requireNotNull(existingRequest).status
         }
-
-        authCookies.write(response, refreshTokenService.issue(user))
-        logger.info("로그인 성공: {} ({})", user.name, email)
-
-        response.sendRedirect("$frontendUrl/auth/callback")
+        if (status == AccessRequestStatus.PROFILE_REQUIRED) {
+            val accessRequest = accessRequestService.findProfileRequest(email)
+            signupCookies.write(response, signupTokenService.issue(requireNotNull(accessRequest.id), email))
+            logger.info("가입 정보 입력 시작: {}", email)
+            response.sendRedirect("$frontendUrl/signup")
+        } else {
+            logger.info("로그인 제한 상태: {} ({})", status, email)
+            redirect(response, "status", status.name.lowercase())
+        }
     }
 
     private fun redirect(response: HttpServletResponse, key: String, value: String) {

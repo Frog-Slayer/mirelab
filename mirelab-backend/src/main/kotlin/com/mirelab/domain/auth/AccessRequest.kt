@@ -1,10 +1,11 @@
 package com.mirelab.domain.auth
 
 import com.mirelab.domain.user.User
+import jakarta.persistence.AttributeConverter
 import jakarta.persistence.Column
+import jakarta.persistence.Convert
+import jakarta.persistence.Converter
 import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -17,13 +18,23 @@ import java.util.UUID
 
 enum class AccessRequestStatus {
     PENDING,
+    PROFILE_REQUIRED,
     APPROVED,
     REJECTED,
 }
 
+/** Hibernate가 enum CHECK 제약을 자동 생성하지 않게 문자열 값으로 명시적으로 변환한다. */
+@Converter
+class AccessRequestStatusConverter : AttributeConverter<AccessRequestStatus, String> {
+    override fun convertToDatabaseColumn(attribute: AccessRequestStatus?): String? = attribute?.name
+
+    override fun convertToEntityAttribute(dbData: String?): AccessRequestStatus? =
+        dbData?.let(AccessRequestStatus::valueOf)
+}
+
 /**
  * 가입 신청. 등록되지 않은 구글 계정으로 로그인을 시도하면 거부하는 대신 여기 한 줄이 쌓이고,
- * admin 이 승인할 때 [User] 가 만들어진다.
+ * admin 이 승인하면 사용자가 프로필을 입력할 수 있게 되고, 입력을 마칠 때 [User] 가 만들어진다.
  *
  * 이메일당 한 행만 둔다(재시도해도 새로 안 쌓임). 거부당한 사람이 다시 로그인하면 같은 행이
  * PENDING 으로 돌아가 admin 목록에 다시 뜬다 — 오해로 거부한 경우를 되돌릴 방법이 필요하다.
@@ -38,7 +49,7 @@ class AccessRequest(
     @Column(nullable = false, unique = true)
     val email: String,
 
-    /** 구글 프로필의 이름 — 승인 화면에서 멤버 이름의 기본값으로 쓴다 */
+    /** 구글 프로필의 이름 — 가입 정보 입력 화면에서 참고용으로 보여준다 */
     @Column(name = "google_name", nullable = false)
     var googleName: String,
 
@@ -48,8 +59,8 @@ class AccessRequest(
     @Column(name = "requested_at", nullable = false)
     var requestedAt: Instant = Instant.now(),
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Convert(converter = AccessRequestStatusConverter::class)
+    @Column(nullable = false, length = 32)
     var status: AccessRequestStatus = AccessRequestStatus.PENDING,
 
     @Column(name = "decided_at")
@@ -66,6 +77,18 @@ class AccessRequest(
         this.pictureUrl = pictureUrl
         this.requestedAt = now
         this.status = AccessRequestStatus.PENDING
+        this.decidedAt = null
+    }
+
+    fun requestProfile(now: Instant = Instant.now()) {
+        this.status = AccessRequestStatus.PROFILE_REQUIRED
+        this.grantedUser = null
+        this.decidedAt = now
+    }
+
+    fun markPending() {
+        this.status = AccessRequestStatus.PENDING
+        this.grantedUser = null
         this.decidedAt = null
     }
 

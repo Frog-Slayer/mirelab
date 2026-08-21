@@ -27,6 +27,7 @@ import org.springframework.security.web.AuthenticationEntryPoint
 @EnableWebSecurity
 class SecurityConfig(
     private val jwtService: JwtService,
+    private val accessRequestService: AccessRequestService,
     private val oAuth2SuccessHandler: OAuth2SuccessHandler,
     private val oAuth2FailureHandler: OAuth2FailureHandler,
     @Value("\${mirelab.internal-secret}") private val internalSecret: String,
@@ -62,7 +63,10 @@ class SecurityConfig(
                 it.accessDeniedHandler(jsonAccessDeniedHandler())
             }
             .addFilterBefore(InternalApiFilter(internalSecret), UsernamePasswordAuthenticationFilter::class.java)
-            .addFilterBefore(JwtAuthenticationFilter(jwtService), UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(
+                JwtAuthenticationFilter(jwtService, accessRequestService),
+                UsernamePasswordAuthenticationFilter::class.java,
+            )
 
         return http.build()
     }
@@ -90,6 +94,7 @@ class SecurityConfig(
         val PUBLIC_PATHS = arrayOf(
             "/api/auth/refresh",
             "/api/auth/logout",
+            "/api/auth/signup",
             "/api/oauth2/**",
             "/api/login/oauth2/**",
             "/internal/**", // InternalApiFilter 가 공유 시크릿으로 따로 막는다

@@ -15,7 +15,10 @@ import org.springframework.web.filter.OncePerRequestFilter
  * `authorizeHttpRequests` 가 한다. 공개 경로(로그인·갱신 등)는 토큰이 없는 게 정상이라
  * 필터가 앞질러 막으면 안 된다.
  */
-class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerRequestFilter() {
+class JwtAuthenticationFilter(
+    private val jwtService: JwtService,
+    private val accessRequestService: AccessRequestService,
+) : OncePerRequestFilter() {
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -24,6 +27,7 @@ class JwtAuthenticationFilter(private val jwtService: JwtService) : OncePerReque
     ) {
         bearerToken(request)
             ?.let(jwtService::parse)
+            ?.takeIf { accessRequestService.canLogin(it.userId) }
             ?.let { principal ->
                 SecurityContextHolder.getContext().authentication =
                     UsernamePasswordAuthenticationToken(principal, null, principal.authorities)

@@ -7,6 +7,12 @@ export interface AuthResult {
   user: User
 }
 
+export interface SignupProfile {
+  email: string
+  googleName: string
+  pictureUrl: string | null
+}
+
 /**
  * 갱신은 동시에 여러 번 나가면 안 된다 — refresh 토큰이 회전하기 때문에 두 번째 요청은
  * 이미 무효가 된 값을 들고 가서 실패하고, 그 실패가 멀쩡한 세션을 끊어버린다.
@@ -60,4 +66,12 @@ export async function logout(): Promise<void> {
 export function startGoogleLogin(): void {
   const base = import.meta.env.VITE_API_BASE_URL ?? '/api'
   window.location.href = `${base}/oauth2/authorization/google`
+}
+
+export function getSignupProfile(): Promise<SignupProfile> {
+  return requestWithoutAuthRetry('/auth/signup', { method: 'GET' })
+}
+
+export function completeSignup(input: { name: string; color: string }): Promise<void> {
+  return requestWithoutAuthRetry('/auth/signup', { method: 'POST', body: input })
 }

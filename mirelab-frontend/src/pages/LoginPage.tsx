@@ -11,6 +11,10 @@ const NOTICES: Record<string, { tone: 'info' | 'error'; text: string }> = {
     tone: 'info',
     text: '가입 신청이 접수됐습니다. 관리자가 승인하면 다시 로그인해 주세요.',
   },
+  rejected: {
+    tone: 'error',
+    text: '가입 신청이 거절된 계정입니다. 관리자에게 문의해 주세요.',
+  },
   no_email: {
     tone: 'error',
     text: '구글 계정에서 이메일을 받아오지 못했습니다. 이메일 제공에 동의한 뒤 다시 시도해 주세요.',

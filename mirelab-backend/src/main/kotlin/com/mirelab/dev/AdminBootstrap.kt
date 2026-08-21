@@ -49,7 +49,10 @@ class AdminBootstrap(
         // 자기 자신에 대한 대기 신청이 남아 있으면 정리한다. 안 그러면 admin 이 멤버 관리
         // 화면에서 자기 이메일을 보게 되고, 승인을 누르면 이미 가입된 이메일이라 409 가 난다.
         accessRequestRepository.findByEmail(adminEmail)
-            ?.takeIf { it.status == AccessRequestStatus.PENDING }
+            ?.takeIf {
+                it.status == AccessRequestStatus.PENDING ||
+                    it.status == AccessRequestStatus.PROFILE_REQUIRED
+            }
             ?.let {
                 it.approve(admin)
                 logger.info("admin 본인의 대기 중 가입 신청을 정리했습니다: {}", adminEmail)

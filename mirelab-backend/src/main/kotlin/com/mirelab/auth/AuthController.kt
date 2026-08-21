@@ -17,13 +17,44 @@ data class AuthResult(
     val user: UserResponse,
 )
 
+data class SignupProfile(val email: String, val googleName: String, val pictureUrl: String?)
+data class CompleteSignupRequest(val name: String, val color: String)
+
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(
     private val refreshTokenService: RefreshTokenService,
     private val jwtService: JwtService,
     private val authCookies: AuthCookies,
+    private val accessRequestService: AccessRequestService,
+    private val signupTokenService: SignupTokenService,
+    private val signupCookies: SignupCookies,
 ) {
+
+    @org.springframework.web.bind.annotation.GetMapping("/signup")
+    fun signupProfile(request: HttpServletRequest): SignupProfile {
+        val identity = signupIdentity(request)
+        val accessRequest = accessRequestService.profileRequired(identity.requestId, identity.email)
+        return SignupProfile(accessRequest.email, accessRequest.googleName, accessRequest.pictureUrl)
+    }
+
+    @PostMapping("/signup")
+    fun completeSignup(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        @org.springframework.web.bind.annotation.RequestBody body: CompleteSignupRequest,
+    ): ResponseEntity<Void> {
+        val identity = signupIdentity(request)
+        val user = accessRequestService.completeProfile(
+            identity.requestId,
+            identity.email,
+            body.name,
+            body.color,
+        )
+        authCookies.write(response, refreshTokenService.issue(user))
+        signupCookies.clear(response)
+        return ResponseEntity.noContent().build()
+    }
 
     /**
      * 쿠키의 refresh 로 access token 을 받아온다. 최초 로그인 직후(`/auth/callback`)와
@@ -44,6 +75,12 @@ class AuthController(
                 throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "다시 로그인해 주세요")
             }
 
+        if (!accessRequestService.canLogin(requireNotNull(user.id))) {
+            refreshTokenService.revoke(requireNotNull(user.id))
+            authCookies.clear(response)
+            throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 제한된 계정입니다")
+        }
+
         authCookies.write(response, refreshTokenService.issue(user))
         val accessToken = jwtService.issue(user)
 
@@ -61,5 +98,12 @@ class AuthController(
         authCookies.clear(response)
 
         return ResponseEntity.noContent().build()
+    }
+
+    private fun signupIdentity(request: HttpServletRequest): SignupIdentity {
+        val token = signupCookies.read(request)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "구글 로그인을 다시 해 주세요")
+        return signupTokenService.parse(token)
+            ?: throw ResponseStatusException(HttpStatus.UNAUTHORIZED, "가입 정보 입력 시간이 만료됐습니다")
     }
 }
