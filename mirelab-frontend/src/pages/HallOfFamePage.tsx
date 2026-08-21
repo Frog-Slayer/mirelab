@@ -18,6 +18,7 @@ import {
 } from '@/lib/workApi'
 import BookLookupField from '@/components/BookLookupField'
 import WorkPreviewCard from '@/components/WorkPreviewCard'
+import { parseYearFromPubDate } from '@/lib/bookApi'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
 import { WorkKind, WorkStatus } from '@/types'
@@ -240,6 +241,7 @@ function AddDialog({
     reason: string
     coverUrl?: string
     description?: string
+    year?: number
   }) => void
   onClose: () => void
 }) {
@@ -255,6 +257,7 @@ function AddDialog({
   const [reason, setReason] = useState('')
   const [coverUrl, setCoverUrl] = useState('')
   const [description, setDescription] = useState('')
+  const [year, setYear] = useState<number>()
 
   return (
     <dialog
@@ -281,6 +284,7 @@ function AddDialog({
             reason: reason.trim(),
             coverUrl: coverUrl || undefined,
             description: description || undefined,
+            year,
           })
         }}
         className="flex flex-col gap-3 p-5"
@@ -310,6 +314,8 @@ function AddDialog({
           onTitleChange={setTitle}
           author={author}
           onAuthorChange={setAuthor}
+          year={year}
+          onYearChange={setYear}
           description={description}
           onDescriptionChange={setDescription}
           coverUrl={coverUrl}
@@ -327,6 +333,7 @@ function AddDialog({
               setAuthor(book.author)
               setCoverUrl(book.cover)
               setDescription(book.description)
+              setYear(parseYearFromPubDate(book.pubDate))
             }}
           />
         )}

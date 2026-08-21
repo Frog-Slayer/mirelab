@@ -354,6 +354,7 @@ export default function WorkPage() {
             author={work.author}
             description={work.description ?? ''}
             coverUrl={work.coverUrl ?? ''}
+            year={work.year}
             status={work.status}
             onSaveInfo={(info) => editInfo.mutate({ workId: work.id, ...info })}
             onChangeStatus={(next) => changeStatus.mutate(next)}
