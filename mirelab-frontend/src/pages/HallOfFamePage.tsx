@@ -38,6 +38,7 @@ export default function HallOfFamePage() {
   if (!study) return null
 
   const shown = works.filter((w) => filter === 'ALL' || w.kind === filter)
+  const ratedWorks = works.filter((work) => work.voterCount > 0)
   const [first, second, third] = shown
   // 1~3위는 카드로만 보여준다 — 책장에는 완료작 4위 이하부터 둔다.
   const podiumIds = new Set([first, second, third].filter(Boolean).map((w) => w!.id))
@@ -72,10 +73,19 @@ export default function HallOfFamePage() {
         <div className="flex flex-wrap items-end justify-between gap-5 border-b border-neutral-200 pb-6">
           <div className="flex flex-col gap-1.5">
             <h1 className="text-3xl font-semibold tracking-[-0.03em]">명예의 전당</h1>
-            <p className="text-sm text-neutral-500">
-              지금까지 함께 읽고 본 {works.length}편 · 평균 ★{' '}
-              {formatRating(works.reduce((a, w) => a + w.average, 0) / (works.length || 1))}
-            </p>
+            <div className="flex items-center gap-1.5 text-sm text-neutral-500">
+              지금까지 함께 읽고 본 {works.length}편 ·{' '}
+              {ratedWorks.length > 0 ? (
+                `평균 ★ ${formatRating(
+                  ratedWorks.reduce((sum, work) => sum + work.average, 0) / ratedWorks.length,
+                )}`
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <span>평가 없음</span>
+                  <Stars value={0} size="sm" />
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex rounded-lg bg-neutral-100 p-1">
@@ -173,7 +183,14 @@ function Podium({
       </div>
 
       {/* 평점은 본문 흐름과 무관하게 카드 우상단에 고정한다 — 1위는 두 줄, 2·3위는 한 줄 */}
-      {featured ? (
+      {work.voterCount === 0 ? (
+        <div
+          className={`absolute flex items-center gap-1.5 text-sm text-neutral-400 ${featured ? 'top-7 right-7 sm:top-8 sm:right-8' : 'top-5 right-5'}`}
+        >
+          <span>평가 없음</span>
+          <Stars value={0} size="sm" />
+        </div>
+      ) : featured ? (
         <div className="absolute top-7 right-7 flex flex-col items-end gap-1 sm:top-8 sm:right-8">
           <span className="text-3xl font-semibold tabular-nums">{formatRating(work.average)}</span>
           <Stars value={work.average} size="sm" />

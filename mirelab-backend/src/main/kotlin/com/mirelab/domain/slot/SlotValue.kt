@@ -64,6 +64,10 @@ class SlotValue(
 
     var draft: Boolean = true,
 
+    /** 개인 평점 공개 여부. 새 평점은 기본적으로 본인에게만 보인다. */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    var published: Boolean = false,
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false)

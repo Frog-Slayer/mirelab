@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -37,4 +38,20 @@ class SlotController(
         membershipGuard.requireWork(workId, principal.userId)
         return slotService.saveValue(workId, principal.userId, body)
     }
+
+    @PatchMapping("/api/works/{workId}/rating-visibility")
+    fun setRatingVisibility(
+        @PathVariable workId: UUID,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @RequestBody body: RatingVisibilityInput,
+    ): ResponseEntity<Void> {
+        membershipGuard.requireWork(workId, principal.userId)
+        return if (slotService.setRatingPublished(workId, principal.userId, body.published)) {
+            ResponseEntity.noContent().build()
+        } else {
+            ResponseEntity.notFound().build()
+        }
+    }
 }
+
+data class RatingVisibilityInput(val published: Boolean)

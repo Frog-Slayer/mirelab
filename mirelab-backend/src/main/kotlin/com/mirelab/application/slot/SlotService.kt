@@ -2,6 +2,7 @@ package com.mirelab.application.slot
 
 import com.mirelab.domain.slot.SlotDef
 import com.mirelab.domain.slot.SlotOwner
+import com.mirelab.domain.slot.SlotType
 import com.mirelab.domain.slot.SlotValue
 import com.mirelab.domain.slot.SlotValueContext
 import com.mirelab.domain.slot.Visibility
@@ -40,7 +41,11 @@ class SlotService(
         val slotById = slots.associateBy { it.id }
 
         val values = slotValueRepository.findByWorkIdAndContext(workId, SlotValueContext.STUDY)
-            .filter { value -> value.user.id == viewerId || canSee(slotById[value.slotDef.id]) }
+            .filter { value ->
+                value.user.id == viewerId ||
+                    if (value.slotDef.type == SlotType.RATING) value.published
+                    else canSee(slotById[value.slotDef.id])
+            }
         return WorkSlotsResponse(slots.map { it.toResponse() }, values.map { it.toResponse() })
     }
 
@@ -76,6 +81,24 @@ class SlotService(
             SlotValue(work = work, slotDef = slotDef, user = user, value = input.value, draft = input.draft ?: true)
         }
         return slotValueRepository.save(entity).toResponse()
+    }
+
+    @Transactional
+    fun setRatingPublished(workId: UUID, userId: UUID, published: Boolean): Boolean {
+        val work = workRepository.findById(workId).orElse(null) ?: return false
+        val studyId = work.study?.id ?: return false
+        val ratingSlot = slotDefRepository.findByStudyIdOrderBySortOrder(studyId)
+            .firstOrNull { it.type == SlotType.RATING && !it.hidden }
+            ?: return false
+        val value = slotValueRepository.findByWorkIdAndSlotDefIdAndUserIdAndContext(
+            workId,
+            ratingSlot.id!!,
+            userId,
+            SlotValueContext.STUDY,
+        ) ?: return false
+        value.published = published
+        slotValueRepository.save(value)
+        return true
     }
 }
 

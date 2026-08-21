@@ -55,11 +55,16 @@ data class RankedWorkResponse(
     val actors: List<String>,
     /** userId(문자열) → 평점 */
     val ratings: Map<String, Double>,
+    val publishedRatingUserIds: Set<String>,
     val average: Double,
     val voterCount: Int,
 )
 
-fun Work.toRanked(ratings: Map<String, Double>, average: Double): RankedWorkResponse = RankedWorkResponse(
+fun Work.toRanked(
+    ratings: Map<String, Double>,
+    publishedRatingUserIds: Set<String>,
+    average: Double,
+): RankedWorkResponse = RankedWorkResponse(
     id = id!!,
     studyId = study?.id,
     ownerId = owner?.id,
@@ -74,8 +79,9 @@ fun Work.toRanked(ratings: Map<String, Double>, average: Double): RankedWorkResp
     coverUrl = coverUrl,
     actors = actors,
     ratings = ratings,
+    publishedRatingUserIds = publishedRatingUserIds,
     average = average,
-    voterCount = ratings.size,
+    voterCount = publishedRatingUserIds.size,
 )
 
 /** 책장 — 후보·읽는 중까지 포함한 전체 작품. 회차 수까지 곁들인다 */
@@ -94,6 +100,7 @@ data class LibraryEntryResponse(
     val coverUrl: String?,
     val actors: List<String>,
     val ratings: Map<String, Double>,
+    val publishedRatingUserIds: Set<String>,
     val average: Double,
     val voterCount: Int,
     val sessionCount: Int,
@@ -114,6 +121,7 @@ fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
     coverUrl = coverUrl,
     actors = actors,
     ratings = ratings,
+    publishedRatingUserIds = publishedRatingUserIds,
     average = average,
     voterCount = voterCount,
     sessionCount = sessionCount,

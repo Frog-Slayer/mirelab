@@ -17,7 +17,7 @@ import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import { formatRating } from '@/lib/format'
 import { addSession } from '@/lib/sessionApi'
-import { getWorkSlots, saveValue } from '@/lib/slotApi'
+import { getWorkSlots, saveValue, setRatingPublished } from '@/lib/slotApi'
 import {
   addWorkBlock,
   getWorkBlocks,
@@ -68,6 +68,8 @@ export default function WorkPage() {
   const { data, isPending } = useQuery({
     queryKey: ['work', workId],
     queryFn: () => getWork(workId),
+    // 다른 멤버가 평점을 공개하거나 공개 평점을 수정하면 화면 전환 없이 반영한다.
+    refetchInterval: 1_000,
   })
   const { data: workSlots } = useQuery({
     queryKey: ['workSlots', workId, user?.id],
@@ -108,6 +110,10 @@ export default function WorkPage() {
     },
   })
   const save = useMutation({ mutationFn: saveValue, onSuccess: refresh })
+  const changeRatingVisibility = useMutation({
+    mutationFn: (published: boolean) => setRatingPublished(workId, published),
+    onSuccess: refresh,
+  })
   const drop = useMutation({
     mutationFn: () => removeWork(workId),
     onSuccess: () => {
@@ -258,17 +264,24 @@ export default function WorkPage() {
               </div>
             </div>
 
-            {work.voterCount > 0 && (
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-serif text-4xl font-semibold tabular-nums">
-                    {formatRating(work.average)}
-                  </span>
-                  <Stars value={work.average} />
+            <div className="flex min-h-14 flex-col items-end justify-center gap-1">
+              {work.voterCount > 0 ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="font-serif text-4xl font-semibold tabular-nums">
+                      {formatRating(work.average)}
+                    </span>
+                    <Stars value={work.average} />
+                  </div>
+                  <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-neutral-400">
+                  <span>평가 없음</span>
+                  <Stars value={0} />
                 </div>
-                <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {work.status !== WorkStatus.CANDIDATE && (
@@ -280,6 +293,7 @@ export default function WorkPage() {
                 {members.map((m) => {
                   const score = work.ratings[m.id]
                   const mine = m.id === user.id
+                  const published = work.publishedRatingUserIds.includes(m.id)
                   const content = (
                     <>
                       <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
@@ -296,6 +310,17 @@ export default function WorkPage() {
                         <span className="truncate text-sm font-medium text-neutral-800">
                           {m.name}
                         </span>
+                        {score !== undefined && (
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                              published
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-neutral-100 text-neutral-500'
+                            }`}
+                          >
+                            {published ? '공개' : '비공개'}
+                          </span>
+                        )}
                       </div>
                       {score !== undefined && blurbOf(m.id) && (
                         <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>
@@ -330,6 +355,9 @@ export default function WorkPage() {
               blurbSlot={blurbSlot}
               ratingValue={myValueOf(ratingSlot.id)?.value}
               blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
+              published={work.publishedRatingUserIds.includes(user.id)}
+              onPublishedChange={(published) => changeRatingVisibility.mutate(published)}
+              changingPublished={changeRatingVisibility.isPending}
               onSaveSlot={(slotDefId, value) =>
                 save.mutate({ targetId: work.id, slotDefId, value, draft: false })
               }

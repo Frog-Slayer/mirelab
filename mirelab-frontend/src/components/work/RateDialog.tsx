@@ -9,6 +9,9 @@ export default function RateDialog({
   blurbSlot,
   ratingValue,
   blurbValue,
+  published,
+  onPublishedChange,
+  changingPublished,
   onSaveSlot,
   onClose,
 }: {
@@ -16,6 +19,9 @@ export default function RateDialog({
   blurbSlot?: SlotDef
   ratingValue?: SlotValue['value']
   blurbValue?: SlotValue['value']
+  published: boolean
+  onPublishedChange: (published: boolean) => void
+  changingPublished?: boolean
   onSaveSlot: (slotDefId: string, value: SlotValue['value']) => void
   onClose: () => void
 }) {
@@ -54,6 +60,33 @@ export default function RateDialog({
             value={ratingValue}
             onSave={(value) => onSaveSlot(ratingSlot.id, value)}
           />
+        </div>
+
+        <div className="flex items-center justify-between gap-4 border-t border-neutral-100 pt-4">
+          <div>
+            <span className="text-sm font-semibold">내 평점 공개</span>
+            <p className="mt-0.5 text-xs text-neutral-500">
+              공개된 평점만 다른 멤버에게 보이고 평균에 반영됩니다.
+            </p>
+          </div>
+          <div className="flex shrink-0 rounded-lg bg-neutral-100 p-1">
+            {[false, true].map((value) => (
+              <button
+                key={String(value)}
+                type="button"
+                onClick={() => onPublishedChange(value)}
+                disabled={!ratingValue || changingPublished}
+                aria-pressed={published === value}
+                className={`cursor-pointer rounded-md px-2.5 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  published === value
+                    ? 'bg-white font-medium text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                {value ? '공개' : '비공개'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {blurbSlot && (

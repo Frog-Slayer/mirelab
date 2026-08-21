@@ -19,6 +19,7 @@ export interface SlotValueResponse {
   userId: string
   value: SlotValue['value']
   draft: boolean
+  published: boolean
 }
 
 interface WorkSlotsResponse {
@@ -50,6 +51,7 @@ export function toSlotValue(r: SlotValueResponse): SlotValue {
     userId: r.userId,
     value: r.value,
     draft: r.draft,
+    published: r.published,
   }
 }
 
@@ -77,4 +79,8 @@ export function saveValue(input: {
       draft: input.draft,
     })
     .then(toSlotValue)
+}
+
+export function setRatingPublished(workId: string, published: boolean): Promise<void> {
+  return api.patch(`/works/${workId}/rating-visibility`, { published })
 }

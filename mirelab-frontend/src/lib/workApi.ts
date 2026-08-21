@@ -4,6 +4,8 @@ import type { Session, Work, WorkKind } from '@/types'
 export interface RankedWork extends Work {
   /** userId → 점수 */
   ratings: Record<string, number>
+  /** 다른 멤버에게 공개된 평점의 userId */
+  publishedRatingUserIds: string[]
   average: number
   voterCount: number
 }

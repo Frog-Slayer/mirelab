@@ -35,6 +35,7 @@ data class SlotValueResponse(
     val userId: UUID,
     val value: Map<String, Any?>,
     val draft: Boolean,
+    val published: Boolean,
 )
 
 fun SlotValue.toResponse() = SlotValueResponse(
@@ -43,6 +44,7 @@ fun SlotValue.toResponse() = SlotValueResponse(
     userId = user.id!!,
     value = value,
     draft = draft,
+    published = published,
 )
 
 /** 작품 화면 하나를 그리는 데 필요한 칸 정의 + 값 전부 */
