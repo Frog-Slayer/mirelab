@@ -7,6 +7,8 @@ import com.mirelab.infra.user.UserRepository
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -50,8 +52,9 @@ class MeController(
     }
 
     /**
-     * 새 사진으로 갈아끼운다. 이전 파일은 DB 를 고친 뒤에 지운다 — 순서를 뒤집으면 저장에
-     * 실패했을 때 사진만 사라진 계정이 남는다.
+     * 새 사진으로 갈아끼운다. 파일 지우기는 되돌릴 수 없으므로 트랜잭션이 끝나는 것을 보고
+     * 정리한다([cleanUpAfterTransaction]) — 커밋됐으면 이전 파일이, 롤백됐으면 방금 저장한
+     * 파일이 아무도 가리키지 않는 쪽이 된다.
      */
     @PutMapping("/picture")
     @Transactional
@@ -68,9 +71,9 @@ class MeController(
 
         val user = me(principal)
         val previous = user.pictureFilename
-        user.pictureFilename = profilePictureStorage.save(file.bytes)
-        userRepository.flush()
-        profilePictureStorage.delete(previous)
+        val saved = profilePictureStorage.save(file.bytes)
+        user.pictureFilename = saved
+        cleanUpAfterTransaction(onCommit = previous, onRollback = saved)
 
         return user.toResponse()
     }
@@ -82,10 +85,27 @@ class MeController(
         val user = me(principal)
         val previous = user.pictureFilename
         user.pictureFilename = null
-        userRepository.flush()
-        profilePictureStorage.delete(previous)
+        cleanUpAfterTransaction(onCommit = previous, onRollback = null)
 
         return user.toResponse()
+    }
+
+    /**
+     * 트랜잭션이 어느 쪽으로 끝나든, 그 결과 아무도 가리키지 않게 된 파일 하나를 치운다.
+     *
+     * 트랜잭션 안에서 미리 지우면 이후 롤백됐을 때 DB 는 옛 파일을 가리키는데 파일은 이미
+     * 없는 상태가 된다 — flush 를 먼저 해도 커밋 전이라 마찬가지다.
+     */
+    private fun cleanUpAfterTransaction(onCommit: String?, onRollback: String?) {
+        if (onCommit == null && onRollback == null) return
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCompletion(status: Int) {
+                    val committed = status == TransactionSynchronization.STATUS_COMMITTED
+                    profilePictureStorage.delete(if (committed) onCommit else onRollback)
+                }
+            },
+        )
     }
 
     private fun me(principal: AuthPrincipal): User =

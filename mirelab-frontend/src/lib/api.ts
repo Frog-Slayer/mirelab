@@ -17,6 +17,18 @@ export class ApiError extends Error {
  * `{"message": "..."}` 로 내려주므로(SecurityConfig·ResponseStatusException) 그걸 그대로
  * 보여주는 편이, 화면마다 지어낸 일반 문구보다 사용자에게 도움이 된다.
  */
+/**
+ * 서버가 준 `/api/...` 경로를 실제로 요청할 주소로 바꾼다 — `<img src>` 처럼 아래 fetch
+ * 래퍼를 거칠 수 없는 곳이 쓴다.
+ *
+ * 래퍼는 경로 앞에 BASE_URL 을 붙이는데 이 경로에는 이미 `/api` 가 들어 있다. 그대로 쓰면
+ * VITE_API_BASE_URL 로 백엔드를 다른 곳에 둔 배포에서 프론트 origin 의 `/api/...` 를
+ * 찾으러 가고, 그건 SPA 폴백에 걸려 전부 404 가 된다.
+ */
+export function apiAssetUrl(path: string): string {
+  return path.startsWith('/api/') ? `${BASE_URL}${path.slice('/api'.length)}` : path
+}
+
 export function apiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError && error.body && typeof error.body === 'object') {
     const message = Reflect.get(error.body, 'message')

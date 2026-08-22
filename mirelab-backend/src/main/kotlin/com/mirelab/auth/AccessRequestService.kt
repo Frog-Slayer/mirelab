@@ -114,15 +114,27 @@ class AccessRequestService(
             User(name = trimmedName, color = color, email = email, role = Role.MEMBER),
         )
 
-        // 구글 사진을 기본 프로필 사진으로 깔아준다. 이미 사진이 있는 계정(다시 가입 정보를
-        // 입력하는 경우)은 건드리지 않는다 — 본인이 고른 사진을 되돌려놓으면 안 된다.
-        if (user.pictureFilename == null) {
-            user.pictureFilename = profilePictureImporter.importFrom(request.pictureUrl)
-        }
-
         request.approve(user)
 
         return user
+    }
+
+    /**
+     * 구글 사진을 기본 프로필 사진으로 깔아준다. 이미 사진이 있는 계정(다시 가입 정보를
+     * 입력하는 경우)은 건드리지 않는다 — 본인이 고른 사진을 되돌려놓으면 안 된다.
+     *
+     * [completeProfile] 안에서 부르지 않고 일부러 트랜잭션 밖에 떼어 뒀다. 바깥 서버에서
+     * 파일을 받아 오는 일이라 상대가 늘어지면 그만큼 기다리는데, 트랜잭션 안이면 그동안
+     * DB 커넥션과 방금 만든 계정 행의 잠금을 붙들고 있게 된다.
+     */
+    fun importGooglePicture(userId: UUID, sourceUrl: String?) {
+        if (sourceUrl.isNullOrBlank()) return
+
+        val user = userRepository.findById(userId).orElse(null) ?: return
+        if (user.pictureFilename != null) return
+
+        user.pictureFilename = profilePictureImporter.importFrom(sourceUrl) ?: return
+        userRepository.save(user)
     }
 
     @Transactional

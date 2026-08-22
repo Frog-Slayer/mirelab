@@ -44,17 +44,30 @@ function PictureSection({ user, applyUser }: { user: User; applyUser: (user: Use
   }
 
   const pick = async (file: File | undefined) => {
-    if (!file) return
+    if (!file || busy) return
+
+    // 버튼은 업로드를 시작하기 전, 파일을 받아든 순간 잠근다 — 디코딩·리사이즈에도 시간이
+    // 걸려서 그 사이 한 번 더 고를 수 있고, 그러면 업로드 두 개가 겹쳐 나간다. 진 쪽이 올린
+    // 파일은 DB 가 가리키지 않는 채로 볼륨에 영영 남는다.
+    setBusy(true)
+    setError('')
 
     let image: Blob
     try {
       image = await toAvatarBlob(file)
     } catch {
       setError('이미지 파일을 골라 주세요.')
+      setBusy(false)
       return
     }
 
-    await run(() => uploadMyPicture(image), '사진을 올리지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
+    try {
+      applyUser(await uploadMyPicture(image))
+    } catch (err) {
+      setError(apiErrorMessage(err, '사진을 올리지 못했습니다. 잠시 뒤 다시 시도해 주세요.'))
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (

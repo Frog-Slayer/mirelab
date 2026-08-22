@@ -10,15 +10,19 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.mock.web.MockMultipartFile
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
+/**
+ * 테스트를 트랜잭션으로 감싸지 않는다 — 사진 파일 정리는 트랜잭션이 끝나는 것을 보고
+ * 일어나므로(MeController 의 cleanUpAfterTransaction), 테스트가 트랜잭션을 붙들고 있으면
+ * 정리가 아예 일어나지 않거나 롤백 쪽으로 일어난다. 대신 남는 행과 파일을 직접 치운다.
+ */
 @SpringBootTest
-@Transactional
 class MeControllerTest @Autowired constructor(
     private val controller: MeController,
     private val userRepository: UserRepository,
@@ -33,6 +37,14 @@ class MeControllerTest @Autowired constructor(
         me = userRepository.save(
             User(name = "예전 이름", color = "bg-sky-500", email = "me@example.com", role = Role.MEMBER),
         )
+    }
+
+    @AfterEach
+    fun tearDown() {
+        userRepository.findById(requireNotNull(me.id)).ifPresent { user ->
+            profilePictureStorage.delete(user.pictureFilename)
+            userRepository.delete(user)
+        }
     }
 
     private fun principal() = AuthPrincipal(userId = requireNotNull(me.id), name = me.name, role = me.role)
