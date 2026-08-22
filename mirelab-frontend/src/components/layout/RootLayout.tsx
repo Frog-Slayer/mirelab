@@ -9,6 +9,17 @@ import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
 import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
+/**
+ * 헤더·본문·푸터가 같은 기둥 위에 서도록 폭 상한과 좌우 여백을 한 줄로 묶어둔다.
+ * 네 군데(헤더 막대·탭 줄·본문·푸터)에 흩어 놓으면 하나만 고쳐졌을 때 로고와 본문,
+ * 푸터 글자의 왼쪽 끝이 조용히 어긋난다.
+ *
+ * max-width 와 padding 은 반드시 같은 요소에 함께 걸어야 한다 — box-sizing 이
+ * border-box 라 상한값이 padding 을 포함하기 때문에, 바깥에 padding 을 주고 안쪽에
+ * max-width 를 주면 그 padding 만큼 기둥이 어긋난다.
+ */
+const CONTENT_COLUMN = 'mx-auto w-full max-w-[96rem] px-3'
+
 export default function RootLayout() {
   const { user } = useCurrentUser()
   const { studySlug } = useParams()
@@ -53,7 +64,8 @@ export default function RootLayout() {
         ref={headerRef}
         className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur-xl"
       >
-        <div className="mx-auto flex max-w-6xl items-center gap-5 px-6 py-3.5">
+        {/* 배경과 아래 테두리는 화면 끝까지 가고, 내용만 본문과 같은 기둥에 선다 */}
+        <div className={`${CONTENT_COLUMN} flex items-center gap-5 py-3.5`}>
           <Link to="/app" className="text-lg font-semibold tracking-[-0.03em]">
             mirelab
           </Link>
@@ -111,13 +123,13 @@ export default function RootLayout() {
             recordDrawerOpen ? 'xl:w-[28rem]' : ''
           }`}
         />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-6 sm:py-8">
+        <main className={`${CONTENT_COLUMN} flex-1 py-6 sm:py-8`}>
           <Outlet context={recordDrawer} />
         </main>
       </div>
 
-      <footer className="border-t border-neutral-200 px-6 py-5">
-        <p className="mx-auto max-w-6xl text-xs text-neutral-400">mirelab</p>
+      <footer className="border-t border-neutral-200 py-5">
+        <p className={`${CONTENT_COLUMN} text-xs text-neutral-400`}>mirelab</p>
       </footer>
 
       {/* 스터디 안 어느 화면에서든 다음 모임으로 바로 들어가는 플로팅 카드 */}
@@ -145,7 +157,8 @@ function StudyNav({ study }: { study: Study }) {
 
   return (
     <div className="border-t border-neutral-100">
-      <nav className="mx-auto flex max-w-6xl gap-6 overflow-x-auto px-6 text-sm">
+      {/* 탭도 위 막대·본문과 같은 기둥에 선다 — 로고 바로 아래에서 시작해야 한 줄로 읽힌다 */}
+      <nav className={`${CONTENT_COLUMN} flex gap-6 overflow-x-auto text-sm`}>
         {items.map(({ to, label, end }) => (
           <NavLink
             key={to}
