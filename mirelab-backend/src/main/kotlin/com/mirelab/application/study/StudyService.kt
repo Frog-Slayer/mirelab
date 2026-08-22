@@ -31,6 +31,7 @@ class StudyService(
         return studies.map { it.toResponse() }.sortedBy { it.name }
     }
 
+    @Transactional(readOnly = true)
     fun findBySlug(slug: String): StudyResponse? = studyRepository.findBySlug(slug)?.toResponse()
 
     @Transactional(readOnly = true)

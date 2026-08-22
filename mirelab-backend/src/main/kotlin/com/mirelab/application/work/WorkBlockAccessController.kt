@@ -4,7 +4,6 @@ import com.mirelab.auth.AccessRequestService
 import com.mirelab.auth.AuthPrincipal
 import com.mirelab.auth.IssuedRealtimeTicket
 import com.mirelab.auth.RealtimeTicketService
-import com.mirelab.infra.work.WorkBlockRepository
 import java.util.UUID
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -31,7 +30,6 @@ data class ConsumedRealtimeTicket(val userId: UUID)
  */
 @RestController
 class WorkBlockAccessController(
-    private val workBlockRepository: WorkBlockRepository,
     private val workAccessChecker: WorkAccessChecker,
     private val accessRequestService: AccessRequestService,
     private val realtimeTicketService: RealtimeTicketService,
@@ -86,9 +84,8 @@ class WorkBlockAccessController(
      * 재확인 경로에는 그 필터가 없으니 여기서 같은 기준을 다시 세운다.
      */
     private fun check(blockId: UUID, userId: UUID): Access {
-        val block = workBlockRepository.findById(blockId).orElse(null) ?: return Access.NOT_FOUND
-        val allowed = accessRequestService.canLogin(userId) &&
-            workAccessChecker.canAccess(block.work, userId)
+        val canAccess = workAccessChecker.canAccessBlock(blockId, userId) ?: return Access.NOT_FOUND
+        val allowed = accessRequestService.canLogin(userId) && canAccess
         return if (allowed) Access.ALLOWED else Access.DENIED
     }
 

@@ -15,6 +15,7 @@ class WorkBlockService(
     private val workRepository: WorkRepository,
     private val userRepository: UserRepository,
 ) {
+    @Transactional(readOnly = true)
     fun list(workId: UUID): List<WorkBlockResponse> =
         workBlockRepository.findByWorkIdOrderByCreatedAt(workId).map { it.toResponse() }
 

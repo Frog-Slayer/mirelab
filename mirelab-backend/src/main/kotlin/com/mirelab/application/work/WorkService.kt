@@ -33,6 +33,7 @@ class WorkService(
     private val workBlockRepository: WorkBlockRepository,
 ) {
     /** 완료작만 별점순 — 스터디의 첫 화면 */
+    @Transactional(readOnly = true)
     fun hallOfFame(slug: String): List<RankedWorkResponse> {
         val study = studyRepository.findBySlug(slug) ?: return emptyList()
         val memberIds = effectiveMemberIds(requireNotNull(study.id))
@@ -43,6 +44,7 @@ class WorkService(
     }
 
     /** 후보·읽는 중까지 포함한 전체 책장 */
+    @Transactional(readOnly = true)
     fun library(slug: String): List<LibraryEntryResponse> {
         val study = studyRepository.findBySlug(slug) ?: return emptyList()
         val memberIds = effectiveMemberIds(requireNotNull(study.id))
@@ -52,6 +54,7 @@ class WorkService(
         }
     }
 
+    @Transactional(readOnly = true)
     fun getDetail(workId: UUID, viewerId: UUID): WorkDetailResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
         val studyId = work.study?.id ?: return null

@@ -37,6 +37,7 @@ class SlotService(
      * 다만 숨긴 칸·남의 모임 콜아웃 칸은 published 여부와 무관하게 애초에 이 화면 소관이
      * 아니므로, 그 관문(slotById)은 평가 덩어리도 똑같이 통과해야 한다.
      */
+    @Transactional(readOnly = true)
     fun getWorkSlots(workId: UUID, viewerId: UUID): WorkSlotsResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
         val studyId = work.study?.id ?: return null

@@ -35,7 +35,11 @@ fun Work.toResponse() = WorkResponse(
     reason = reason,
     description = description,
     coverUrl = coverUrl,
-    actors = actors,
+    // toList() 로 복사해야 한다 — actors 는 lazy @ElementCollection 이라 그대로 담으면
+    // 아직 안 읽은 컬렉션이 DTO 에 실려 나가고, 트랜잭션이 끝난 뒤 Jackson 이 직렬화하다
+    // "no session" 으로 터진다. 엔티티의 가변 컬렉션을 응답이 그대로 물고 있지 않게 되는
+    // 것도 덤이다.
+    actors = actors.toList(),
 )
 
 /** 완료작 순위·서재 정렬에 쓰는, 평점이 집계된 작품 */
@@ -83,7 +87,8 @@ fun Work.toRanked(
     reason = reason,
     description = description,
     coverUrl = coverUrl,
-    actors = actors,
+    // lazy @ElementCollection 이라 여기서 복사해 둔다 — [Work.toResponse] 의 주석 참고
+    actors = actors.toList(),
     ratings = ratings,
     publishedRatingUserIds = publishedRatingUserIds,
     ratedUserIds = ratedUserIds,

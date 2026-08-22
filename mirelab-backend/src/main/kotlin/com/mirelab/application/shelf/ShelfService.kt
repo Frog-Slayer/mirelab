@@ -38,6 +38,7 @@ class ShelfService(
     private val userRepository: UserRepository,
     private val workAccessChecker: WorkAccessChecker,
 ) {
+    @Transactional(readOnly = true)
     fun list(userId: UUID): ShelfResponse {
         val myStudyIds = myStudyIds(userId)
         val works = worksFor(userId, myStudyIds)
@@ -51,6 +52,7 @@ class ShelfService(
         return ShelfResponse(slotDefs.map { it.toResponse() }, entries)
     }
 
+    @Transactional(readOnly = true)
     fun getEntry(userId: UUID, workId: UUID): ShelfDetailResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
         val myStudyIds = myStudyIds(userId)

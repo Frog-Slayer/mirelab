@@ -34,6 +34,7 @@ class SessionService(
     }
 
     /** 날짜가 잡힌 회차만 달력에 올라온다 — 휴회·뒤풀이 같은 일정은 아직 없다 */
+    @Transactional(readOnly = true)
     fun schedule(slug: String): List<ScheduleItemResponse> {
         val study = studyRepository.findBySlug(slug) ?: return emptyList()
         return sessionRepository.findByStudyId(study.id!!)
@@ -58,6 +59,7 @@ class SessionService(
      * 새 회차를 잡아도 지난 회차의 meetAt 이 더 이르다는 이유로 계속 그 지난 회차가
      * 뜬다.
      */
+    @Transactional(readOnly = true)
     fun currentSession(slug: String): CurrentSessionResponse? {
         val study = studyRepository.findBySlug(slug) ?: return null
         val now = Instant.now()
