@@ -1,15 +1,16 @@
 import * as Y from 'yjs'
 import { docs } from 'y-websocket/bin/utils'
 import type { Persistence } from 'y-websocket/bin/utils'
-
-const SPRING_BASE_URL = process.env.SPRING_BASE_URL ?? 'http://localhost:8080'
+import { SPRING_BASE_URL, internalHeaders } from './auth'
 
 // BlockNote 가 프론트에서 collaboration fragment 로 쓰는 이름(CollaborativeBody.tsx 참고).
 // 빈 문서인지 판단하려면 결국 이 이름을 알아야 한다 — 이 릴레이가 BlockNote 전용이라 감수한다.
 const BLOCKNOTE_FRAGMENT_NAME = 'blocknote'
 
 async function fetchSnapshot(blockId: string): Promise<Uint8Array | null> {
-  const res = await fetch(`${SPRING_BASE_URL}/internal/blocks/${blockId}/snapshot`)
+  const res = await fetch(`${SPRING_BASE_URL}/internal/blocks/${blockId}/snapshot`, {
+    headers: internalHeaders(),
+  })
   if (res.status === 204 || res.status === 404) return null
   if (!res.ok) throw new Error(`snapshot fetch failed: ${res.status}`)
   return new Uint8Array(await res.arrayBuffer())
@@ -18,7 +19,7 @@ async function fetchSnapshot(blockId: string): Promise<Uint8Array | null> {
 async function pushSnapshot(blockId: string, update: Uint8Array): Promise<void> {
   const res = await fetch(`${SPRING_BASE_URL}/internal/blocks/${blockId}/snapshot`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/octet-stream' },
+    headers: internalHeaders({ 'Content-Type': 'application/octet-stream' }),
     body: update,
   })
   if (!res.ok) throw new Error(`snapshot push failed: ${res.status}`)
@@ -27,6 +28,7 @@ async function pushSnapshot(blockId: string, update: Uint8Array): Promise<void> 
 async function clearSnapshot(blockId: string): Promise<void> {
   const res = await fetch(`${SPRING_BASE_URL}/internal/blocks/${blockId}/snapshot`, {
     method: 'DELETE',
+    headers: internalHeaders(),
   })
   if (!res.ok) throw new Error(`snapshot clear failed: ${res.status}`)
 }

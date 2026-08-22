@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### 비밀값 (구글 OAuth client, jwt secret 등) ###
+application-secret.properties

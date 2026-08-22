@@ -18,8 +18,9 @@ import org.springframework.web.bind.annotation.RestController
  * 저장만 한다"). Node 는 방(room)이 처음 열릴 때 GET 으로 스냅샷을 받아 문서를
  * 복원하고, 마지막 접속자가 나갈 때 POST 로 병합된 최종 상태를 밀어넣는다.
  *
- * ⚠️ 지금은 인증이 전혀 없어 누구나 호출할 수 있다 — 로그인 붙기 전엔 배포 금지라는
- * design.md 3장 경고가 이 엔드포인트에도 그대로 적용된다.
+ * 사용자 토큰으로는 인증할 수 없는 경로라(부르는 쪽이 사람이 아니다) 공유 시크릿 헤더로
+ * 막는다 — [com.mirelab.auth.InternalApiFilter] 참고. 접속 권한 판정은 별도로
+ * [WorkBlockAccessController] 가 사용자 토큰까지 받아서 한다.
  */
 @RestController
 class WorkBlockSnapshotController(private val workBlockRepository: WorkBlockRepository) {

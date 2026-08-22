@@ -8,7 +8,6 @@ data class CreateWorkRequest(
     val kind: WorkKind,
     val title: String,
     val author: String,
-    val addedBy: UUID?,
     val reason: String?,
     val coverUrl: String? = null,
     val description: String? = null,
@@ -18,7 +17,7 @@ data class CreateWorkRequest(
 
 data class UpdateStatusRequest(val status: WorkStatus)
 
-data class UpdateReasonRequest(val userId: UUID, val reason: String)
+data class UpdateReasonRequest(val reason: String)
 
 data class UpdateWorkInfoRequest(
     val title: String,

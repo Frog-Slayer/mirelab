@@ -53,28 +53,26 @@ export function toSlotValue(r: SlotValueResponse): SlotValue {
   }
 }
 
-/** viewerId 는 서버가 비공개·마감 전 칸 값을 걸러내는 기준이다 — 응답에 아예 안 실려 온다 */
+/**
+ * 보는 사람이 누구냐에 따라 비공개·마감 전 칸 값이 서버에서 걸러진다 — 그 기준은
+ * access token 의 주체이고, 응답에는 아예 안 실려 온다.
+ */
 export async function getWorkSlots(
   workId: string,
-  viewerId: string,
 ): Promise<{ slots: SlotDef[]; values: SlotValue[] }> {
-  const res = await api.get<WorkSlotsResponse>(`/works/${workId}/slots`, {
-    headers: { 'X-User-Id': viewerId },
-  })
+  const res = await api.get<WorkSlotsResponse>(`/works/${workId}/slots`)
   return { slots: res.slots.map(toSlotDef), values: res.values.map(toSlotValue) }
 }
 
 export function saveValue(input: {
   targetId: string
   slotDefId: string
-  userId: string
   value: SlotValue['value']
   draft?: boolean
 }): Promise<SlotValue> {
   return api
     .post<SlotValueResponse>(`/works/${input.targetId}/slot-values`, {
       slotDefId: input.slotDefId,
-      userId: input.userId,
       value: input.value,
       draft: input.draft,
     })

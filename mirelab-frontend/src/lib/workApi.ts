@@ -20,12 +20,12 @@ export function getLibrary(slug: string): Promise<LibraryEntry[]> {
   return api.get(`/studies/${slug}/works`)
 }
 
+/** 담은 사람(addedBy)은 서버가 토큰에서 정한다 */
 export function addWork(input: {
   slug: string
   kind: WorkKind
   title: string
   author: string
-  addedBy: string
   reason?: string
   coverUrl?: string
   description?: string
@@ -35,7 +35,6 @@ export function addWork(input: {
     kind: input.kind,
     title: input.title,
     author: input.author,
-    addedBy: input.addedBy,
     reason: input.reason,
     coverUrl: input.coverUrl,
     description: input.description,
@@ -62,12 +61,9 @@ export function removeWork(workId: string): Promise<void> {
   return api.delete(`/works/${workId}`)
 }
 
-export function updateWorkReason(input: {
-  workId: string
-  userId: string
-  reason: string
-}): Promise<void> {
-  return api.patch(`/works/${input.workId}/reason`, { userId: input.userId, reason: input.reason })
+/** 선정 이유는 그 책을 담은 사람만 고칠 수 있다 — 서버가 토큰의 주체와 대조한다 */
+export function updateWorkReason(input: { workId: string; reason: string }): Promise<void> {
+  return api.patch(`/works/${input.workId}/reason`, { reason: input.reason })
 }
 
 export function updateWorkInfo(input: {

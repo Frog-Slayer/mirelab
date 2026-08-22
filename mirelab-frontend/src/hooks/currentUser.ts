@@ -1,13 +1,14 @@
 import { createContext, use } from 'react'
 import type { User } from '@/types'
 
-// 로그인은 나중에 붙인다. 그때 CurrentUserProvider 안쪽만 실제 인증 결과로 교체하면
-// 이 훅을 쓰는 나머지 코드는 건드리지 않아도 된다.
+/** loading 은 첫 자동 로그인 시도가 끝나기 전 — 이때 리다이렉트하면 새로고침마다 로그인 화면이 번쩍인다 */
+export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
 export interface CurrentUserValue {
-  users: User[]
   user: User | null
-  setUserId: (id: string) => void
+  status: AuthStatus
+  isAdmin: boolean
+  logout: () => Promise<void>
 }
 
 export const CurrentUserContext = createContext<CurrentUserValue | null>(null)

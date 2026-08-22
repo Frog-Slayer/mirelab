@@ -13,11 +13,9 @@ export function toStudy(r: StudyResponse): Study {
   return { id: r.id, slug: r.slug, name: r.name, hasWorks: r.hasWorks, memberIds: [] }
 }
 
-/** 내가 속한 스터디들 — 로그인 전이라 헤더로 현재 사용자를 알린다 */
-export async function getMyStudies(userId: string): Promise<Study[]> {
-  const studies = await api.get<StudyResponse[]>('/studies/mine', {
-    headers: { 'X-User-Id': userId },
-  })
+/** 내가 속한 스터디들 — 주체는 access token 에서 온다 */
+export async function getMyStudies(): Promise<Study[]> {
+  const studies = await api.get<StudyResponse[]>('/studies/mine')
   return studies.map(toStudy)
 }
 

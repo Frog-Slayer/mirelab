@@ -22,15 +22,9 @@ export function getWorkBlocks(workId: string): Promise<WorkBlock[]> {
   return api.get(`/works/${workId}/blocks`)
 }
 
-export function addWorkBlock(input: {
-  workId: string
-  authorId: string
-  title: string
-}): Promise<WorkBlock> {
-  return api.post(`/works/${input.workId}/blocks`, {
-    authorId: input.authorId,
-    title: input.title,
-  })
+/** 작성자는 서버가 토큰에서 정한다 — 남의 이름으로 블록을 만들 수 없다 */
+export function addWorkBlock(input: { workId: string; title: string }): Promise<WorkBlock> {
+  return api.post(`/works/${input.workId}/blocks`, { title: input.title })
 }
 
 export function updateWorkBlockTitle(input: { id: string; title: string }): Promise<void> {
@@ -39,4 +33,14 @@ export function updateWorkBlockTitle(input: { id: string; title: string }): Prom
 
 export function removeWorkBlock(id: string): Promise<void> {
   return api.delete(`/blocks/${id}`)
+}
+
+interface RealtimeTicketResponse {
+  value: string
+  expiresInSeconds: number
+}
+
+/** access token 은 Authorization 헤더에만 보내고, WebSocket URL에는 이 일회용 티켓만 넣는다. */
+export function issueRealtimeTicket(blockId: string): Promise<RealtimeTicketResponse> {
+  return api.post(`/blocks/${blockId}/realtime-ticket`)
 }

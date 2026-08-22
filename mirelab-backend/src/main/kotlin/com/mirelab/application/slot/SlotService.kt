@@ -10,8 +10,10 @@ import com.mirelab.infra.slot.SlotValueRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkRepository
 import java.util.UUID
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.server.ResponseStatusException
 
 @Service
 class SlotService(
@@ -49,11 +51,20 @@ class SlotService(
     }
 
     @Transactional
-    fun saveValue(workId: UUID, input: SlotValueInput): SlotValueResponse {
+    fun saveValue(workId: UUID, userId: UUID, input: SlotValueInput): SlotValueResponse {
+        val work = workRepository.findById(workId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "없는 작품입니다")
+        }
+        val slotDef = slotDefRepository.findById(input.slotDefId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "없는 기록 항목입니다")
+        }
+        if (work.study?.id == null || slotDef.study.id != work.study?.id) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "작품과 기록 항목의 스터디가 다릅니다")
+        }
         val existing = slotValueRepository.findByWorkIdAndSlotDefIdAndUserIdAndContext(
             workId,
             input.slotDefId,
-            input.userId,
+            userId,
             SlotValueContext.STUDY,
         )
         val entity = if (existing != null) {
@@ -61,9 +72,7 @@ class SlotService(
             input.draft?.let { existing.draft = it }
             existing
         } else {
-            val work = workRepository.findById(workId).orElseThrow()
-            val slotDef = slotDefRepository.findById(input.slotDefId).orElseThrow()
-            val user = userRepository.findById(input.userId).orElseThrow()
+            val user = userRepository.findById(userId).orElseThrow()
             SlotValue(work = work, slotDef = slotDef, user = user, value = input.value, draft = input.draft ?: true)
         }
         return slotValueRepository.save(entity).toResponse()
@@ -72,7 +81,6 @@ class SlotService(
 
 data class SlotValueInput(
     val slotDefId: UUID,
-    val userId: UUID,
     val value: Map<String, Any?>,
     val draft: Boolean?,
 )

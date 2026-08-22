@@ -26,6 +26,6 @@ fun WorkBlock.toResponse() = WorkBlockResponse(
     createdAt = createdAt,
 )
 
-data class CreateWorkBlockRequest(val authorId: UUID, val title: String)
+data class CreateWorkBlockRequest(val title: String)
 
 data class UpdateWorkBlockTitleRequest(val title: String)

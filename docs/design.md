@@ -143,6 +143,10 @@ User          영서 · 호남 · 희남 · 승우 · 헌주      ← 사람. �
 
 `SlotValue`, `Memo` 는 모두 `userId` 를 갖는다.
 
+`StudyMember`는 화면 필터가 아니라 접근 권한의 경계이기도 하다. 스터디 URL 하위 화면과
+스터디·작품·일정·칸 값·공동 기록 API는 모두 이 멤버십이 있어야 접근할 수 있다. 내 서재는
+개인 API지만, 스터디 작품을 읽거나 기록할 때는 똑같이 해당 스터디 멤버십을 확인한다.
+
 ### 스터디마다 화면이 다르다
 
 차이는 인원이 아니라 **작품을 다루는가**다. `Study.hasWorks` 하나로 갈린다.
@@ -229,15 +233,19 @@ from slot_value where slot_def_id = ?
 - **메모** — DB가 소유. `/me` 에서 모아 보려면 질의 가능해야 한다
 - **연결** — Yjs 항목이 가진 고유 id 를 `Memo.itemId` 가 참조
 
-### 인증은 나중에, 작성자는 지금부터
+### 인증 — 구글 로그인 + admin 승인제
 
-로그인은 뒤로 미루되 **`Member` 테이블과 `SlotValue.memberId` 는 지금 만든다.** 나중에 붙이면 이미 쌓인 데이터가 주인 없는 상태가 된다. 스터디 성격상 "누가 썼는가"가 데이터의 절반이다.
+주체는 **서버가 검증한 access token** 에서만 온다. 클라이언트가 `X-User-Id` 로 자칭하던 방식은 걷어냈다 — 그때는 아무나 아무 멤버로 글을 쓸 수 있었다.
 
-- 지금: 헤더에서 멤버 전환 (개발용 · 5인 화면 테스트에 오히려 편하다)
-- 나중: 카카오 로그인 등
-- 프론트는 `useCurrentUser()` 훅 하나로 감싸두고, 나중에 그 안쪽만 교체
+- **로그인**: 구글 OAuth2. 성공 핸들러가 refresh 토큰을 httpOnly 쿠키에 심고 프론트를 `/auth/callback` 으로 보낸다. 프론트는 거기서 `POST /api/auth/refresh` 를 한 번 불러 access token 을 받는다 — 그래서 "최초 로그인" 과 "새로고침 자동 로그인" 이 같은 경로다.
+- **토큰**: access 는 30분, 메모리(모듈 변수)에만. refresh 는 30일, 불투명 랜덤 문자열이고 DB 에는 SHA-256 해시만 둔다. 갱신할 때마다 회전한다(사용자당 한 행).
+- **가입**: 등록 안 된 구글 계정은 거부하지 않고 `access_requests` 에 신청으로 쌓는다. admin(`pj0642@gmail.com`)이 `/admin/members` 에서 승인하면 `PROFILE_REQUIRED`가 되고, 신청자가 다음 구글 로그인에서 이름·색을 직접 입력할 때 `User`가 만들어지며 `APPROVED`가 된다. 승인 전에는 로그인 화면에서 "승인 대기" 안내를 본다.
+- **멤버 데이터**: 목 사용자는 만들지 않는다. 실제 멤버는 가입 정보 입력을 완료할 때 생성되고, 스터디에 배정된 멤버와 admin만 멤버별 평점에 노출된다.
+- **실시간 서버**: 인증된 REST 요청으로 블록 전용·20초·일회용 티켓을 먼저 발급한다. 접속 URL에는 일반 access token 대신 이 티켓만 넣고, 릴레이가 백엔드 `POST /internal/blocks/{id}/realtime-ticket/consume` 에서 원자적으로 한 번 소비한 뒤 방을 연다. 소켓은 토큰보다 오래 살 수 있으므로 릴레이가 1분마다 `GET /internal/blocks/{id}/access?userId=` 로 다시 물어보고, 거부되거나 스터디에서 빠졌으면 그 자리에서 끊는다. `/internal` 하위는 공유 시크릿 헤더(`X-Internal-Secret`)로 막혀 있다.
+- **거부된 계정**: 거부해도 스터디 멤버십은 남으므로 소속만 보면 통과한다. 그래서 REST 는 `JwtAuthenticationFilter`, 실시간은 티켓 발급·소비·재인가 세 지점 모두 `AccessRequestService.canLogin` 을 같이 본다.
+- 프론트는 여전히 `useCurrentUser()` 훅 하나로 감싸져 있다.
 
-⚠️ **로그인 붙기 전엔 배포 금지.** 아무나 아무 멤버로 글을 쓸 수 있다.
+설정은 `mirelab-backend/application-secret.properties.example` 참고.
 
 ---
 
@@ -254,7 +262,7 @@ from slot_value where slot_def_id = ?
 | P1   | 책 검색 · 모임 만들기   | `/:studySlug/sessions/new`   | 제목만 치면 표지·저자·쪽수 자동                     |
 | P2   | 칸 관리                 | `/:studySlug/settings/slots` | 설정 안에서 추가·정렬·숨김                          |
 | P1   | 리마인더                | —                            | 마감 전 자동 알림                                   |
-| P2   | 로그인 · 배포           | —                            | 그 전엔 로컬에서만                                  |
+| P2   | ~~로그인~~ · 배포       | `/login`, `/admin/members`   | 구글 로그인 + admin 승인제 (3장 참고). 배포는 아직   |
 | P2   | 통합 검색 · 통계        | —                            | 기록이 쌓인 뒤에 필요해진다                         |
 
 ### 작품 상태
@@ -378,5 +386,5 @@ Kotlin 2.3 · Spring Boot 4.1 · JPA · Postgres (dev/prod 공통, Docker Compos
 4. 프론트 디자인 — 특히 블록노트 에디터
 5. ~~도서 정보 가져오기 — 알라딘 Open API 연동, 검색 자동완성으로 표지·저자·줄거리 채움~~
 6. 영화 정보 가져오기 — TMDB 로 시도 예정. 줄거리 한국어 번역이 인기작 위주라 비주류작은 비거나 영어로 나올 수 있음(감수하기로 함)
-7. 구글 로그인
+7. ~~구글 로그인~~ — admin 승인제와 멤버 관리 화면의 스터디 배정까지 붙음
 8. 모바일 대응

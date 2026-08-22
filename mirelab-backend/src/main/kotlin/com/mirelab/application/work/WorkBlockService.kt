@@ -19,9 +19,9 @@ class WorkBlockService(
         workBlockRepository.findByWorkIdOrderByCreatedAt(workId).map { it.toResponse() }
 
     @Transactional
-    fun create(workId: UUID, input: CreateWorkBlockRequest): WorkBlockResponse? {
+    fun create(workId: UUID, authorId: UUID, input: CreateWorkBlockRequest): WorkBlockResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
-        val author = userRepository.findById(input.authorId).orElse(null) ?: return null
+        val author = userRepository.findById(authorId).orElse(null) ?: return null
         val block = WorkBlock(work = work, author = author, title = input.title, createdAt = Instant.now())
         return workBlockRepository.save(block).toResponse()
     }

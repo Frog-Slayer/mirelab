@@ -48,16 +48,14 @@ function toShelfEntry(r: ShelfEntryResponse): ShelfEntry {
   }
 }
 
-export async function getShelf(userId: string): Promise<Shelf> {
-  const res = await api.get<ShelfResponse>('/me/shelf', { headers: { 'X-User-Id': userId } })
+export async function getShelf(): Promise<Shelf> {
+  const res = await api.get<ShelfResponse>('/me/shelf')
   return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
 }
 
-export async function getShelfEntry(userId: string, workId: string): Promise<ShelfDetail | null> {
+export async function getShelfEntry(workId: string): Promise<ShelfDetail | null> {
   try {
-    const res = await api.get<ShelfDetailResponse>(`/me/shelf/${workId}`, {
-      headers: { 'X-User-Id': userId },
-    })
+    const res = await api.get<ShelfDetailResponse>(`/me/shelf/${workId}`)
     return {
       work: res.work,
       study: res.study ? toStudy(res.study) : null,
@@ -70,8 +68,8 @@ export async function getShelfEntry(userId: string, workId: string): Promise<She
   }
 }
 
+/** 주인(ownerId)은 서버가 토큰에서 정한다 */
 export function addPersonalWork(input: {
-  ownerId: string
   kind: WorkKind
   title: string
   author: string
@@ -79,33 +77,28 @@ export function addPersonalWork(input: {
   description?: string
   year?: number
 }): Promise<Work> {
-  return api.post(
-    '/me/shelf',
-    {
-      kind: input.kind,
-      title: input.title,
-      author: input.author,
-      coverUrl: input.coverUrl,
-      description: input.description,
-      year: input.year,
-    },
-    { headers: { 'X-User-Id': input.ownerId } },
-  )
+  return api.post('/me/shelf', {
+    kind: input.kind,
+    title: input.title,
+    author: input.author,
+    coverUrl: input.coverUrl,
+    description: input.description,
+    year: input.year,
+  })
 }
 
 /** 내 서재 쪽 저장 — 스터디 작품 상세의 saveValue 와 달리 targetId 에 접두어 안 붙인다 */
 export function saveShelfValue(input: {
   targetId: string
   slotDefId: string
-  userId: string
   value: SlotValue['value']
   draft?: boolean
 }): Promise<SlotValue> {
   return api
-    .post<SlotValueResponse>(
-      `/me/shelf/${input.targetId}/slot-values`,
-      { slotDefId: input.slotDefId, value: input.value, draft: input.draft },
-      { headers: { 'X-User-Id': input.userId } },
-    )
+    .post<SlotValueResponse>(`/me/shelf/${input.targetId}/slot-values`, {
+      slotDefId: input.slotDefId,
+      value: input.value,
+      draft: input.draft,
+    })
     .then(toSlotValue)
 }

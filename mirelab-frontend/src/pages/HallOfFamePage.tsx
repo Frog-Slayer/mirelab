@@ -59,6 +59,7 @@ export default function HallOfFamePage() {
   if (!study || !user) return null
 
   const shown = works.filter((w) => filter === 'ALL' || w.kind === filter)
+  const isStudyMember = members.some((member) => member.id === user.id)
   const [first, second, third] = shown
   // 1~3위는 카드로만 보여준다 — 책장에는 4위 이하부터. 나머지는 상태 상관없이 전부 책장에 둔다.
   const podiumIds = new Set([first, second, third].filter(Boolean).map((w) => w!.id))
@@ -141,14 +142,14 @@ export default function HallOfFamePage() {
           completed={completedItems}
           others={otherItems}
           users={members}
-          onAdd={() => setAdding(true)}
+          onAdd={isStudyMember ? () => setAdding(true) : undefined}
         />
         {adding && (
           <AddDialog
             initialKind={filter === 'ALL' ? undefined : filter}
             onClose={() => setAdding(false)}
             onSubmit={(input) => {
-              create.mutate({ ...input, slug: study.slug, addedBy: user.id })
+              create.mutate({ ...input, slug: study.slug })
               setAdding(false)
             }}
           />
