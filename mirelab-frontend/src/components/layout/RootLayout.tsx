@@ -9,7 +9,7 @@ import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
 export default function RootLayout() {
-  const { user, isAdmin } = useCurrentUser()
+  const { user } = useCurrentUser()
   const { studySlug } = useParams()
   const navigate = useNavigate()
   const [recordDrawerOpen, setRecordDrawerOpen] = useState(false)
@@ -85,17 +85,8 @@ export default function RootLayout() {
             )
           )}
 
-          <div className="ml-auto flex items-center gap-4">
-            {isAdmin && (
-              <NavLink
-                to="/admin/members"
-                className={({ isActive }) =>
-                  `text-sm ${isActive ? 'text-neutral-900' : 'text-neutral-500 hover:text-neutral-900'}`
-                }
-              >
-                멤버 관리
-              </NavLink>
-            )}
+          {/* 관리자용 "멤버 관리"도 프로필 메뉴 안으로 들어갔다 — 헤더에는 아바타만 남는다 */}
+          <div className="ml-auto">
             {user && <UserMenu user={user} shelfTo={shelfSlug ? `/${shelfSlug}/shelf` : null} />}
           </div>
         </div>

@@ -188,7 +188,8 @@ const ROW_GAP = ROOM_BELOW + PLANK_HEIGHT + ROOM_ABOVE
  * 책장처럼 칸은 일정하고 꽂힌 책만 들쭉날쭉해 보인다.
  *
  * 표지 있는 책은 이미지 원본 비율을 따라가느라 높이 상한이 없어서(BookCover), 이 값을
- * max-height 로도 함께 걸어 선반 위로 삐져나오지 못하게 한다. 영화 티켓은 계산식상
+ * max-height 로도 함께 걸어 선반 위로 삐져나오지 못하게 한다. 영화 티켓도 계산식대로면
+ * 최대 215 라 이 값을 넘으므로 [MovieTicket] 에서 같이 조인다.
  */
 const SLOT_HEIGHT = 196
 

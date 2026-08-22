@@ -22,7 +22,9 @@ const ITEM_CLASS =
  * 있으므로([routes] 의 `:studySlug/shelf`) 갈 곳이 정해질 때만 [shelfTo] 가 들어온다.
  */
 export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: string | null }) {
-  const { logout } = useCurrentUser()
+  // "멤버 관리"는 shelfTo 처럼 prop 으로 받지 않는다 — 갈 곳이 스터디에 따라 달라지는
+  // 서재와 달리 경로가 하나로 고정이고, admin 여부는 여기서 바로 알 수 있다.
+  const { logout, isAdmin } = useCurrentUser()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -79,6 +81,16 @@ export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: stri
           <Link to="/settings" role="menuitem" onClick={() => setOpen(false)} className={ITEM_CLASS}>
             설정
           </Link>
+          {isAdmin && (
+            <Link
+              to="/admin/members"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={ITEM_CLASS}
+            >
+              멤버 관리
+            </Link>
+          )}
           <button
             type="button"
             role="menuitem"
