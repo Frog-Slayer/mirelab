@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { Library, LogOut, Settings, Users } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 import Avatar from '@/components/Avatar'
+import {
+  MENU_ICON_CLASS,
+  MENU_ITEM_CLASS,
+  MENU_PANEL_CLASS,
+  MENU_TRIGGER_CLASS,
+} from '@/components/layout/menu'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useDropdown } from '@/hooks/useDropdown'
 import type { User } from '@/types'
-
-/**
- * 메뉴 항목 하나의 생김새. Link 든 button 이든 똑같이 보이도록 한 곳에 모아둔다 —
- * 각자 클래스를 늘어놓으면 하나를 고칠 때 나머지가 조용히 어긋난다.
- */
-const ITEM_CLASS =
-  'block w-full cursor-pointer px-3 py-2 text-left text-sm font-normal text-neutral-700 hover:bg-neutral-50'
 
 /**
  * 헤더 우상단의 프로필 사진과 그 아래로 열리는 메뉴.
@@ -26,30 +26,7 @@ export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: stri
   // 서재와 달리 경로가 하나로 고정이고, admin 여부는 여기서 바로 알 수 있다.
   const { logout, isAdmin } = useCurrentUser()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      // 키보드로 닫았으면 포커스가 사라지면 안 된다 — 열었던 자리로 돌려준다
-      buttonRef.current?.focus()
-    }
-
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const { open, setOpen, containerRef, buttonRef } = useDropdown()
 
   return (
     <div ref={containerRef} className="relative">
@@ -60,25 +37,33 @@ export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: stri
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`${user.name} 메뉴`}
-        className="block cursor-pointer rounded-full ring-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className={MENU_TRIGGER_CLASS}
       >
         <Avatar user={user} />
       </button>
 
       {open && (
-        <div
-          role="menu"
-          className="absolute right-0 z-20 mt-2 w-44 rounded-md border border-neutral-200 bg-white py-1 shadow-lg"
-        >
+        <div role="menu" className={`${MENU_PANEL_CLASS} w-44`}>
           <p className="truncate px-3 py-2 text-sm font-medium text-neutral-900">{user.name}</p>
           <div className="my-1 border-t border-neutral-100" />
 
           {shelfTo && (
-            <Link to={shelfTo} role="menuitem" onClick={() => setOpen(false)} className={ITEM_CLASS}>
-              내 서재
+            <Link
+              to={shelfTo}
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={MENU_ITEM_CLASS}
+            >
+              <Library aria-hidden className={MENU_ICON_CLASS} strokeWidth={1.75} />내 서재
             </Link>
           )}
-          <Link to="/settings" role="menuitem" onClick={() => setOpen(false)} className={ITEM_CLASS}>
+          <Link
+            to="/settings"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className={MENU_ITEM_CLASS}
+          >
+            <Settings aria-hidden className={MENU_ICON_CLASS} strokeWidth={1.75} />
             설정
           </Link>
           {isAdmin && (
@@ -86,8 +71,9 @@ export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: stri
               to="/admin/members"
               role="menuitem"
               onClick={() => setOpen(false)}
-              className={ITEM_CLASS}
+              className={MENU_ITEM_CLASS}
             >
+              <Users aria-hidden className={MENU_ICON_CLASS} strokeWidth={1.75} />
               멤버 관리
             </Link>
           )}
@@ -98,8 +84,9 @@ export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: stri
               setOpen(false)
               void logout().then(() => navigate('/'))
             }}
-            className={ITEM_CLASS}
+            className={MENU_ITEM_CLASS}
           >
+            <LogOut aria-hidden className={MENU_ICON_CLASS} strokeWidth={1.75} />
             로그아웃
           </button>
         </div>

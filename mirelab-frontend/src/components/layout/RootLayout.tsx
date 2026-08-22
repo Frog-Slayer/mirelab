@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
+import NotificationsMenu from '@/components/layout/NotificationsMenu'
 import UserMenu from '@/components/layout/UserMenu'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
@@ -85,9 +86,14 @@ export default function RootLayout() {
             )
           )}
 
-          {/* 관리자용 "멤버 관리"도 프로필 메뉴 안으로 들어갔다 — 헤더에는 아바타만 남는다 */}
-          <div className="ml-auto">
-            {user && <UserMenu user={user} shelfTo={shelfSlug ? `/${shelfSlug}/shelf` : null} />}
+          {/* 관리자용 "멤버 관리"도 프로필 메뉴 안으로 들어갔다 — 헤더에는 종과 아바타만 남는다 */}
+          <div className="ml-auto flex items-center gap-3">
+            {user && (
+              <>
+                <NotificationsMenu />
+                <UserMenu user={user} shelfTo={shelfSlug ? `/${shelfSlug}/shelf` : null} />
+              </>
+            )}
           </div>
         </div>
 
