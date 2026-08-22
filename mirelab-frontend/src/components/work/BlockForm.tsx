@@ -20,14 +20,14 @@ export default function BlockForm({
         if (!title.trim()) return
         onSave(title.trim())
       }}
-      className="flex flex-col gap-2 rounded-lg border border-neutral-200 p-4"
+      className="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white px-5 py-5"
     >
       <input
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="제목"
-        className="rounded-sm border border-neutral-200 px-3 py-1.5 text-sm font-medium outline-none focus:border-neutral-400"
+        className="work-block-h1 border-b border-neutral-200 bg-transparent px-0 pb-2 outline-none placeholder:text-neutral-300 focus:border-neutral-400"
       />
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="app-button app-button-ghost">

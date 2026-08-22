@@ -52,5 +52,5 @@ export default function PersonalBlockNoteField({
     }
   }, [editor])
 
-  return <BlockNoteView editor={editor} />
+  return <BlockNoteView editor={editor} theme="light" />
 }
