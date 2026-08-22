@@ -1,3 +1,9 @@
 .env
 .env.*
 !.env.example
+
+# 편집기·OS 부스러기. 커밋할 일이 없고, git status 에 섞이면 진짜 변경이 안 보인다.
+# vim 스왑 파일(.docker-compose.dev.yml.swp 같은)은 편집 중에만 있다가 저절로 사라진다.
+*.sw[a-p]
+*~
+.DS_Store

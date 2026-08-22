@@ -14,7 +14,7 @@ import {
   type AdminUser,
   type Study,
 } from '@/types'
-import { ApiError } from '@/lib/api'
+import { apiErrorMessage } from '@/lib/api'
 
 /**
  * 고를 수 있는 색은 이 넷뿐이다 — CollaborativeBody 의 COLOR_HEX 가 매핑하는 값들이라
@@ -202,9 +202,5 @@ function RequestRow({
 }
 
 function statusChangeError(error: Error): string {
-  if (error instanceof ApiError && error.body && typeof error.body === 'object') {
-    const message = Reflect.get(error.body, 'message')
-    if (typeof message === 'string' && message) return message
-  }
-  return '상태를 변경하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
+  return apiErrorMessage(error, '상태를 변경하지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
 }
