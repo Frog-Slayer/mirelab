@@ -64,6 +64,13 @@ class SlotValue(
 
     var draft: Boolean = true,
 
+    /**
+     * "내 평가"(별점과 그 옆 한줄평) 공개 여부. 새 값은 기본적으로 본인에게만 보이고,
+     * 둘은 언제나 같은 값을 갖는다 — 여닫는 단위가 낱개가 아니라 덩어리다(SlotService 참고).
+     */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    var published: Boolean = false,
+
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(nullable = false)

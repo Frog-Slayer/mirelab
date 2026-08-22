@@ -55,7 +55,8 @@ class WorkController(
         @AuthenticationPrincipal principal: AuthPrincipal,
     ): ResponseEntity<WorkDetailResponse> {
         membershipGuard.requireWork(workId, principal.userId)
-        return workService.getDetail(workId)?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+        return workService.getDetail(workId, principal.userId)?.let { ResponseEntity.ok(it) }
+            ?: ResponseEntity.notFound().build()
     }
 
     @PatchMapping("/api/works/{workId}/status")

@@ -168,6 +168,8 @@ export interface SlotValue {
   userId: string | null
   value: SlotValueData
   draft: boolean
+  /** 개인 평점 공개 여부. 평점이 아닌 값에서는 사용하지 않는다 */
+  published?: boolean
 }
 
 /** 모임 날짜 조율. 확정된 뒤에도 다시 열 수 있다 */

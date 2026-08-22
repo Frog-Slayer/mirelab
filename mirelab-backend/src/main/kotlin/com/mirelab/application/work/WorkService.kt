@@ -52,12 +52,15 @@ class WorkService(
         }
     }
 
-    fun getDetail(workId: UUID): WorkDetailResponse? {
+    fun getDetail(workId: UUID, viewerId: UUID): WorkDetailResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
         val studyId = work.study?.id ?: return null
         val sessions = sessionRepository.findByWorkId(workId)
             .sortedWith(compareBy(nullsLast()) { it.meetAt })
-        return WorkDetailResponse(rank(work, studyId, effectiveMemberIds(studyId)), sessions.map { it.toResponse() })
+        return WorkDetailResponse(
+            rank(work, studyId, effectiveMemberIds(studyId), viewerId),
+            sessions.map { it.toResponse() },
+        )
     }
 
     @Transactional
@@ -157,7 +160,12 @@ class WorkService(
             addAll(userRepository.findAllByRole(Role.ADMIN).mapNotNull { it.id })
         }
 
-    private fun rank(work: Work, studyId: UUID, memberIds: Set<UUID>): RankedWorkResponse {
+    private fun rank(
+        work: Work,
+        studyId: UUID,
+        memberIds: Set<UUID>,
+        viewerId: UUID? = null,
+    ): RankedWorkResponse {
         val slotId = ratingSlotId(studyId)
         val values = if (slotId != null) {
             slotValueRepository.findByWorkIdAndContext(work.id!!, SlotValueContext.STUDY)
@@ -169,8 +177,16 @@ class WorkService(
         } else {
             emptyList()
         }
-        val ratings = values.associate { it.user.id.toString() to ((it.value["n"] as? Number)?.toDouble() ?: 0.0) }
-        val average = if (ratings.isEmpty()) 0.0 else ratings.values.average()
-        return work.toRanked(ratings, average)
+        val publishedValues = values.filter { it.published }
+        val visibleValues = values.filter { it.published || it.user.id == viewerId }
+        val ratings = visibleValues.associate {
+            it.user.id.toString() to ((it.value["n"] as? Number)?.toDouble() ?: 0.0)
+        }
+        val publishedRatings = publishedValues.associate {
+            it.user.id.toString() to ((it.value["n"] as? Number)?.toDouble() ?: 0.0)
+        }
+        val average = if (publishedRatings.isEmpty()) 0.0 else publishedRatings.values.average()
+        val ratedUserIds = values.mapTo(mutableSetOf()) { it.user.id.toString() }
+        return work.toRanked(ratings, publishedRatings.keys, ratedUserIds, average)
     }
 }

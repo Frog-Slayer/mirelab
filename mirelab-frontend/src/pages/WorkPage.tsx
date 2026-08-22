@@ -15,9 +15,10 @@ import NotFoundPage from '@/pages/NotFoundPage'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
+import { ApiError } from '@/lib/api'
 import { formatRating } from '@/lib/format'
 import { addSession } from '@/lib/sessionApi'
-import { getWorkSlots, saveValue } from '@/lib/slotApi'
+import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
 import {
   addWorkBlock,
   getWorkBlocks,
@@ -26,6 +27,7 @@ import {
   updateWorkBlockTitle,
 } from '@/lib/workBlockApi'
 import {
+  type RankedWork,
   getHallOfFame,
   getWork,
   removeWork,
@@ -39,6 +41,23 @@ const statusLabel: Record<string, string> = {
   [WorkStatus.CANDIDATE]: '후보',
   [WorkStatus.READING]: '읽는 중',
   [WorkStatus.DONE]: '완료',
+}
+
+/**
+ * 별점 공개의 묘미는 다 같이 "하나, 둘, 셋" 하고 여는 그 순간이라, 그때만큼은 밀리면 안 된다.
+ * 그건 서버가 밀어주는 신호(openWorkSlotEvents)가 맡고, 폴링은 그 신호가 끊겼을 때를 위한
+ * 보험이다 — 그래서 스트림이 붙어 있는 동안은 느긋하게만 본다.
+ *
+ * 보험으로 돌 때도 종일 초당 왕복을 돌릴 수는 없으니(작품 상세 한 번이 서버 쿼리 여러 개다),
+ * "열리기를 기다리는 중"일 때만 촘촘히 본다. 매긴 사람이 다 공개해버렸으면 기다릴 게 없다.
+ */
+const REVEAL_POLL_MS = 1_000
+const IDLE_POLL_MS = 30_000
+
+function ratingPollMs(work: RankedWork | undefined, live: boolean): number {
+  if (live || !work || work.status === WorkStatus.CANDIDATE) return IDLE_POLL_MS
+  const pending = work.ratedUserIds.length > work.publishedRatingUserIds.length
+  return pending ? REVEAL_POLL_MS : IDLE_POLL_MS
 }
 
 /** 앞으로 한 칸 나아가는 동작. 완료는 끝이라 없다 */
@@ -55,9 +74,12 @@ export default function WorkPage() {
   const navigate = useNavigate()
   const [manageOpen, setManageOpen] = useState(false)
   const [ratingOpen, setRatingOpen] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
   const [startOpen, setStartOpen] = useState(false)
   const { open: drawerOpen, setOpen: setDrawerOpen } = useRecordDrawer()
   const [creatingBlock, setCreatingBlock] = useState(false)
+  /** 서버가 신호를 밀어주는 접속이 살아 있는지 — 끊긴 동안만 폴링이 촘촘해진다 */
+  const [live, setLive] = useState(false)
 
   // 드로어 열림 상태는 RootLayout 에 있어서 페이지를 떠나도 안 꺼진다 —
   // 다른 화면에서 main 이 계속 밀려 있는 것처럼 보이니 나갈 때 접어둔다.
@@ -65,14 +87,35 @@ export default function WorkPage() {
     return () => setDrawerOpen(false)
   }, [setDrawerOpen])
 
+  // 누가 평점을 공개하거나 한줄평을 고치면 서버가 곧바로 알려준다. 신호에는 내용이 없으니
+  // (무엇이 보이는지는 사람마다 다르다) 이 작품이 걸린 쿼리만 다시 받아오게 한다.
+  const userId = user?.id
+  useEffect(() => {
+    if (!userId) return
+    return openWorkSlotEvents(workId, {
+      onEvent: () => {
+        void qc.invalidateQueries({ queryKey: ['work', workId] })
+        void qc.invalidateQueries({ queryKey: ['workSlots', workId] })
+        // 공개된 평점이 늘면 평균이 바뀌고, 그러면 명예의 전당 순위도 따라 바뀐다
+        void qc.invalidateQueries({ queryKey: ['hallOfFame'] })
+      },
+      onConnectedChange: setLive,
+    })
+  }, [qc, workId, userId])
+
   const { data, isPending } = useQuery({
     queryKey: ['work', workId],
     queryFn: () => getWork(workId),
+    // 다른 멤버가 평점을 공개하거나 공개 평점을 수정하면 화면 전환 없이 반영한다.
+    refetchInterval: (query) => ratingPollMs(query.state.data?.work, live),
   })
   const { data: workSlots } = useQuery({
     queryKey: ['workSlots', workId, user?.id],
     queryFn: () => getWorkSlots(workId),
     enabled: !!user,
+    // 남의 한줄평은 점수와 달리 이쪽 응답에 실려 온다 — 같이 갱신해야 별점만 바뀌고
+    // 그 밑 한줄평은 옛것 그대로인 어긋난 카드가 안 나온다.
+    refetchInterval: ratingPollMs(data?.work, live),
   })
   const blockApiReady = isWorkBlockApiReady(workId)
   const { data: blocks = [] } = useQuery({
@@ -108,6 +151,25 @@ export default function WorkPage() {
     },
   })
   const save = useMutation({ mutationFn: saveValue, onSuccess: refresh })
+  // 공개 토글의 표시 상태는 서버 값(work.publishedRatingUserIds)이라, 실패하면 버튼이
+  // 슬그머니 제자리로 돌아갈 뿐 아무 말이 없다 — 눌러도 안 되는 버튼을 계속 누르게 되니
+  // 실패는 반드시 화면에 남긴다.
+  const changeRatingVisibility = useMutation({
+    mutationFn: (published: boolean) => setRatingPublished(workId, published),
+    onSuccess: () => {
+      setPublishError(null)
+      refresh()
+    },
+    onError: (error) => {
+      setPublishError(
+        error instanceof ApiError && error.status === 404
+          ? '별점을 먼저 저장한 뒤에 공개할 수 있어요.'
+          : '공개 설정을 바꾸지 못했어요. 잠시 뒤 다시 시도해 주세요.',
+      )
+      // 서버가 실제로 어떤 상태인지 다시 받아와 화면과 어긋난 채로 두지 않는다.
+      refresh()
+    },
+  })
   const drop = useMutation({
     mutationFn: () => removeWork(workId),
     onSuccess: () => {
@@ -258,17 +320,24 @@ export default function WorkPage() {
               </div>
             </div>
 
-            {work.voterCount > 0 && (
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-serif text-4xl font-semibold tabular-nums">
-                    {formatRating(work.average)}
-                  </span>
-                  <Stars value={work.average} />
+            <div className="flex min-h-14 flex-col items-end justify-center gap-1">
+              {work.voterCount > 0 ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    <span className="font-serif text-4xl font-semibold tabular-nums">
+                      {formatRating(work.average)}
+                    </span>
+                    <Stars value={work.average} />
+                  </div>
+                  <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-neutral-400">
+                  <span>평가 없음</span>
+                  <Stars value={0} />
                 </div>
-                <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {work.status !== WorkStatus.CANDIDATE && (
@@ -278,13 +347,17 @@ export default function WorkPage() {
               </span>
               <div className="mt-3 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {members.map((m) => {
+                  // 남의 점수는 공개한 것만 내려오므로, 점수가 없다고 안 매긴 건 아니다 —
+                  // ratedUserIds 로 "비공개로 매김"과 "아직 안 매김"을 갈라 보여준다.
                   const score = work.ratings[m.id]
                   const mine = m.id === user.id
+                  const rated = work.ratedUserIds.includes(m.id)
+                  const published = work.publishedRatingUserIds.includes(m.id)
                   const content = (
                     <>
                       <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
                         {score === undefined ? (
-                          <span className="text-neutral-300">아직</span>
+                          <span className="text-neutral-300">{rated ? '비공개' : '아직'}</span>
                         ) : (
                           <>
                             <span aria-hidden>★</span>
@@ -296,10 +369,22 @@ export default function WorkPage() {
                         <span className="truncate text-sm font-medium text-neutral-800">
                           {m.name}
                         </span>
+                        {/* 남의 카드는 점수 자리에 이미 공개 여부가 드러나니, 뱃지는 내 것만 */}
+                        {mine && rated && (
+                          <span
+                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                              published
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-neutral-100 text-neutral-500'
+                            }`}
+                          >
+                            {published ? '공개' : '비공개'}
+                          </span>
+                        )}
                       </div>
-                      {score !== undefined && blurbOf(m.id) && (
-                        <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>
-                      )}
+                      {/* 한줄평 공개 여부는 그 칸의 visibility 가 이미 정한다 — 평점을
+                          비공개로 뒀다고 같이 가릴 일이 아니다 */}
+                      {blurbOf(m.id) && <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>}
                     </>
                   )
                   return mine ? (
@@ -330,10 +415,17 @@ export default function WorkPage() {
               blurbSlot={blurbSlot}
               ratingValue={myValueOf(ratingSlot.id)?.value}
               blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
+              published={work.publishedRatingUserIds.includes(user.id)}
+              onPublishedChange={(published) => changeRatingVisibility.mutate(published)}
+              changingPublished={changeRatingVisibility.isPending}
+              publishError={publishError}
               onSaveSlot={(slotDefId, value) =>
                 save.mutate({ targetId: work.id, slotDefId, value, draft: false })
               }
-              onClose={() => setRatingOpen(false)}
+              onClose={() => {
+                setPublishError(null)
+                setRatingOpen(false)
+              }}
             />
           )}
 
