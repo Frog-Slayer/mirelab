@@ -6,6 +6,8 @@ export interface RankedWork extends Work {
   ratings: Record<string, number>
   /** 다른 멤버에게 공개된 평점의 userId */
   publishedRatingUserIds: string[]
+  /** 평점을 남긴 userId 전체 — 비공개로 매긴 사람까지 포함한다(점수는 안 내려온다) */
+  ratedUserIds: string[]
   average: number
   voterCount: number
 }

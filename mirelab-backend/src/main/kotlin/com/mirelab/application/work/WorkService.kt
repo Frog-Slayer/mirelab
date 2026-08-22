@@ -186,6 +186,7 @@ class WorkService(
             it.user.id.toString() to ((it.value["n"] as? Number)?.toDouble() ?: 0.0)
         }
         val average = if (publishedRatings.isEmpty()) 0.0 else publishedRatings.values.average()
-        return work.toRanked(ratings, publishedRatings.keys, average)
+        val ratedUserIds = values.mapTo(mutableSetOf()) { it.user.id.toString() }
+        return work.toRanked(ratings, publishedRatings.keys, ratedUserIds, average)
     }
 }

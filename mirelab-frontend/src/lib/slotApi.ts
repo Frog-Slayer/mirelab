@@ -1,4 +1,5 @@
 import { api } from '@/lib/api'
+import { openLiveStream } from '@/lib/liveStream'
 import type { SlotDef, SlotValue } from '@/types'
 import { SlotScope } from '@/types'
 
@@ -83,4 +84,15 @@ export function saveValue(input: {
 
 export function setRatingPublished(workId: string, published: boolean): Promise<void> {
   return api.patch(`/works/${workId}/rating-visibility`, { published })
+}
+
+/**
+ * 이 작품의 칸 값이 누구에 의해서든 바뀌면 신호가 온다 — 내용은 없으니 받는 쪽이 평소
+ * 경로로 다시 받아가면 된다. 끊을 때 부를 함수를 돌려준다.
+ */
+export function openWorkSlotEvents(
+  workId: string,
+  handlers: { onEvent: () => void; onConnectedChange?: (connected: boolean) => void },
+): () => void {
+  return openLiveStream(`/works/${workId}/slot-events`, handlers)
 }

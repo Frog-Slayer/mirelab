@@ -1,5 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
+/** fetch 래퍼를 못 타는 요청(스트리밍 접속 등)이 같은 주소를 쓰도록 열어둔다 */
+export const API_BASE_URL = BASE_URL
+
 export class ApiError extends Error {
   readonly status: number
   readonly body: unknown
@@ -92,6 +95,17 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
     return await rawRequest<T>(path, options)
   }
+}
+
+/**
+ * 스트리밍 접속(SSE)처럼 위 래퍼를 못 타는 요청이 401 을 만났을 때 쓰는 갱신 경로.
+ * 갱신은 단 한 군데(authApi.refreshSession)만 한다는 규칙을 지키면서 재시도하게 해준다.
+ */
+export async function refreshAuth(): Promise<boolean> {
+  if (!tokenRefresher) return false
+  const refreshed = await tokenRefresher()
+  if (!refreshed) onAuthLost?.()
+  return refreshed
 }
 
 /** 갱신 요청 자신은 재시도 루프를 타면 안 되므로 이 저수준 경로를 쓴다 */

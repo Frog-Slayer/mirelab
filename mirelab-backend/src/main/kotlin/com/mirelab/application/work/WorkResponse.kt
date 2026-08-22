@@ -53,9 +53,14 @@ data class RankedWorkResponse(
     val description: String?,
     val coverUrl: String?,
     val actors: List<String>,
-    /** userId(문자열) → 평점 */
+    /** userId(문자열) → 평점. 남의 값은 공개한 것만 담긴다 */
     val ratings: Map<String, Double>,
     val publishedRatingUserIds: Set<String>,
+    /**
+     * 평점을 남긴 사람 전체 — 비공개로 매긴 사람까지 포함한다. 점수는 안 주고 "매겼다"는
+     * 사실만 주는 값이라, 아직 안 매긴 사람과 비공개로 매긴 사람을 화면에서 구분할 수 있다.
+     */
+    val ratedUserIds: Set<String>,
     val average: Double,
     val voterCount: Int,
 )
@@ -63,6 +68,7 @@ data class RankedWorkResponse(
 fun Work.toRanked(
     ratings: Map<String, Double>,
     publishedRatingUserIds: Set<String>,
+    ratedUserIds: Set<String>,
     average: Double,
 ): RankedWorkResponse = RankedWorkResponse(
     id = id!!,
@@ -80,6 +86,7 @@ fun Work.toRanked(
     actors = actors,
     ratings = ratings,
     publishedRatingUserIds = publishedRatingUserIds,
+    ratedUserIds = ratedUserIds,
     average = average,
     voterCount = publishedRatingUserIds.size,
 )
@@ -101,6 +108,7 @@ data class LibraryEntryResponse(
     val actors: List<String>,
     val ratings: Map<String, Double>,
     val publishedRatingUserIds: Set<String>,
+    val ratedUserIds: Set<String>,
     val average: Double,
     val voterCount: Int,
     val sessionCount: Int,
@@ -122,6 +130,7 @@ fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
     actors = actors,
     ratings = ratings,
     publishedRatingUserIds = publishedRatingUserIds,
+    ratedUserIds = ratedUserIds,
     average = average,
     voterCount = voterCount,
     sessionCount = sessionCount,
