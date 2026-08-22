@@ -52,9 +52,16 @@ class ShelfService(
         return ShelfResponse(slotDefs.map { it.toResponse() }, entries)
     }
 
+    /**
+     * 개인 책의 상세. 스터디에서 온 책은 여기에 없다 — 그 책의 기록은 스터디 작품 상세의
+     * "내 기록" 드로어 한 곳에서만 쓴다. 같은 책에 개인 페이지가 따로 있으면 어느 쪽에
+     * 썼는지 사람이 기억해야 하고, 서재에서 눌러 들어간 곳과 스터디에서 눌러 들어간 곳이
+     * 달라진다. 서재의 스터디 책은 목록에는 그대로 꽂혀 있고, 누르면 스터디 쪽으로 간다.
+     */
     @Transactional(readOnly = true)
     fun getEntry(userId: UUID, workId: UUID): ShelfDetailResponse? {
         val work = workRepository.findById(workId).orElse(null) ?: return null
+        if (work.study != null) return null
         val myStudyIds = myStudyIds(userId)
         if (!isMine(work, userId, myStudyIds)) return null
 
@@ -86,10 +93,19 @@ class ShelfService(
         return workRepository.save(work).toResponse()
     }
 
-    /** 저장(upsert) — 스터디 책이면 작품 상세와 같은 STUDY 컨텍스트에 쓴다. 개인 책만 SHELF. */
+    /**
+     * 개인 책의 기록 저장(upsert).
+     *
+     * 스터디 책은 여기로 못 쓴다 — 쓰는 곳은 스터디 작품 상세 하나뿐이다([getEntry] 참고).
+     * 읽는 문([getEntry])만 닫고 쓰는 문을 열어두면, 화면은 없는데 경로만 살아 있는 상태가
+     * 된다.
+     */
     @Transactional
     fun saveValue(userId: UUID, workId: UUID, input: ShelfSlotValueInput): SlotValueResponse {
         val work = workRepository.findById(workId).orElseThrow()
+        if (work.study != null) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "스터디 작품 상세에서 기록하는 책입니다")
+        }
         val myStudyIds = myStudyIds(userId)
         if (!workAccessChecker.canAccess(work, userId, myStudyIds)) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근할 수 없는 작품입니다")
@@ -123,9 +139,20 @@ class ShelfService(
 
     private fun myStudyIds(userId: UUID): Set<UUID> = workAccessChecker.myStudyIds(userId)
 
-    /** 내가 속한 스터디들의 작품 + 내가 개인으로 담은 작품 */
+    /**
+     * 내가 속한 스터디들의 작품 + 내가 개인으로 담은 작품.
+     *
+     * 스터디 작품은 "시작"한 것부터 들어온다. 후보(CANDIDATE)는 아직 다 같이 읽기로 한
+     * 책이 아니라 누가 담아둔 제안일 뿐인데, 그게 곧바로 내 서재에 꽂히면 서재가 "내가
+     * 읽은 것"이 아니라 "스터디 후보 목록"이 된다. 시작하는 순간([SessionService.addForWork]
+     * 이 CANDIDATE -> READING 으로 옮긴다)이 내 책이 되는 지점이다.
+     *
+     * 개인 책은 담는 순간부터 READING 이라([addPersonalWork]) 이 조건에 걸리지 않는다.
+     */
     private fun worksFor(userId: UUID, myStudyIds: Set<UUID>): List<Work> {
-        val studyWorks = myStudyIds.flatMap { workRepository.findByStudyId(it) }
+        val studyWorks = myStudyIds
+            .flatMap { workRepository.findByStudyId(it) }
+            .filter { it.status != WorkStatus.CANDIDATE }
         val ownWorks = workRepository.findByOwnerId(userId)
         return (studyWorks + ownWorks).distinctBy { it.id }
     }

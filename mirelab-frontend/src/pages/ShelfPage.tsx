@@ -12,9 +12,17 @@ import { formatRating } from '@/lib/format'
 import type { SlotDef } from '@/types'
 import { SlotType, WorkKind, WorkStatus } from '@/types'
 
-/** 스터디에서 온 책도 내 서재 안에서는 똑같이 자기 페이지(별도 기록)를 갖는다 */
+/**
+ * 스터디에서 온 책은 그 스터디의 작품 상세로 보낸다 — 그 책의 기록은 거기 "내 기록"
+ * 드로어 한 곳에서만 쓰기 때문이다. 개인 페이지는 혼자 담은 책에만 있다.
+ *
+ * 어느 스터디로 보낼지는 그 책이 속한 스터디(`entry.study`)를 따른다. 서재에는 내가 속한
+ * 스터디 전부의 책이 섞여 꽂히므로, 지금 보고 있는 스터디와 다를 수 있다.
+ */
 function entryHref(entry: ShelfEntry, currentStudySlug: string) {
-  return `/${currentStudySlug}/shelf/${entry.work.id}`
+  return entry.study
+    ? `/${entry.study.slug}/books/${entry.work.id}`
+    : `/${currentStudySlug}/shelf/${entry.work.id}`
 }
 
 const statusPriority: Record<string, number> = {

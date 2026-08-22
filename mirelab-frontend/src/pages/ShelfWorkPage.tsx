@@ -16,8 +16,9 @@ const statusLabel: Record<string, string> = {
 }
 
 /**
- * 내 서재 안의 책 상세. 스터디에서 온 책도 여기서 기록하지만, 스터디 쪽 작품
- * 상세의 기록과는 별개다 — 백엔드가 컨텍스트(SHELF)로 구분해준다.
+ * 혼자 담은 책의 상세. 스터디에서 온 책은 여기 없다 — 그 책은 스터디 작품 상세의
+ * "내 기록" 드로어에서 쓰고, 서재에서 눌러도 그쪽으로 간다([ShelfPage] 의 entryHref).
+ * 그래서 옛 링크로 들어오면 서버가 404 를 주고 아래 문구가 뜬다.
  */
 export default function ShelfWorkPage() {
   const { workId = '' } = useParams()
