@@ -47,7 +47,7 @@ export default function RootLayout() {
         className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur-xl"
       >
         <div className="mx-auto flex max-w-6xl items-center gap-5 px-6 py-3.5">
-          <Link to="/" className="text-lg font-semibold tracking-[-0.03em]">
+          <Link to="/app" className="text-lg font-semibold tracking-[-0.03em]">
             mirelab
           </Link>
 
@@ -98,7 +98,7 @@ export default function RootLayout() {
             )}
             <button
               type="button"
-              onClick={() => void logout()}
+              onClick={() => void logout().then(() => navigate('/'))}
               className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-900"
             >
               로그아웃

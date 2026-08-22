@@ -1,4 +1,4 @@
-import { Navigate, useSearchParams } from 'react-router'
+import { Link, Navigate, useSearchParams } from 'react-router'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { startGoogleLogin } from '@/lib/authApi'
 
@@ -34,14 +34,16 @@ export default function LoginPage() {
   const { status } = useCurrentUser()
 
   // 이미 로그인된 상태로 /login 에 오면(뒤로가기 등) 홈으로 되돌린다
-  if (status === 'authenticated') return <Navigate to="/" replace />
+  if (status === 'authenticated') return <Navigate to="/app" replace />
 
   const notice = NOTICES[params.get('status') ?? params.get('error') ?? '']
 
   return (
     <div className="flex min-h-full items-center justify-center px-6 py-16">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-[-0.03em]">mirelab</h1>
+        <Link to="/" className="text-2xl font-semibold tracking-[-0.03em]">
+          mirelab
+        </Link>
         <p className="mt-2 text-sm text-neutral-500">스터디 기록을 함께 쌓는 곳</p>
 
         {notice && (
@@ -59,8 +61,9 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={startGoogleLogin}
-          className="mt-8 w-full cursor-pointer rounded-md border border-neutral-200 py-2.5 text-sm font-medium hover:bg-neutral-50"
+          className="mt-8 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-md border border-neutral-200 py-2.5 text-sm font-medium hover:bg-neutral-50"
         >
+          <GoogleLogo />
           구글로 계속하기
         </button>
 
@@ -69,5 +72,28 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+function GoogleLogo() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-[18px] flex-none" aria-hidden>
+      <path
+        fill="#4285F4"
+        d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.55h3.24c1.9-1.75 2.98-4.33 2.98-7.42Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 22c2.7 0 4.98-.9 6.63-2.35l-3.24-2.55c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M6.39 13.93A6.03 6.03 0 0 1 6.07 12c0-.67.12-1.32.32-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.55l3.35-2.62Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.94c1.47 0 2.79.5 3.82 1.5l2.88-2.88A9.65 9.65 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z"
+      />
+    </svg>
   )
 }

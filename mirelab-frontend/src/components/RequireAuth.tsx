@@ -6,14 +6,14 @@ function Splash({ label }: { label: string }) {
 }
 
 /**
- * 로그인 안 된 사람은 /login 으로. status 가 loading 인 동안은 아무 판단도 하지 않는다 —
+ * 로그인 안 된 사람은 공개 랜딩으로. status 가 loading 인 동안은 아무 판단도 하지 않는다 —
  * 자동 로그인이 끝나기 전에 리다이렉트하면 새로고침마다 로그인 화면이 번쩍인다.
  */
 export default function RequireAuth() {
   const { status } = useCurrentUser()
 
   if (status === 'loading') return <Splash label="불러오는 중…" />
-  if (status === 'anonymous') return <Navigate to="/login" replace />
+  if (status === 'anonymous') return <Navigate to="/" replace />
 
   return <Outlet />
 }
@@ -26,7 +26,7 @@ export function RequireAdmin() {
   const { status, isAdmin } = useCurrentUser()
 
   if (status === 'loading') return <Splash label="불러오는 중…" />
-  if (!isAdmin) return <Navigate to="/" replace />
+  if (!isAdmin) return <Navigate to="/app" replace />
 
   return <Outlet />
 }
