@@ -34,3 +34,13 @@ export function updateWorkBlockTitle(input: { id: string; title: string }): Prom
 export function removeWorkBlock(id: string): Promise<void> {
   return api.delete(`/blocks/${id}`)
 }
+
+interface RealtimeTicketResponse {
+  value: string
+  expiresInSeconds: number
+}
+
+/** access token 은 Authorization 헤더에만 보내고, WebSocket URL에는 이 일회용 티켓만 넣는다. */
+export function issueRealtimeTicket(blockId: string): Promise<RealtimeTicketResponse> {
+  return api.post(`/blocks/${blockId}/realtime-ticket`)
+}

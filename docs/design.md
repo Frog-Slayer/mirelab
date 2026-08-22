@@ -241,7 +241,8 @@ from slot_value where slot_def_id = ?
 - **토큰**: access 는 30분, 메모리(모듈 변수)에만. refresh 는 30일, 불투명 랜덤 문자열이고 DB 에는 SHA-256 해시만 둔다. 갱신할 때마다 회전한다(사용자당 한 행).
 - **가입**: 등록 안 된 구글 계정은 거부하지 않고 `access_requests` 에 신청으로 쌓는다. admin(`pj0642@gmail.com`)이 `/admin/members` 에서 승인하면 `PROFILE_REQUIRED`가 되고, 신청자가 다음 구글 로그인에서 이름·색을 직접 입력할 때 `User`가 만들어지며 `APPROVED`가 된다. 승인 전에는 로그인 화면에서 "승인 대기" 안내를 본다.
 - **멤버 데이터**: 목 사용자는 만들지 않는다. 실제 멤버는 가입 정보 입력을 완료할 때 생성되고, 스터디에 배정된 멤버와 admin만 멤버별 평점에 노출된다.
-- **실시간 서버**: 접속 URL 쿼리로 access token 을 받아, 백엔드 `POST /internal/blocks/{id}/authorize` 에 한 번 물어보고 방을 열어준다. `/internal` 하위는 공유 시크릿 헤더(`X-Internal-Secret`)로 막혀 있다.
+- **실시간 서버**: 인증된 REST 요청으로 블록 전용·20초·일회용 티켓을 먼저 발급한다. 접속 URL에는 일반 access token 대신 이 티켓만 넣고, 릴레이가 백엔드 `POST /internal/blocks/{id}/realtime-ticket/consume` 에서 원자적으로 한 번 소비한 뒤 방을 연다. 소켓은 토큰보다 오래 살 수 있으므로 릴레이가 1분마다 `GET /internal/blocks/{id}/access?userId=` 로 다시 물어보고, 거부되거나 스터디에서 빠졌으면 그 자리에서 끊는다. `/internal` 하위는 공유 시크릿 헤더(`X-Internal-Secret`)로 막혀 있다.
+- **거부된 계정**: 거부해도 스터디 멤버십은 남으므로 소속만 보면 통과한다. 그래서 REST 는 `JwtAuthenticationFilter`, 실시간은 티켓 발급·소비·재인가 세 지점 모두 `AccessRequestService.canLogin` 을 같이 본다.
 - 프론트는 여전히 `useCurrentUser()` 훅 하나로 감싸져 있다.
 
 설정은 `mirelab-backend/application-secret.properties.example` 참고.
