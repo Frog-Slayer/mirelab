@@ -19,21 +19,12 @@ export class ApiError extends Error {
  */
 let accessToken: string | null = null
 
-/** 토큰이 갈릴 때 같이 따라가야 하는 것들(Yjs 접속 파라미터 등)에 알린다 */
-const tokenListeners = new Set<(token: string | null) => void>()
-
 export function getAccessToken(): string | null {
   return accessToken
 }
 
 export function setAccessToken(token: string | null): void {
   accessToken = token
-  tokenListeners.forEach((listener) => listener(token))
-}
-
-export function onAccessTokenChange(listener: (token: string | null) => void): () => void {
-  tokenListeners.add(listener)
-  return () => tokenListeners.delete(listener)
 }
 
 /**

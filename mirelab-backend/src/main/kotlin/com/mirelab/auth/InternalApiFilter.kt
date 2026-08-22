@@ -11,8 +11,9 @@ import org.springframework.web.filter.OncePerRequestFilter
  * `/internal` 하위는 사람이 아니라 실시간 릴레이(mirelab-realtime)가 부르는 경로다.
  * 사용자 토큰으로 인증할 수 없으니 공유 시크릿 헤더로 막는다 — 릴레이와 백엔드가 같은 값을 쥔다.
  *
- * 이 시크릿만으로는 "누가" 인지 알 수 없다. 그래서 블록 접근 권한은 별도로
- * [com.mirelab.application.work.WorkBlockAccessController] 가 사용자 토큰까지 받아서 따로 본다.
+ * 사용자의 블록 접근 권한은 공개 API에서 일회용 티켓을 발급할 때 확인하고, 내부 경로에서는
+ * [com.mirelab.application.work.WorkBlockAccessController] 가 그 티켓을 소비하면서, 그리고
+ * 접속이 사는 동안 주기적으로 다시 물어보면서 같은 기준으로 확인한다.
  */
 class InternalApiFilter(private val expectedSecret: String) : OncePerRequestFilter() {
 
