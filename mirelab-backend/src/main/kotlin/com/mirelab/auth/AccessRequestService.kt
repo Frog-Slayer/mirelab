@@ -5,6 +5,7 @@ import com.mirelab.domain.auth.AccessRequestStatus
 import com.mirelab.domain.user.Role
 import com.mirelab.domain.user.User
 import com.mirelab.infra.auth.AccessRequestRepository
+import com.mirelab.infra.user.ProfilePictureImporter
 import com.mirelab.infra.user.UserRepository
 import java.util.UUID
 import org.springframework.http.HttpStatus
@@ -23,6 +24,7 @@ class AccessRequestService(
     private val accessRequestRepository: AccessRequestRepository,
     private val userRepository: UserRepository,
     private val refreshTokenService: RefreshTokenService,
+    private val profilePictureImporter: ProfilePictureImporter,
 ) {
     /** 등록되지 않은 계정의 로그인 시도 — 신청을 만들거나, 이미 있으면 최신 프로필로 되살린다 */
     @Transactional
@@ -111,6 +113,13 @@ class AccessRequestService(
         } ?: userRepository.save(
             User(name = trimmedName, color = color, email = email, role = Role.MEMBER),
         )
+
+        // 구글 사진을 기본 프로필 사진으로 깔아준다. 이미 사진이 있는 계정(다시 가입 정보를
+        // 입력하는 경우)은 건드리지 않는다 — 본인이 고른 사진을 되돌려놓으면 안 된다.
+        if (user.pictureFilename == null) {
+            user.pictureFilename = profilePictureImporter.importFrom(request.pictureUrl)
+        }
+
         request.approve(user)
 
         return user

@@ -47,6 +47,8 @@ export interface User {
   name: string
   color: string
   role: Role
+  /** 프로필 사진 경로. 안 올렸으면 null 이고, 그때는 이름·색으로 기본 아바타를 그린다 */
+  pictureUrl: string | null
 }
 
 /** admin 은 가입 신청을 승인하는 사람. 화면에서는 "멤버 관리" 진입 여부만 갈린다 */

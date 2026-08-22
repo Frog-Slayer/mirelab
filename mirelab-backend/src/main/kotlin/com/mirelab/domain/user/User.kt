@@ -35,6 +35,15 @@ class User(
     @Column(unique = true)
     var email: String? = null,
 
+    /**
+     * 프로필 사진 파일 이름. 사진 자체는 DB 가 아니라 서버 볼륨에 두고 여기엔 이름만 둔다.
+     *
+     * 이름이 곧 무작위 UUID 라 갈아끼울 때마다 URL 이 통째로 바뀐다 — 브라우저·프록시가
+     * 옛 사진을 계속 들고 있는 일이 없고, 캐시를 영구로 걸어도 안전하다.
+     */
+    @Column(name = "picture_filename")
+    var pictureFilename: String? = null,
+
     @Enumerated(EnumType.STRING)
     var role: Role = Role.MEMBER,
 )

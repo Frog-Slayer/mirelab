@@ -97,6 +97,9 @@ class SecurityConfig(
             "/api/auth/signup",
             "/api/oauth2/**",
             "/api/login/oauth2/**",
+            // 파일 이름이 무작위 UUID 라 주소를 아는 사람만 꺼낼 수 있다 —
+            // <img> 가 토큰을 실을 수 없어서 인증 대신 이 방식을 쓴다(ProfilePictureController 주석).
+            "/api/profile-pictures/**",
             "/internal/**", // InternalApiFilter 가 공유 시크릿으로 따로 막는다
             "/h2-console/**",
             "/error",
