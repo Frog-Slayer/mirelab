@@ -38,6 +38,11 @@ export default function RootLayout() {
 
   const current = studies.find((s) => s.slug === studySlug) ?? null
 
+  // 서재는 개인 것이라 어느 스터디에서 열든 내용이 같다(백엔드가 slug 를 안 본다). 다만
+  // 화면 자체는 스터디 안에 있어서 slug 가 있어야 열리므로, 스터디 밖(설정·멤버 관리)에서는
+  // 아무 데나 — 첫 스터디로 보낸다. 아직 어느 스터디에도 없으면 갈 곳이 없으니 감춘다.
+  const shelfSlug = current?.slug ?? studies[0]?.slug ?? null
+
   return (
     <div
       className="flex min-h-full flex-col"
@@ -91,7 +96,7 @@ export default function RootLayout() {
                 멤버 관리
               </NavLink>
             )}
-            {user && <UserMenu user={user} />}
+            {user && <UserMenu user={user} shelfTo={shelfSlug ? `/${shelfSlug}/shelf` : null} />}
           </div>
         </div>
 
@@ -128,17 +133,17 @@ function StudyNav({ study }: { study: Study }) {
   const base = `/${study.slug}`
 
   // 홈(명예의 전당 + 책장)을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
+  // "내 서재" 는 여기 없다 — 다 같이 보는 것들 사이에 개인 화면이 끼면 축이 섞인다.
+  // 프로필 사진 메뉴(UserMenu)로 옮겼다.
   const items = study.hasWorks
     ? [
         { to: base, label: '홈', end: true },
         { to: `${base}/books`, label: '작품 목록', end: true },
         { to: `${base}/sessions`, label: '일정', end: true },
-        { to: `${base}/shelf`, label: '내 서재', end: false },
       ]
     : [
         { to: base, label: '홈', end: true },
         { to: `${base}/sessions`, label: '일정', end: true },
-        { to: `${base}/shelf`, label: '내 서재', end: false },
       ]
 
   return (

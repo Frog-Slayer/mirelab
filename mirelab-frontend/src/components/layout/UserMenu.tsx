@@ -5,12 +5,23 @@ import { useCurrentUser } from '@/hooks/currentUser'
 import type { User } from '@/types'
 
 /**
+ * 메뉴 항목 하나의 생김새. Link 든 button 이든 똑같이 보이도록 한 곳에 모아둔다 —
+ * 각자 클래스를 늘어놓으면 하나를 고칠 때 나머지가 조용히 어긋난다.
+ */
+const ITEM_CLASS =
+  'block w-full cursor-pointer px-3 py-2 text-left text-sm font-normal text-neutral-700 hover:bg-neutral-50'
+
+/**
  * 헤더 우상단의 프로필 사진과 그 아래로 열리는 메뉴.
  *
  * 로그아웃을 여기 넣은 이유: 헤더에 상시 노출돼 있으면 매일 쓰는 버튼들 사이에서 실수로
  * 눌리기 쉽고, 자리도 그만큼 차지한다. 자주 쓰지 않는 것은 한 번 열어야 보이는 편이 낫다.
+ *
+ * "내 서재" 도 같은 이유로 여기 있다 — 스터디 탭(홈·작품 목록·일정)은 다 같이 보는 것이고
+ * 서재는 내 것이라, 축이 다른 것을 같은 줄에 세워두지 않는다. 서재 화면은 스터디 안에
+ * 있으므로([routes] 의 `:studySlug/shelf`) 갈 곳이 정해질 때만 [shelfTo] 가 들어온다.
  */
-export default function UserMenu({ user }: { user: User }) {
+export default function UserMenu({ user, shelfTo }: { user: User; shelfTo?: string | null }) {
   const { logout } = useCurrentUser()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -60,12 +71,12 @@ export default function UserMenu({ user }: { user: User }) {
           <p className="truncate px-3 py-2 text-sm font-medium text-neutral-900">{user.name}</p>
           <div className="my-1 border-t border-neutral-100" />
 
-          <Link
-            to="/settings"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-          >
+          {shelfTo && (
+            <Link to={shelfTo} role="menuitem" onClick={() => setOpen(false)} className={ITEM_CLASS}>
+              내 서재
+            </Link>
+          )}
+          <Link to="/settings" role="menuitem" onClick={() => setOpen(false)} className={ITEM_CLASS}>
             설정
           </Link>
           <button
@@ -75,7 +86,7 @@ export default function UserMenu({ user }: { user: User }) {
               setOpen(false)
               void logout().then(() => navigate('/'))
             }}
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50"
+            className={ITEM_CLASS}
           >
             로그아웃
           </button>

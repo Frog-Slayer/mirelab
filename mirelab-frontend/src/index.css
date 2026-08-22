@@ -26,12 +26,12 @@ body {
   color: #14532d;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+/*
+ * 폼 요소의 `font: inherit` 는 여기서 다시 쓰지 않는다 — Tailwind preflight 가 이미
+ * @layer base 에서 해준다. 레이어 밖에 같은 규칙을 두면 캐스케이드 레이어 규칙상
+ * 레이어 밖 선언이 모든 레이어를 이겨서, button/input/textarea/select 에 붙인
+ * text-sm·font-medium 같은 유틸리티가 통째로 무시된다(부모 크기를 물려받아 버린다).
+ */
 
 /*
  * @blocknote/shadcn의 메뉴 배경 유틸리티(bg-popover)는 패키지 내부에서만 쓰여
