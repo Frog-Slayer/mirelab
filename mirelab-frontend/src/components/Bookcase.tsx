@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import PickNote from '@/components/PickNote'
@@ -161,7 +161,39 @@ export function Bookcase({
 }
 
 const PLANK_CLASS =
-  'h-4 border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]'
+  'border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]'
+
+/**
+ * 선반 두께와 칸의 위아래 여백(px).
+ *
+ * 줄 사이 간격에는 선반이 겹쳐 놓이므로 `줄간격 = 아래여백 + 선반두께 + 위여백` 이
+ * 정확히 성립해야 모든 칸의 높이가 같아진다. 이 관계를 Tailwind 클래스로 흩어놓으면
+ * (pt-7 / gap-y-6 / pb-1.5) 눈에 안 보인 채로 어긋난다 — 실제로 첫 칸에는 위여백이
+ * 통째로 들어가고 둘째 칸부터는 선반 두께를 뺀 나머지만 남아서, 첫 칸만 25px 쯤
+ * 높았다. 그래서 세 값을 여기 못박고 간격을 계산해서 쓴다.
+ *
+ * rem 이 아니라 px 인 이유: 선반 위치는 measure() 가 잰 px 좌표로 찍는데(top), 여백만
+ * rem 이면 root font-size 가 바뀔 때 둘이 어긋난다.
+ */
+const PLANK_HEIGHT = 16
+const ROOM_ABOVE = 16
+const ROOM_BELOW = 4
+const ROW_GAP = ROOM_BELOW + PLANK_HEIGHT + ROOM_ABOVE
+
+/**
+ * 칸 하나에 주어지는 높이. 모든 `<li>` 를 이 높이로 고정해서 줄 높이를 맞춘다 —
+ * 안 그러면 줄마다 "그 줄에서 제일 큰 책"만큼 높아져서 칸 높이가 제각각이 된다.
+ *
+ * 책은 이 안에서 바닥에 붙어 서고(items-end), 남는 위쪽은 그냥 빈 공간이다. 실제
+ * 책장처럼 칸은 일정하고 꽂힌 책만 들쭉날쭉해 보인다.
+ *
+ * 표지 있는 책은 이미지 원본 비율을 따라가느라 높이 상한이 없어서(BookCover), 이 값을
+ * max-height 로도 함께 걸어 선반 위로 삐져나오지 못하게 한다. 영화 티켓은 계산식상
+ */
+const SLOT_HEIGHT = 196
+
+/** 칸 하나의 전체 높이 — 빈 책장도 이만큼은 자리를 차지한다 */
+const COMPARTMENT_HEIGHT = ROOM_ABOVE + SLOT_HEIGHT + ROOM_BELOW
 
 /**
  * 칸 하나 — 폭이 남는 한 줄을 최대한 채우고, 다 못 들어가면 자연스럽게 다음 줄로
@@ -194,9 +226,23 @@ function ShelfCompartment({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative">
+      {/*
+        `[&>li]` 로 칸 높이를 여기서 한 번에 먹인다 — 책 컴포넌트마다 따로 걸면 새 종류를
+        추가할 때 하나만 빠져도 그 줄만 높이가 달라진다. li 는 자리(칸)이고, 그 안에서
+        책이 바닥에 붙는다.
+      */}
       <ol
         ref={listRef}
-        className="flex min-h-56 flex-wrap items-end gap-x-2.5 gap-y-6 bg-[#a89b8c] bg-[linear-gradient(90deg,rgba(54,35,21,0.1)_1px,transparent_1px)] bg-size-[14px_14px] px-5 pt-7 pb-1.5"
+        className="flex flex-wrap items-end gap-x-2.5 bg-[#a89b8c] bg-[linear-gradient(90deg,rgba(54,35,21,0.1)_1px,transparent_1px)] bg-size-[14px_14px] px-5 [&>li]:flex [&>li]:h-[var(--slot-h)] [&>li]:items-end"
+        style={
+          {
+            rowGap: ROW_GAP,
+            paddingTop: ROOM_ABOVE,
+            paddingBottom: ROOM_BELOW,
+            minHeight: COMPARTMENT_HEIGHT,
+            '--slot-h': `${SLOT_HEIGHT}px`,
+          } as CSSProperties
+        }
       >
         {children}
       </ol>
@@ -205,10 +251,10 @@ function ShelfCompartment({ children }: { children: React.ReactNode }) {
           key={bottom}
           aria-hidden
           className={`pointer-events-none absolute inset-x-0 ${PLANK_CLASS}`}
-          style={{ top: bottom + 4 }}
+          style={{ top: bottom + ROOM_BELOW, height: PLANK_HEIGHT }}
         />
       ))}
-      <div className={PLANK_CLASS} />
+      <div className={PLANK_CLASS} style={{ height: PLANK_HEIGHT }} />
     </div>
   )
 }
@@ -318,10 +364,16 @@ function MovieTicket({
   // 포스터가 있어도 일반 티켓과 비슷한 덩치를 유지하되, 포스터 면과 스텁을 함께 감싼다.
   const posterWidth = 88 + (hash % 8)
   const ticketWidth = item.coverUrl ? posterWidth + 16 : 96
-  const ticketHeight = item.coverUrl ? Math.round(posterWidth * 1.5) + 72 : 192
+  const ticketHeight = Math.min(
+    SLOT_HEIGHT,
+    item.coverUrl ? Math.round(posterWidth * 1.5) + 72 : 192,
+  )
 
   return (
-    <li className="group/ticket relative">
+    // 칸(li)은 책보다 클 수 있으므로 호버 카드는 티켓을 감싼 안쪽 div 에 건다 —
+    // li 에 걸면 빈 윗공간에만 얹어도 카드가 뜨고, 카드가 책 위가 아니라 칸 위에 붙는다.
+    <li>
+      <div className="group/ticket relative">
       <Link
         to={item.href}
         onMouseEnter={() => onActivate?.(item.id)}
@@ -385,7 +437,8 @@ function MovieTicket({
         </div>
       </Link>
 
-      <BookPreview item={item} users={users} group="ticket" />
+        <BookPreview item={item} users={users} group="ticket" />
+      </div>
     </li>
   )
 }
@@ -409,7 +462,9 @@ function BookCover({
   const titleSize = item.title.length > 34 ? 10 : item.title.length > 22 ? 11 : 13
 
   return (
-    <li className="group/cover relative">
+    // 호버 카드를 안쪽 div 에 거는 이유는 MovieTicket 과 같다
+    <li>
+      <div className="group/cover relative">
       <Link
         to={item.href}
         onMouseEnter={() => onActivate?.(item.id)}
@@ -419,7 +474,10 @@ function BookCover({
           item.source !== undefined ? `, ${item.source ?? '혼자 읽음'}` : ''
         }`}
         className={`relative block origin-bottom overflow-hidden rounded-t-sm border border-black/25 bg-white shadow-[3px_3px_5px_rgba(0,0,0,0.24),inset_3px_0_rgba(255,255,255,0.35)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.28)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
-        style={item.coverUrl ? { width } : { height, width }}
+        // 표지는 원본 비율대로 서되 칸을 넘지는 못한다. 넘치는 만큼은 아래가 잘리는데,
+        // 책 표지는 제목이 위에 있으니 위를 남기고 아래를 자르는 쪽이 알아보기 좋다
+        // (Link 에 이미 overflow-hidden 이 걸려 있다).
+        style={item.coverUrl ? { width, maxHeight: SLOT_HEIGHT } : { height, width }}
       >
         {item.coverUrl ? (
           <Cover
@@ -449,7 +507,8 @@ function BookCover({
         </span>
       </Link>
 
-      <BookPreview item={item} users={users} group="cover" />
+        <BookPreview item={item} users={users} group="cover" />
+      </div>
     </li>
   )
 }
