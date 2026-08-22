@@ -5,6 +5,7 @@ import com.mirelab.domain.auth.AccessRequestStatus
 import com.mirelab.domain.user.Role
 import com.mirelab.domain.user.User
 import com.mirelab.infra.auth.AccessRequestRepository
+import com.mirelab.infra.user.ProfilePictureImporter
 import com.mirelab.infra.user.UserRepository
 import java.util.UUID
 import org.springframework.http.HttpStatus
@@ -23,6 +24,7 @@ class AccessRequestService(
     private val accessRequestRepository: AccessRequestRepository,
     private val userRepository: UserRepository,
     private val refreshTokenService: RefreshTokenService,
+    private val profilePictureImporter: ProfilePictureImporter,
 ) {
     /** 등록되지 않은 계정의 로그인 시도 — 신청을 만들거나, 이미 있으면 최신 프로필로 되살린다 */
     @Transactional
@@ -111,9 +113,28 @@ class AccessRequestService(
         } ?: userRepository.save(
             User(name = trimmedName, color = color, email = email, role = Role.MEMBER),
         )
+
         request.approve(user)
 
         return user
+    }
+
+    /**
+     * 구글 사진을 기본 프로필 사진으로 깔아준다. 이미 사진이 있는 계정(다시 가입 정보를
+     * 입력하는 경우)은 건드리지 않는다 — 본인이 고른 사진을 되돌려놓으면 안 된다.
+     *
+     * [completeProfile] 안에서 부르지 않고 일부러 트랜잭션 밖에 떼어 뒀다. 바깥 서버에서
+     * 파일을 받아 오는 일이라 상대가 늘어지면 그만큼 기다리는데, 트랜잭션 안이면 그동안
+     * DB 커넥션과 방금 만든 계정 행의 잠금을 붙들고 있게 된다.
+     */
+    fun importGooglePicture(userId: UUID, sourceUrl: String?) {
+        if (sourceUrl.isNullOrBlank()) return
+
+        val user = userRepository.findById(userId).orElse(null) ?: return
+        if (user.pictureFilename != null) return
+
+        user.pictureFilename = profilePictureImporter.importFrom(sourceUrl) ?: return
+        userRepository.save(user)
     }
 
     @Transactional

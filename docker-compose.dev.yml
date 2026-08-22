@@ -50,6 +50,8 @@ services:
     volumes:
       - ./mirelab-backend:/app
       - backend_gradle_cache:/gradle-cache
+      # 프로필 사진은 컨테이너 밖에 둔다 — 이미지를 다시 빌드해도 남아 있어야 한다
+      - profile_pictures:/var/mirelab/profile-pictures
     ports:
       - "8080:8080"
     depends_on:
@@ -93,3 +95,4 @@ services:
 volumes:
   pgdata:
   backend_gradle_cache:
+  profile_pictures:

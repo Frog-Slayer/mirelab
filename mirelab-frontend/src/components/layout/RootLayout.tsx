@@ -2,13 +2,14 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
+import UserMenu from '@/components/layout/UserMenu'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
 import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
 export default function RootLayout() {
-  const { user, isAdmin, logout } = useCurrentUser()
+  const { user, isAdmin } = useCurrentUser()
   const { studySlug } = useParams()
   const navigate = useNavigate()
   const [recordDrawerOpen, setRecordDrawerOpen] = useState(false)
@@ -90,19 +91,7 @@ export default function RootLayout() {
                 멤버 관리
               </NavLink>
             )}
-            {user && (
-              <span className="flex items-center gap-2 text-sm text-neutral-700">
-                <span className={`size-2 rounded-full ${user.color}`} aria-hidden />
-                {user.name}
-              </span>
-            )}
-            <button
-              type="button"
-              onClick={() => void logout().then(() => navigate('/'))}
-              className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-900"
-            >
-              로그아웃
-            </button>
+            {user && <UserMenu user={user} />}
           </div>
         </div>
 

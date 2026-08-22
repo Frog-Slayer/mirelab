@@ -45,12 +45,20 @@ class AuthController(
         @org.springframework.web.bind.annotation.RequestBody body: CompleteSignupRequest,
     ): ResponseEntity<Void> {
         val identity = signupIdentity(request)
+        // 승인하고 나면 신청은 PROFILE_REQUIRED 가 아니게 되어 다시 꺼낼 수 없다 — 사진 주소는
+        // 미리 집어둔다.
+        val googlePictureUrl = accessRequestService.profileRequired(
+            identity.requestId,
+            identity.email,
+        ).pictureUrl
         val user = accessRequestService.completeProfile(
             identity.requestId,
             identity.email,
             body.name,
             body.color,
         )
+        // 사진 받아오기는 계정을 만드는 트랜잭션이 끝난 뒤에 한다(AccessRequestService 참고).
+        accessRequestService.importGooglePicture(requireNotNull(user.id), googlePictureUrl)
         authCookies.write(response, refreshTokenService.issue(user))
         signupCookies.clear(response)
         return ResponseEntity.noContent().build()

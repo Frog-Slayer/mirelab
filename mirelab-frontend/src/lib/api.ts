@@ -16,6 +16,31 @@ export class ApiError extends Error {
 }
 
 /**
+ * 서버가 보낸 사람이 읽을 오류 문구를 꺼낸다. 백엔드는 401·403·400 을 모두
+ * `{"message": "..."}` 로 내려주므로(SecurityConfig·ResponseStatusException) 그걸 그대로
+ * 보여주는 편이, 화면마다 지어낸 일반 문구보다 사용자에게 도움이 된다.
+ */
+/**
+ * 서버가 준 `/api/...` 경로를 실제로 요청할 주소로 바꾼다 — `<img src>` 처럼 아래 fetch
+ * 래퍼를 거칠 수 없는 곳이 쓴다.
+ *
+ * 래퍼는 경로 앞에 BASE_URL 을 붙이는데 이 경로에는 이미 `/api` 가 들어 있다. 그대로 쓰면
+ * VITE_API_BASE_URL 로 백엔드를 다른 곳에 둔 배포에서 프론트 origin 의 `/api/...` 를
+ * 찾으러 가고, 그건 SPA 폴백에 걸려 전부 404 가 된다.
+ */
+export function apiAssetUrl(path: string): string {
+  return path.startsWith('/api/') ? `${BASE_URL}${path.slice('/api'.length)}` : path
+}
+
+export function apiErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof ApiError && error.body && typeof error.body === 'object') {
+    const message = Reflect.get(error.body, 'message')
+    if (typeof message === 'string' && message) return message
+  }
+  return fallback
+}
+
+/**
  * access token 은 메모리에만 둔다 — localStorage 에 두면 XSS 로 새고, 쿠키에 두면
  * SPA 라 읽을 일이 없는데 CSRF 표면만 늘어난다. 탭을 새로 열면 refresh 쿠키로
  * 다시 받아오면 된다(CurrentUserProvider 의 자동 로그인).
@@ -62,16 +87,20 @@ async function rawRequest<T>(
   path: string,
   { body, headers, skipAuthRetry: _skipAuthRetry, ...init }: RequestOptions = {},
 ): Promise<T> {
+  // FormData 는 그대로 넘긴다. Content-Type 을 우리가 붙이면 브라우저가 만들어 넣는
+  // multipart boundary 가 빠져서 서버가 본문을 못 읽는다.
+  const multipart = body instanceof FormData
+
   const res = await fetch(`${BASE_URL}${path}`, {
     ...init,
     // refresh 쿠키가 실려야 갱신·로그아웃이 동작한다
     credentials: 'include',
     headers: {
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...(body === undefined || multipart ? {} : { 'Content-Type': 'application/json' }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...headers,
     },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: multipart ? body : body === undefined ? undefined : JSON.stringify(body),
   })
 
   const text = await res.text()

@@ -48,9 +48,11 @@ export default function CurrentUserProvider({ children }: { children: ReactNode 
     queryClient.clear()
   }, [queryClient])
 
+  const applyUser = useCallback((next: User) => setUser(next), [])
+
   const value = useMemo<CurrentUserValue>(
-    () => ({ user, status, isAdmin: user?.role === Role.ADMIN, logout }),
-    [user, status, logout],
+    () => ({ user, status, isAdmin: user?.role === Role.ADMIN, logout, applyUser }),
+    [user, status, logout, applyUser],
   )
 
   return <CurrentUserContext value={value}>{children}</CurrentUserContext>

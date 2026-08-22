@@ -41,6 +41,9 @@ services:
 
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID를 .env에 설정하세요}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET을 .env에 설정하세요}
+    volumes:
+      # 프로필 사진은 DB 가 아니라 여기 쌓인다 — 이 볼륨을 잃으면 사진만 기본 아바타로 돌아간다
+      - profile_pictures:/var/mirelab/profile-pictures
     depends_on:
       db:
         condition: service_healthy
@@ -87,3 +90,4 @@ services:
 volumes:
   pgdata:
   frontend_dist:
+  profile_pictures:

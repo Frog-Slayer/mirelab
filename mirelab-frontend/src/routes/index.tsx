@@ -8,6 +8,7 @@ import WorkPage from '@/pages/WorkPage'
 import ShelfPage from '@/pages/ShelfPage'
 import ShelfWorkPage from '@/pages/ShelfWorkPage'
 import AdminMembersPage from '@/pages/AdminMembersPage'
+import SettingsPage from '@/pages/SettingsPage'
 import LoginPage from '@/pages/LoginPage'
 import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import SignupPage from '@/pages/SignupPage'
@@ -32,6 +33,8 @@ export const router = createBrowserRouter([
         element: <RootLayout />,
         children: [
           { path: 'app', element: <StudyHomeRedirect /> },
+          // 스터디와 무관한 내 계정 설정. RESERVED_SLUGS 의 'settings' 가 slug 충돌을 막는다.
+          { path: 'settings', element: <SettingsPage /> },
           // 전역 관리 화면. RESERVED_SLUGS 에 'admin' 이 있어 스터디 slug 와 안 부딪힌다.
           {
             path: 'admin/members',

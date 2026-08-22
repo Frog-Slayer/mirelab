@@ -9,6 +9,11 @@ export interface CurrentUserValue {
   status: AuthStatus
   isAdmin: boolean
   logout: () => Promise<void>
+  /**
+   * 설정에서 이름·사진을 고친 뒤 화면에 바로 반영한다. 서버가 돌려준 사용자를 그대로
+   * 넣는다 — 프론트가 다음 상태를 지어내면 서버가 다듬은 값(공백 정리 등)과 어긋난다.
+   */
+  applyUser: (user: User) => void
 }
 
 export const CurrentUserContext = createContext<CurrentUserValue | null>(null)
