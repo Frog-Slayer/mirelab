@@ -142,6 +142,7 @@ function StudyNav({ study }: { study: Study }) {
   const items = study.hasWorks
     ? [
         { to: base, label: '홈', end: true },
+        { to: `${base}/books`, label: '작품 목록', end: true },
         { to: `${base}/sessions`, label: '일정', end: true },
         { to: `${base}/shelf`, label: '내 서재', end: false },
       ]

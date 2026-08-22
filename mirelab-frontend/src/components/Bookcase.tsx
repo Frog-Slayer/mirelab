@@ -120,7 +120,7 @@ export function Bookcase({
   /** 호버 카드에서 "누가 골랐는지" 를 보여주려면 필요 */
   users?: User[]
   onActivate?: (id: string) => void
-  /** 있으면 others 칸 맨 끝이 "+" 로 바뀌어 책 추가 모달을 띄운다 */
+  /** 있으면 읽는 중·후보 칸 맨 끝에 "+"를 두어 책 추가 모달을 띄운다 */
   onAdd?: () => void
 }) {
   const hasCompleted = completed.length > 0
@@ -218,9 +218,6 @@ function ShelfCompartment({ children }: { children: React.ReactNode }) {
  * onAdd 가 있으면 그 칸 자체가 "+" 버튼이 되어 책을 추가할 수 있다.
  */
 function EmptySlot({ onAdd }: { onAdd?: () => void }) {
-  const cls =
-    'flex w-10 flex-none items-center justify-center rounded-t-[3px] border border-dashed text-lg'
-
   if (onAdd) {
     return (
       <li>
@@ -229,14 +226,19 @@ function EmptySlot({ onAdd }: { onAdd?: () => void }) {
           onClick={onAdd}
           aria-label="책 추가하기"
           title="책 추가하기"
-          className={`${cls} cursor-pointer border-black/25 text-black/35 transition-colors hover:border-emerald-600/50 hover:bg-black/5 hover:text-emerald-700`}
-          style={{ height: 150 }}
+          className="group relative flex h-40 w-24 origin-bottom cursor-pointer items-center justify-center overflow-hidden rounded-r-md rounded-l-sm border border-neutral-200 bg-white text-neutral-400 shadow-[3px_3px_5px_rgba(0,0,0,0.18)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:border-neutral-300 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.2)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none"
         >
-          +
+          <span className="absolute inset-y-0 left-2 w-px bg-neutral-200" aria-hidden />
+          <span className="text-2xl leading-none transition-transform group-hover:scale-110 group-focus-visible:scale-110">
+            <span aria-hidden>+</span>
+          </span>
         </button>
       </li>
     )
   }
+
+  const cls =
+    'flex w-10 flex-none items-center justify-center rounded-t-[3px] border border-dashed text-lg'
 
   return (
     <li>
@@ -374,7 +376,10 @@ function MovieTicket({
             </>
           )}
         </div>
-        <div className="flex h-9 shrink-0 items-center justify-between px-1" style={{ color: palette.ink }}>
+        <div
+          className="flex h-9 shrink-0 items-center justify-between px-1"
+          style={{ color: palette.ink }}
+        >
           <span className="h-4 w-11 bg-[repeating-linear-gradient(90deg,currentColor_0_2px,transparent_2px_3px,currentColor_3px_4px,transparent_4px_6px)] opacity-75" />
           <span className="text-[8px] tabular-nums">{item.year}</span>
         </div>
@@ -434,7 +439,9 @@ function BookCover({
             >
               {item.title}
             </span>
-            <span className="text-[9px] leading-tight opacity-75">{item.author || '작자 미상'}</span>
+            <span className="text-[9px] leading-tight opacity-75">
+              {item.author || '작자 미상'}
+            </span>
           </div>
         )}
         <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-white/90 shadow-sm">
@@ -483,7 +490,9 @@ function BookPreview({
               <Stars value={item.average ?? 0} size="sm" />
             </div>
           )}
-          {item.description && <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>}
+          {item.description && (
+            <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>
+          )}
           <PickNote addedBy={item.addedBy} reason={item.reason} users={users} truncate={false} />
         </div>
       </div>
