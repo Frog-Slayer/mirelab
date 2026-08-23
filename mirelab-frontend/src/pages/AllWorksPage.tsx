@@ -26,6 +26,30 @@ const statusPriority = {
   [WorkStatus.CANDIDATE]: 2,
 } satisfies Record<LibraryEntry['status'], number>
 
+/**
+ * 상태마다 줄 세우는 기준 날짜가 다르다 — 후보는 담긴 날, 진행 중은 시작한 날,
+ * 완료는 끝난 날. "이 상태가 된 지 얼마나 됐나"가 각 묶음에서 궁금한 것이라서다.
+ */
+function sortKey(work: LibraryEntry): string | null | undefined {
+  if (work.status === WorkStatus.DONE) return work.finishedAt
+  if (work.status === WorkStatus.READING) return work.startedAt
+  return work.addedAt
+}
+
+/**
+ * 오래된 것이 위로 — 스터디가 지나온 순서대로 읽힌다.
+ *
+ * 날짜가 없는 작품(이 필드들이 생기기 전에 만들어진 것)은 언제인지 알 수 없으니 있는
+ * 것들 뒤로 몰고, 그들끼리는 제목순으로 떨어지게 둔다 — 0 을 돌려 다음 기준으로 넘긴다.
+ * 오름차순이라고 해서 "모르는 것"을 맨 앞에 두면 아무 근거 없이 제일 오래된 척이 된다.
+ */
+function byOldest(a: string | null | undefined, b: string | null | undefined): number {
+  if (!a && !b) return 0
+  if (!a) return 1
+  if (!b) return -1
+  return a.localeCompare(b)
+}
+
 const statusLabel = {
   [WorkStatus.READING]: '진행 중',
   [WorkStatus.CANDIDATE]: '후보',
@@ -66,9 +90,10 @@ export default function AllWorksPage() {
     .sort((a, b) => {
       const statusDifference = statusPriority[a.status] - statusPriority[b.status]
       if (statusDifference !== 0) return statusDifference
-      if (a.status === WorkStatus.DONE && b.status === WorkStatus.DONE) {
-        return b.average - a.average
-      }
+
+      const byDate = byOldest(sortKey(a), sortKey(b))
+      if (byDate !== 0) return byDate
+
       return a.title.localeCompare(b.title, 'ko')
     })
 

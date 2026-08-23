@@ -17,6 +17,7 @@ import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkRepository
+import java.time.Instant
 import java.time.Year
 import java.util.UUID
 import org.springframework.http.HttpStatus
@@ -88,6 +89,8 @@ class ShelfService(
             year = input.year ?: Year.now().value,
             status = WorkStatus.READING,
             coverUrl = input.coverUrl,
+            // 후보를 거치지 않고 바로 읽는 중으로 담기므로 담은 순간이 곧 시작한 순간이다
+            startedAt = Instant.now(),
             description = input.description,
         )
         return workRepository.save(work).toResponse()

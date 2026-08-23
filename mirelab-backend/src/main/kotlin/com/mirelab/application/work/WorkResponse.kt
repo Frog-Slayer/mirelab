@@ -4,6 +4,7 @@ import com.mirelab.application.session.SessionResponse
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkKind
 import com.mirelab.domain.work.WorkStatus
+import java.time.Instant
 import java.util.UUID
 
 data class WorkResponse(
@@ -20,6 +21,10 @@ data class WorkResponse(
     val description: String?,
     val coverUrl: String?,
     val actors: List<String>,
+    /** 상태별 정렬 기준이 되는 시각들 — [com.mirelab.domain.work.Work.moveTo] 참고 */
+    val addedAt: Instant?,
+    val startedAt: Instant?,
+    val finishedAt: Instant?,
 )
 
 fun Work.toResponse() = WorkResponse(
@@ -40,6 +45,9 @@ fun Work.toResponse() = WorkResponse(
     // "no session" 으로 터진다. 엔티티의 가변 컬렉션을 응답이 그대로 물고 있지 않게 되는
     // 것도 덤이다.
     actors = actors.toList(),
+    addedAt = addedAt,
+    startedAt = startedAt,
+    finishedAt = finishedAt,
 )
 
 /** 완료작 순위·서재 정렬에 쓰는, 평점이 집계된 작품 */
@@ -67,6 +75,9 @@ data class RankedWorkResponse(
     val ratedUserIds: Set<String>,
     val average: Double,
     val voterCount: Int,
+    val addedAt: Instant?,
+    val startedAt: Instant?,
+    val finishedAt: Instant?,
 )
 
 fun Work.toRanked(
@@ -94,6 +105,9 @@ fun Work.toRanked(
     ratedUserIds = ratedUserIds,
     average = average,
     voterCount = publishedRatingUserIds.size,
+    addedAt = addedAt,
+    startedAt = startedAt,
+    finishedAt = finishedAt,
 )
 
 /** 책장 — 후보·읽는 중까지 포함한 전체 작품. 회차 수까지 곁들인다 */
@@ -117,6 +131,9 @@ data class LibraryEntryResponse(
     val average: Double,
     val voterCount: Int,
     val sessionCount: Int,
+    val addedAt: Instant?,
+    val startedAt: Instant?,
+    val finishedAt: Instant?,
 )
 
 fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
@@ -139,6 +156,9 @@ fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
     average = average,
     voterCount = voterCount,
     sessionCount = sessionCount,
+    addedAt = addedAt,
+    startedAt = startedAt,
+    finishedAt = finishedAt,
 )
 
 /** 작품 상세 화면 — 순위 정보 곁들인 작품 + 걸린 회차들 */

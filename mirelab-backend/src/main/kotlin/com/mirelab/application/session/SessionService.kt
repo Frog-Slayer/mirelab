@@ -27,7 +27,8 @@ class SessionService(
         val session = sessionRepository.save(Session(study = study, work = work, meetAt = meetAt, closed = false))
 
         if (work.status == WorkStatus.CANDIDATE) {
-            work.status = WorkStatus.READING
+            // "시작하기"를 누른 이 순간이 작품 목록에서 진행 중 줄을 세우는 기준이 된다
+            work.moveTo(WorkStatus.READING)
             workRepository.save(work)
         }
         return session.toResponse()

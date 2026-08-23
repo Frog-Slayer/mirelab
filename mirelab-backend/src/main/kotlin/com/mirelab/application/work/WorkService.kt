@@ -95,7 +95,9 @@ class WorkService(
     @Transactional
     fun setStatus(workId: UUID, status: WorkStatus): Boolean {
         val work = workRepository.findById(workId).orElse(null) ?: return false
-        work.status = status
+        // 상태와 "그 상태로 들어온 시각"은 늘 같이 움직여야 한다 — status 만 따로 넣으면
+        // 목록 정렬이 옛 날짜를 계속 본다([Work.moveTo] 참고).
+        work.moveTo(status)
         workRepository.save(work)
         return true
     }

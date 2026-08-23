@@ -110,6 +110,15 @@ export interface Work {
   coverUrl?: string
   /** 영화에서만 — 등장 배우. TMDB 연동 전까지는 비어 있다 */
   actors?: string[]
+  /**
+   * 지금 상태로 들어온 시각(ISO). 작품 목록이 상태마다 다른 날짜로 줄을 세운다 —
+   * 후보는 담긴 날, 진행 중은 시작한 날, 완료는 끝난 날.
+   *
+   * 이 필드들이 생기기 전에 만들어진 작품은 값이 없다(null). 목록에서는 뒤로 민다.
+   */
+  addedAt?: string | null
+  startedAt?: string | null
+  finishedAt?: string | null
 }
 
 export interface SlotDef {
