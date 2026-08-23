@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import { Link, NavLink, Outlet, useMatch, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
 import NotificationsMenu from '@/components/layout/NotificationsMenu'
@@ -11,14 +11,24 @@ import type { Study } from '@/types'
 
 /**
  * 헤더·본문·푸터가 같은 기둥 위에 서도록 폭 상한과 좌우 여백을 한 줄로 묶어둔다.
- * 네 군데(헤더 막대·탭 줄·본문·푸터)에 흩어 놓으면 하나만 고쳐졌을 때 로고와 본문,
+ * 세 군데(헤더 막대·탭 줄·푸터)에 흩어 놓으면 하나만 고쳐졌을 때 로고와 본문,
  * 푸터 글자의 왼쪽 끝이 조용히 어긋난다.
  *
  * max-width 와 padding 은 반드시 같은 요소에 함께 걸어야 한다 — box-sizing 이
  * border-box 라 상한값이 padding 을 포함하기 때문에, 바깥에 padding 을 주고 안쪽에
  * max-width 를 주면 그 padding 만큼 기둥이 어긋난다.
  */
-const CONTENT_COLUMN = 'mx-auto w-full max-w-[96rem] px-3'
+const CONTENT_COLUMN = 'mx-auto w-full max-w-6xl px-6'
+
+/**
+ * 책장을 펼치는 화면만 쓰는 넓은 기둥.
+ *
+ * 작품 목록은 책이 한 줄에 몇 권 들어가느냐가 전부라 폭이 넓을수록 잘 보인다. 반면
+ * 글을 읽는 화면들은 줄이 길어지면 되레 읽기 힘들어서 기본 기둥을 그대로 둔다.
+ * 헤더·푸터도 기본 기둥이라, 이 화면에서만 본문이 헤더보다 넓게 삐져나온다 — 의도한
+ * 것이다.
+ */
+const WIDE_COLUMN = 'mx-auto w-full max-w-[96rem] px-3'
 
 export default function RootLayout() {
   const { user } = useCurrentUser()
@@ -49,6 +59,13 @@ export default function RootLayout() {
   })
 
   const current = studies.find((s) => s.slug === studySlug) ?? null
+
+  // 어느 화면이 넓은 기둥을 쓰는지는 여기서 정한다 — 본문의 폭은 <main> 이 쥐고 있어서
+  // 페이지 쪽에서 스스로 넓힐 방법이 없다(부모보다 넓어지려면 음수 마진 같은 편법이
+  // 필요한데, 그러면 화면마다 다른 값이 생겨 유지가 안 된다).
+  // books/:workId(작품 상세)는 글을 읽는 화면이라 여기 걸리지 않아야 한다 — useMatch 는
+  // 기본이 완전 일치라 `/:studySlug/books` 만 잡힌다.
+  const wideMain = !!useMatch('/:studySlug/books')
 
   // 서재는 개인 것이라 어느 스터디에서 열든 내용이 같다(백엔드가 slug 를 안 본다). 다만
   // 화면 자체는 스터디 안에 있어서 slug 가 있어야 열리므로, 스터디 밖(설정·멤버 관리)에서는
@@ -123,7 +140,7 @@ export default function RootLayout() {
             recordDrawerOpen ? 'xl:w-[28rem]' : ''
           }`}
         />
-        <main className={`${CONTENT_COLUMN} flex-1 py-6 sm:py-8`}>
+        <main className={`${wideMain ? WIDE_COLUMN : CONTENT_COLUMN} flex-1 py-6 sm:py-8`}>
           <Outlet context={recordDrawer} />
         </main>
       </div>
