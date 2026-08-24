@@ -7,5 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface PostShareRepository : JpaRepository<PostShare, UUID> {
     fun findByPostId(postId: UUID): List<PostShare>
 
+    fun findByStudyIdAndPostPublishedTrueOrderByPostPublishedAtDesc(studyId: UUID): List<PostShare>
+
     fun deleteByPostId(postId: UUID)
 }

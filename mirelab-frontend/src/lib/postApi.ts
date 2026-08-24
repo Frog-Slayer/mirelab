@@ -15,6 +15,10 @@ export function getUserPosts(username: string): Promise<PostSummary[]> {
   return api.get(`/users/${encodeURIComponent(username)}/posts`)
 }
 
+export function getStudyPosts(slug: string): Promise<PostSummary[]> {
+  return api.get(`/studies/${encodeURIComponent(slug)}/posts`)
+}
+
 export function getPost(postId: string): Promise<Post> {
   return api.get(`/posts/${postId}`)
 }

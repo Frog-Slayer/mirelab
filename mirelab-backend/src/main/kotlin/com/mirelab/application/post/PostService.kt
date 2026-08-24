@@ -45,6 +45,19 @@ class PostService(
     }
 
     @Transactional(readOnly = true)
+    fun listForStudy(slug: String, viewerId: UUID): List<PostSummaryResponse> {
+        val study = studyRepository.findBySlug(slug)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "없는 스터디입니다")
+        val myStudyIds = workAccessChecker.myStudyIds(viewerId)
+        return postShareRepository
+            .findByStudyIdAndPostPublishedTrueOrderByPostPublishedAtDesc(requireNotNull(study.id))
+            .map { it.post }
+            .distinctBy { it.id }
+            .filter { accessChecker.canAccess(it, viewerId, myStudyIds) }
+            .map { toSummary(it, viewerId, myStudyIds) }
+    }
+
+    @Transactional(readOnly = true)
     fun get(postId: UUID, viewerId: UUID): PostResponse {
         val post = find(postId)
         if (!accessChecker.canAccess(post, viewerId, workAccessChecker.myStudyIds(viewerId))) {

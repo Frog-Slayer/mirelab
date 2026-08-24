@@ -6,9 +6,11 @@ import Stars from '@/components/Stars'
 import PickNote from '@/components/PickNote'
 import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
 import RankSticker from '@/components/RankSticker'
+import PostCarousel from '@/components/PostCarousel'
 import { useStudy } from '@/hooks/useStudy'
 import { getHallOfFame, getLibrary, type LibraryEntry, type RankedWork } from '@/lib/workApi'
 import { formatRating } from '@/lib/format'
+import { getStudyPosts } from '@/lib/postApi'
 import type { User } from '@/types'
 import { WorkStatus } from '@/types'
 
@@ -32,6 +34,11 @@ export default function HallOfFamePage() {
   const { data: allWorks = [] } = useQuery({
     queryKey: ['library', study?.slug],
     queryFn: () => getLibrary(study!.slug),
+    enabled: !!study,
+  })
+  const { data: posts = [] } = useQuery({
+    queryKey: ['studyPosts', study?.slug],
+    queryFn: () => getStudyPosts(study!.slug),
     enabled: !!study,
   })
 
@@ -120,6 +127,8 @@ export default function HallOfFamePage() {
           !isPending && <p className="text-sm text-neutral-400">아직 완료한 작품이 없습니다.</p>
         )}
       </section>
+
+      {posts.length > 0 && <PostCarousel posts={posts} />}
 
       <section className="flex flex-col gap-6">
         <Bookcase completed={completedItems} others={[]} users={members} />

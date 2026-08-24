@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional
 @Transactional
 class PostAccessTest @Autowired constructor(
     private val accessChecker: PostAccessChecker,
+    private val postService: PostService,
     private val postRepository: PostRepository,
     private val postShareRepository: PostShareRepository,
     private val userRepository: UserRepository,
@@ -48,6 +49,18 @@ class PostAccessTest @Autowired constructor(
         assertFalse(accessChecker.canAccess(fixture.post, fixture.viewer.id!!, emptySet()))
     }
 
+    @Test
+    fun `스터디 글 목록에는 그 스터디에 공유된 현재 공개 글만 나온다`() {
+        val fixture = fixture(published = true)
+        val privatePost = postRepository.save(Post(author = fixture.author, title = "비공개", published = false))
+        postShareRepository.save(PostShare(post = privatePost, study = fixture.study))
+
+        val posts = postService.listForStudy(fixture.study.slug, fixture.viewer.id!!)
+
+        assertTrue(posts.map { it.id }.contains(fixture.post.id))
+        assertFalse(posts.map { it.id }.contains(privatePost.id))
+    }
+
     private fun fixture(published: Boolean): Fixture {
         val author = userRepository.save(User(name = "작성자", color = "bg-sky-500"))
         val viewer = userRepository.save(User(name = "열람자", color = "bg-rose-500"))
@@ -55,8 +68,8 @@ class PostAccessTest @Autowired constructor(
         listOf(author, viewer).forEach { memberRepository.save(StudyMember(study = study, user = it)) }
         val post = postRepository.save(Post(author = author, title = "글", published = published))
         postShareRepository.save(PostShare(post = post, study = study))
-        return Fixture(post, viewer, study)
+        return Fixture(post, author, viewer, study)
     }
 
-    private data class Fixture(val post: Post, val viewer: User, val study: Study)
+    private data class Fixture(val post: Post, val author: User, val viewer: User, val study: Study)
 }
