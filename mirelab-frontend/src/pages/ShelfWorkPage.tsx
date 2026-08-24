@@ -5,14 +5,24 @@ import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useStudy } from '@/hooks/useStudy'
-import { getShelfEntry, saveShelfValue } from '@/lib/shelfApi'
-import type { SlotDef } from '@/types'
+import {
+  getShelfEntry,
+  saveShelfDocument,
+  saveShelfValue,
+  setShelfWorkStatus,
+} from '@/lib/shelfApi'
+import type { SlotDef, SlotValueData } from '@/types'
 import { SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
   [WorkStatus.CANDIDATE]: '후보',
   [WorkStatus.READING]: '읽는 중',
   [WorkStatus.DONE]: '완료',
+}
+
+const nextStatus: Partial<Record<WorkStatus, { status: WorkStatus; label: string }>> = {
+  [WorkStatus.CANDIDATE]: { status: WorkStatus.READING, label: '읽기 시작' },
+  [WorkStatus.READING]: { status: WorkStatus.DONE, label: '완료' },
 }
 
 /**
@@ -36,6 +46,17 @@ export default function ShelfWorkPage() {
     mutationFn: saveShelfValue,
     onSuccess: () => qc.invalidateQueries(),
   })
+  const saveDocument = useMutation({
+    mutationFn: (bodyJson: string) => saveShelfDocument(workId, bodyJson),
+  })
+  const changeStatus = useMutation({
+    mutationFn: (status: WorkStatus) => setShelfWorkStatus(workId, status),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['shelfEntry', user?.id, workId] })
+      void qc.invalidateQueries({ queryKey: ['shelf'] })
+      void qc.invalidateQueries({ queryKey: ['userShelf'] })
+    },
+  })
 
   if (isPending) return <p className="text-sm text-neutral-400">불러오는 중…</p>
   if (!data || !user || !currentStudy)
@@ -50,12 +71,8 @@ export default function ShelfWorkPage() {
   const blurbSlot = slots.find(
     (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
   )
-  const consolidatedIds = new Set(
-    [ratingSlot?.id, blurbSlot?.id].filter((id): id is string => !!id),
-  )
-  const otherSlots = slots.filter((slot) => !consolidatedIds.has(slot.id))
-  const summarySlot = otherSlots.find((slot) => slot.name === '내 요약')
-  const restSlots = otherSlots.filter((slot) => slot.id !== summarySlot?.id)
+  const documentBlocks = parseBlocks(data.personalBodyJson)
+  const step = nextStatus[work.status]
 
   return (
     <div className="flex flex-col gap-10">
@@ -97,6 +114,17 @@ export default function ShelfWorkPage() {
           )}
           <span className="text-xs text-neutral-400">{study ? study.name : '혼자 읽은 책'}</span>
 
+          {step && (
+            <button
+              type="button"
+              onClick={() => changeStatus.mutate(step.status)}
+              disabled={changeStatus.isPending}
+              className="app-button app-button-primary mt-2 w-fit"
+            >
+              {step.label}
+            </button>
+          )}
+
           {(ratingSlot || blurbSlot) && (
             <div className="mt-auto flex flex-col gap-2 pt-2">
               {ratingSlot && (
@@ -132,61 +160,28 @@ export default function ShelfWorkPage() {
         </div>
       </header>
 
-      <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">내 기록</h2>
-
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {summarySlot && (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-semibold text-neutral-700">
-                {summarySlot.name}
-                {summarySlot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
-              </span>
-              <div className="flex flex-1 flex-col">
-                <PersonalBlockNoteField
-                  key={`${workId}-${user.id}`}
-                  value={valueOf(summarySlot)?.value}
-                  onSave={(value) =>
-                    save.mutate({
-                      targetId,
-                      slotDefId: summarySlot.id,
-                      value,
-                      draft: false,
-                    })
-                  }
-                />
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-6">
-            {restSlots.map((slot) => (
-              <div key={slot.id} className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-neutral-700">
-                  {slot.name}
-                  {slot.visibility === Visibility.PRIVATE && ' · 🔒 나만'}
-                </span>
-                <SlotField
-                  slot={slot}
-                  value={valueOf(slot)?.value}
-                  onSave={(value) =>
-                    save.mutate({
-                      targetId,
-                      slotDefId: slot.id,
-                      value,
-                      draft: false,
-                    })
-                  }
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {otherSlots.length === 0 && (
-          <p className="text-sm text-neutral-400">아직 작성할 수 있는 작품 기록 항목이 없습니다.</p>
-        )}
+      <section
+        aria-label="개인 노트"
+        className="min-h-96 rounded-xl border border-neutral-200 bg-white px-3 py-5 shadow-sm sm:px-6"
+      >
+        <PersonalBlockNoteField
+          key={`${workId}-${user.id}`}
+          value={{ blocks: documentBlocks }}
+          onSave={(value: SlotValueData) => {
+            if ('blocks' in value) saveDocument.mutate(JSON.stringify(value.blocks))
+          }}
+        />
       </section>
     </div>
   )
+}
+
+function parseBlocks(bodyJson: string | null): unknown[] {
+  if (!bodyJson) return []
+  try {
+    const value: unknown = JSON.parse(bodyJson)
+    return Array.isArray(value) ? value : []
+  } catch {
+    return []
+  }
 }

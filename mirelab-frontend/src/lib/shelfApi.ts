@@ -20,6 +20,7 @@ export interface ShelfDetail {
   study: Study | null
   slots: SlotDef[]
   values: SlotValue[]
+  personalBodyJson: string | null
 }
 
 interface ShelfEntryResponse {
@@ -38,6 +39,7 @@ interface ShelfDetailResponse {
   study: StudyResponse | null
   slots: SlotDefResponse[]
   values: SlotValueResponse[]
+  personalBodyJson: string | null
 }
 
 function toShelfEntry(r: ShelfEntryResponse): ShelfEntry {
@@ -66,11 +68,20 @@ export async function getShelfEntry(workId: string): Promise<ShelfDetail | null>
       study: res.study ? toStudy(res.study) : null,
       slots: res.slots.map(toSlotDef),
       values: res.values.map(toSlotValue),
+      personalBodyJson: res.personalBodyJson,
     }
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null
     throw err
   }
+}
+
+export function saveShelfDocument(workId: string, bodyJson: string | null): Promise<void> {
+  return api.patch(`/me/shelf/${workId}/document`, { bodyJson })
+}
+
+export function setShelfWorkStatus(workId: string, status: Work['status']): Promise<void> {
+  return api.patch(`/me/shelf/${workId}/status`, { status })
 }
 
 /** 주인(ownerId)은 서버가 토큰에서 정한다 */

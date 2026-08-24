@@ -19,7 +19,6 @@ import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkRepository
-import java.time.Instant
 import java.time.Year
 import java.util.UUID
 import org.springframework.http.HttpStatus
@@ -89,7 +88,32 @@ class ShelfService(
             work.study?.toResponse(),
             slotDefs.map { it.toResponse() },
             values.map { it.toResponse() },
+            work.personalBodyJson,
         )
+    }
+
+    @Transactional
+    fun saveDocument(userId: UUID, workId: UUID, input: ShelfDocumentInput) {
+        val work = requirePersonalWork(workId, userId)
+        work.personalBodyJson = input.bodyJson
+    }
+
+    @Transactional
+    fun setStatus(userId: UUID, workId: UUID, status: WorkStatus) {
+        requirePersonalWork(workId, userId).moveTo(status)
+    }
+
+    private fun requirePersonalWork(workId: UUID, userId: UUID): Work {
+        val work = workRepository.findById(workId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "없는 책입니다")
+        }
+        if (work.study != null) {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "개인 책이 아닙니다")
+        }
+        if (work.owner?.id != userId) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "내 개인 책만 변경할 수 있습니다")
+        }
+        return work
     }
 
     @Transactional
@@ -101,10 +125,8 @@ class ShelfService(
             title = input.title,
             author = input.author,
             year = input.year ?: Year.now().value,
-            status = WorkStatus.READING,
+            status = WorkStatus.CANDIDATE,
             coverUrl = input.coverUrl,
-            // 후보를 거치지 않고 바로 읽는 중으로 담기므로 담은 순간이 곧 시작한 순간이다
-            startedAt = Instant.now(),
             description = input.description,
         )
         return workRepository.save(work).toResponse()
@@ -164,7 +186,7 @@ class ShelfService(
      * 읽은 것"이 아니라 "스터디 후보 목록"이 된다. 시작하는 순간([SessionService.addForWork]
      * 이 CANDIDATE -> READING 으로 옮긴다)이 내 책이 되는 지점이다.
      *
-     * 개인 책은 담는 순간부터 READING 이라([addPersonalWork]) 이 조건에 걸리지 않는다.
+     * 개인 책은 후보 상태로 담기지만([addPersonalWork]) 소유권으로 따로 합치므로 그대로 보인다.
      */
     private fun worksFor(userId: UUID, myStudyIds: Set<UUID>): List<Work> {
         val studyWorks = myStudyIds

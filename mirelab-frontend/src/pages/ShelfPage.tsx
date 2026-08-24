@@ -226,7 +226,7 @@ function textValue(entry: ShelfEntry, slot?: SlotDef) {
   return value && 'text' in value.value ? value.value.text : ''
 }
 
-function AddDialog({
+export function AddDialog({
   onSubmit,
   onClose,
 }: {

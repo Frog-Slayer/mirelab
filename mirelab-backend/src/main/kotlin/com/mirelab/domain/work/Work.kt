@@ -78,6 +78,14 @@ class Work(
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     var description: String? = null,
 
+    /**
+     * 스터디에 속하지 않은 개인 책의 자유 형식 노트(BlockNote 블록 배열 JSON).
+     * 개인 책만 사용하고 스터디 작품은 기존 SlotValue·WorkBlock 기록 흐름을 유지한다.
+    */
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "personal_body_json", columnDefinition = "text")
+    var personalBodyJson: String? = null,
+
     /** 알라딘·TMDB 같은 외부 API 가 제공하는 표지 이미지 URL */
     @Column(name = "cover_url")
     var coverUrl: String? = null,

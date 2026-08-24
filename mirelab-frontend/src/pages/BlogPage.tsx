@@ -1,17 +1,20 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import Avatar from '@/components/Avatar'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { getBlogProfile, getUserPosts, createPost } from '@/lib/postApi'
-import { getUserShelf } from '@/lib/shelfApi'
+import { addPersonalWork, getUserShelf } from '@/lib/shelfApi'
 import { getMyStudies } from '@/lib/studyApi'
-import { ShelfContents } from '@/pages/ShelfPage'
+import { AddDialog, ShelfContents } from '@/pages/ShelfPage'
 
 export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
   const { studySlug = '' } = useParams()
   const username = studySlug.startsWith('@') ? studySlug.slice(1) : ''
   const { user } = useCurrentUser()
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const [addingBook, setAddingBook] = useState(false)
   const own = user?.username === username
   const { data: profile } = useQuery({
     queryKey: ['blogProfile', username, user?.id],
@@ -36,6 +39,14 @@ export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
   const create = useMutation({
     mutationFn: () => createPost(),
     onSuccess: (post) => navigate(`/@${username}/posts/${post.id}/edit`),
+  })
+  const addBook = useMutation({
+    mutationFn: addPersonalWork,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['userShelf', username] })
+      void qc.invalidateQueries({ queryKey: ['shelf'] })
+      void qc.invalidateQueries({ queryKey: ['blogProfile', username] })
+    },
   })
 
   if (!profile) return <p className="text-sm text-neutral-400">불러오는 중…</p>
@@ -100,7 +111,22 @@ export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
           <p className="py-12 text-center text-sm text-neutral-400">아직 보여줄 글이 없습니다.</p>
         )
       ) : shelf ? (
-        <ShelfContents shelf={shelf} currentStudySlug={studies[0]?.slug} />
+        <>
+          {addingBook && (
+            <AddDialog
+              onClose={() => setAddingBook(false)}
+              onSubmit={(input) => {
+                addBook.mutate(input)
+                setAddingBook(false)
+              }}
+            />
+          )}
+          <ShelfContents
+            shelf={shelf}
+            currentStudySlug={studies[0]?.slug}
+            onAdd={own ? () => setAddingBook(true) : undefined}
+          />
+        </>
       ) : (
         <p className="text-sm text-neutral-400">책장을 불러오는 중…</p>
       )}

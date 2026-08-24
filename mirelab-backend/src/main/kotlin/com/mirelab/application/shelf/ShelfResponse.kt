@@ -5,6 +5,7 @@ import com.mirelab.application.slot.SlotValueResponse
 import com.mirelab.application.study.StudyResponse
 import com.mirelab.application.work.WorkResponse
 import com.mirelab.domain.work.WorkKind
+import com.mirelab.domain.work.WorkStatus
 import java.util.UUID
 
 data class ShelfEntryResponse(
@@ -25,6 +26,7 @@ data class ShelfDetailResponse(
     val study: StudyResponse?,
     val slots: List<SlotDefResponse>,
     val values: List<SlotValueResponse>,
+    val personalBodyJson: String?,
 )
 
 data class AddPersonalWorkRequest(
@@ -41,3 +43,7 @@ data class ShelfSlotValueInput(
     val value: Map<String, Any?>,
     val draft: Boolean?,
 )
+
+data class ShelfDocumentInput(val bodyJson: String?)
+
+data class ShelfStatusInput(val status: WorkStatus)

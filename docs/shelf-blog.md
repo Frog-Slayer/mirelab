@@ -195,6 +195,8 @@ PostShare(post_id, study_id)      // 행이 없으면 = 나만
 | GET    | `/api/studies/{slug}/posts`   | 그 스터디에 공유된 현재 공개 글. 홈 캐러셀용        |
 | GET    | `/api/users/{username}/shelf` | 책장 탭 — 현 `ShelfService.list` 를 열람자 기준으로 일반화 |
 | GET    | `/api/works/{workId}/posts`   | 작품에 연결됐고 현재 열람자가 볼 수 있는 글 목록   |
+| PATCH  | `/api/me/shelf/{workId}/document` | 개인 책 하나의 자유 형식 BlockNote 문서 저장    |
+| PATCH  | `/api/me/shelf/{workId}/status` | 개인 책 소유자가 후보 → 읽는 중 → 완료로 변경   |
 
 **책장 API가 숨은 작업량이다.** 지금 `ShelfService.list(userId)` 는 "userId = 주인 =
 열람자"를 전제로 값까지 그 사람 것만 골라온다. 남의 책장을 보려면 `list(ownerId, viewerId)`
@@ -265,6 +267,15 @@ PostShare(post_id, study_id)      // 행이 없으면 = 나만
 **`WorkPage`** — 기존 작품 기록 아래에 `이 책에 연결된 글`을 둔다. 제목 · 발췌 · 작성자 ·
 날짜를 보여주고 글 읽기 화면으로 연결한다. 서버가 현재 열람자에게 공개된 글만 내려주므로,
 화면에서 별도의 공개 판정을 다시 만들지 않는다. 연결 글이 없으면 섹션 자체를 감춘다.
+
+**`ShelfWorkPage`** — 스터디와 연결되지 않은 개인 책 상세는 여러 슬롯을 모은 `내 기록`
+영역을 없애고, 책마다 하나인 자유 형식 BlockNote 문서로 바꾼다. 별점·한줄평은 책장 정렬과
+공개 상태에 쓰이므로 책 정보 헤더에 그대로 둔다. 기존 `SlotValueContext.SHELF` 값은 데이터
+유실을 피하려고 삭제하지 않지만 이 화면에서는 더 이상 렌더링하지 않는다.
+
+개인 책은 서재에 추가할 때 `CANDIDATE` 상태로 시작하고 `startedAt` 은 비워둔다. 본인 소유
+책은 후보여도 책장에 계속 보이며, 상세 화면의 `읽기 시작`을 눌렀을 때만 `READING` 으로
+옮기고 `startedAt` 을 채운다. 읽는 중에는 같은 자리에 `완료` 버튼을 보여준다.
 
 **스터디 홈** — 명예의 전당과 책장 사이에 `멤버들의 글` 캐러셀을 둔다. 해당 스터디에
 공유됐고 현재 `published = true` 인 글을 최초 발행 시각 역순으로 카드에 담는다. 카드에는
