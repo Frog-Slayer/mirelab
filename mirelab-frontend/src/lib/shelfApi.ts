@@ -53,6 +53,11 @@ export async function getShelf(): Promise<Shelf> {
   return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
 }
 
+export async function getUserShelf(username: string): Promise<Shelf> {
+  const res = await api.get<ShelfResponse>(`/users/${encodeURIComponent(username)}/shelf`)
+  return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
+}
+
 export async function getShelfEntry(workId: string): Promise<ShelfDetail | null> {
   try {
     const res = await api.get<ShelfDetailResponse>(`/me/shelf/${workId}`)

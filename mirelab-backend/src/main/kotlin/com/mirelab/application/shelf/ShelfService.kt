@@ -10,6 +10,8 @@ import com.mirelab.domain.slot.SlotDef
 import com.mirelab.domain.slot.SlotOwner
 import com.mirelab.domain.slot.SlotValue
 import com.mirelab.domain.slot.SlotValueContext
+import com.mirelab.domain.slot.SlotType
+import com.mirelab.domain.slot.Visibility
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkKind
 import com.mirelab.domain.work.WorkStatus
@@ -40,14 +42,26 @@ class ShelfService(
     private val workAccessChecker: WorkAccessChecker,
 ) {
     @Transactional(readOnly = true)
-    fun list(userId: UUID): ShelfResponse {
-        val myStudyIds = myStudyIds(userId)
-        val works = worksFor(userId, myStudyIds)
-        val slotDefs = personalSlotDefs(myStudyIds)
+    fun list(ownerId: UUID, viewerId: UUID = ownerId): ShelfResponse {
+        val ownerStudyIds = myStudyIds(ownerId)
+        val mine = ownerId == viewerId
+        val visibleStudyIds = if (mine) ownerStudyIds else ownerStudyIds intersect myStudyIds(viewerId)
+        val works = if (mine) {
+            worksFor(ownerId, ownerStudyIds)
+        } else {
+            visibleStudyIds.flatMap { workRepository.findByStudyId(it) }
+                .filter { it.status != WorkStatus.CANDIDATE }
+                .distinctBy { it.id }
+                .filter { hasPublishedRating(it, ownerId) }
+        }
+        val allSlotDefs = personalSlotDefs(visibleStudyIds)
+        val slotDefs = if (mine) allSlotDefs else allSlotDefs.filter(::canExposeOnPublicShelf)
         val slotDefIds = slotDefs.mapNotNull { it.id }.toSet()
 
         val entries = works.map { work ->
-            val values = valuesFor(work, userId, slotDefIds)
+            val values = valuesFor(work, ownerId, slotDefIds).let { values ->
+                if (mine) values else values.filter { it.published }
+            }
             ShelfEntryResponse(work.toResponse(), work.study?.toResponse(), values.map { it.toResponse() })
         }
         return ShelfResponse(slotDefs.map { it.toResponse() }, entries)
@@ -181,4 +195,13 @@ class ShelfService(
     private fun valuesFor(work: Work, userId: UUID, slotDefIds: Set<UUID>): List<SlotValue> =
         slotValueRepository.findByWorkIdAndContext(work.id!!, contextFor(work))
             .filter { it.user.id == userId && it.slotDef.id in slotDefIds }
+
+    private fun hasPublishedRating(work: Work, ownerId: UUID): Boolean =
+        slotValueRepository.findByWorkIdAndContext(requireNotNull(work.id), contextFor(work)).any {
+            it.user.id == ownerId && it.slotDef.type == SlotType.RATING && it.published
+        }
+
+    /** 공개 평가 묶음은 별점과 공개 한줄평뿐이다. PRIVATE 메모는 값뿐 아니라 정의도 내리지 않는다. */
+    private fun canExposeOnPublicShelf(slot: SlotDef): Boolean =
+        slot.type == SlotType.RATING || (slot.type == SlotType.TEXT_SHORT && slot.visibility != Visibility.PRIVATE)
 }

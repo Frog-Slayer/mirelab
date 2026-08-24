@@ -72,6 +72,6 @@ export function getSignupProfile(): Promise<SignupProfile> {
   return requestWithoutAuthRetry('/auth/signup', { method: 'GET' })
 }
 
-export function completeSignup(input: { name: string; color: string }): Promise<void> {
+export function completeSignup(input: { username: string; name: string; color: string }): Promise<void> {
   return requestWithoutAuthRetry('/auth/signup', { method: 'POST', body: input })
 }

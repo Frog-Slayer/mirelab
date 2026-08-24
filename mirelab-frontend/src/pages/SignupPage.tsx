@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { completeSignup, getSignupProfile, startGoogleLogin } from '@/lib/authApi'
+import { apiErrorMessage } from '@/lib/api'
 
 const COLORS = [
   { value: 'bg-emerald-500', label: '초록' },
@@ -9,6 +10,7 @@ const COLORS = [
 ] as const
 
 export default function SignupPage() {
+  const [username, setUsername] = useState('')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [color, setColor] = useState<string>(COLORS[0].value)
@@ -28,14 +30,14 @@ export default function SignupPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    if (!name.trim() || saving) return
+    if (!username.trim() || !name.trim() || saving) return
     setSaving(true)
     setError('')
     try {
-      await completeSignup({ name: name.trim(), color })
+      await completeSignup({ username: username.trim(), name: name.trim(), color })
       window.location.replace('/auth/callback')
-    } catch {
-      setError('가입을 완료하지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
+    } catch (err) {
+      setError(apiErrorMessage(err, '가입을 완료하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'))
       setSaving(false)
     }
   }
@@ -69,12 +71,31 @@ export default function SignupPage() {
         <p className="mt-2 text-sm text-neutral-500">관리자 승인이 완료됐습니다.</p>
 
         <label className="mt-8 block text-sm">
+          <span className="text-neutral-600">사용자 이름</span>
+          <input
+            value={username}
+            onChange={(event) => setUsername(event.target.value.toLowerCase())}
+            minLength={3}
+            maxLength={30}
+            pattern="[a-z0-9][a-z0-9_-]{2,29}"
+            autoCapitalize="none"
+            autoComplete="username"
+            spellCheck={false}
+            autoFocus
+            placeholder="yeongseo"
+            className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2.5 outline-none focus:border-neutral-400"
+          />
+          <span className="mt-1.5 block text-xs text-neutral-400">
+            블로그 주소에 사용하며 가입 후에는 바꿀 수 없습니다.
+          </span>
+        </label>
+
+        <label className="mt-6 block text-sm">
           <span className="text-neutral-600">이름</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={40}
-            autoFocus
             className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2.5 outline-none focus:border-neutral-400"
           />
         </label>
@@ -108,7 +129,7 @@ export default function SignupPage() {
 
         <button
           type="submit"
-          disabled={!name.trim() || saving}
+          disabled={!username.trim() || !name.trim() || saving}
           className="mt-6 w-full cursor-pointer rounded-md bg-neutral-900 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           {saving ? '가입하는 중…' : '가입하고 시작하기'}

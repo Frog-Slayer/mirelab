@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
@@ -17,6 +17,7 @@ import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import { ApiError } from '@/lib/api'
 import { formatRating } from '@/lib/format'
+import { getWorkPosts } from '@/lib/postApi'
 import { addSession } from '@/lib/sessionApi'
 import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
 import {
@@ -122,6 +123,11 @@ export default function WorkPage() {
     queryKey: ['workBlocks', workId],
     queryFn: () => getWorkBlocks(workId),
     enabled: blockApiReady,
+  })
+  const { data: linkedPosts = [] } = useQuery({
+    queryKey: ['workPosts', workId, user?.id],
+    queryFn: () => getWorkPosts(workId),
+    enabled: !!user,
   })
   // 명예의 전당과 같은 기준(장르 구분 없는 전체 순위)으로 계산해 어긋나지 않게 한다.
   const { data: hallOfFame } = useQuery({
@@ -366,9 +372,16 @@ export default function WorkPage() {
                         )}
                       </span>
                       <div className="flex items-center gap-1.5 pr-10">
-                        <span className="truncate text-sm font-medium text-neutral-800">
-                          {m.name}
-                        </span>
+                        {mine ? (
+                          <span className="truncate text-sm font-medium text-neutral-800">{m.name}</span>
+                        ) : (
+                          <Link
+                            to={`/@${m.username}`}
+                            className="truncate text-sm font-medium text-neutral-800 hover:underline"
+                          >
+                            {m.name}
+                          </Link>
+                        )}
                         {/* 남의 카드는 점수 자리에 이미 공개 여부가 드러나니, 뱃지는 내 것만 */}
                         {mine && rated && (
                           <span
@@ -453,6 +466,28 @@ export default function WorkPage() {
             onDelete={() => drop.mutate()}
             onClose={() => setManageOpen(false)}
           />
+        )}
+
+        {linkedPosts.length > 0 && (
+          <section className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold">이 책에 연결된 글</h2>
+            <div className="mt-4 divide-y divide-neutral-100">
+              {linkedPosts.map((post) => (
+                <Link
+                  key={post.id}
+                  to={`/@${post.author.username}/posts/${post.id}`}
+                  className="block py-4 first:pt-0 last:pb-0"
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium hover:underline">{post.title || '제목 없음'}</h3>
+                    {!post.published && <span className="text-xs text-neutral-400">초안</span>}
+                  </div>
+                  {post.excerpt && <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{post.excerpt}</p>}
+                  <p className="mt-2 text-xs text-neutral-400">{post.author.name}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">

@@ -44,11 +44,32 @@ export type Availability = (typeof Availability)[keyof typeof Availability]
  */
 export interface User {
   id: string
+  /** /@username 블로그 주소에 쓰는 바뀌지 않는 식별자 */
+  username: string
   name: string
   color: string
   role: Role
   /** 프로필 사진 경로. 안 올렸으면 null 이고, 그때는 이름·색으로 기본 아바타를 그린다 */
   pictureUrl: string | null
+}
+
+export interface PostSummary {
+  id: string
+  author: User
+  title: string
+  excerpt: string
+  work: Work | null
+  sharedStudyIds: string[]
+  published: boolean
+  /** 처음 공개한 시각. 현재 공개 여부는 published를 본다 */
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Post extends PostSummary {
+  /** BlockNote 블록 배열 JSON */
+  bodyJson: string | null
 }
 
 /** admin 은 가입 신청을 승인하는 사람. 화면에서는 "멤버 관리" 진입 여부만 갈린다 */

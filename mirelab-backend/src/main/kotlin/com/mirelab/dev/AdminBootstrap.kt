@@ -3,6 +3,7 @@ package com.mirelab.dev
 import com.mirelab.domain.auth.AccessRequestStatus
 import com.mirelab.domain.user.Role
 import com.mirelab.domain.user.User
+import com.mirelab.domain.user.UsernamePolicy
 import com.mirelab.infra.auth.AccessRequestRepository
 import com.mirelab.infra.user.UserRepository
 import org.slf4j.LoggerFactory
@@ -32,6 +33,7 @@ class AdminBootstrap(
     private val accessRequestRepository: AccessRequestRepository,
     @Value("\${mirelab.admin-email}") private val adminEmail: String,
     @Value("\${mirelab.admin-name}") private val adminName: String,
+    @Value("\${mirelab.admin-username}") private val configuredAdminUsername: String,
 ) : CommandLineRunner {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -41,9 +43,15 @@ class AdminBootstrap(
             logger.warn("mirelab.admin-email 이 비어 있어 admin 보장을 건너뜁니다 — 아무도 가입을 승인할 수 없습니다")
             return
         }
+        val adminUsername = UsernamePolicy.normalize(configuredAdminUsername)
+        require(UsernamePolicy.isAllowed(adminUsername)) {
+            "mirelab.admin-username 형식이 올바르지 않습니다"
+        }
 
-        val admin = userRepository.findByEmail(adminEmail)?.also { promoteIfNeeded(it) }
-            ?: adoptOrCreate()
+        val admin = userRepository.findByEmail(adminEmail)?.also {
+            if (it.username.isNullOrBlank()) it.username = adminUsername
+            promoteIfNeeded(it)
+        } ?: adoptOrCreate(adminUsername)
 
         // 자기 자신에 대한 대기 신청이 남아 있으면 정리한다. 안 그러면 admin 이 멤버 관리
         // 화면에서 자기 이메일을 보게 되고, 승인을 누르면 이미 가입된 이메일이라 409 가 난다.
@@ -69,11 +77,12 @@ class AdminBootstrap(
      * 인증 붙기 전에 시딩된 DB 를 위한 것이다 — 새로 만들어버리면 같은 이름이 둘이 되고,
      * 그 사람이 그때까지 쌓은 기록(SlotValue·Work.addedBy)이 주인 없이 남는다.
      */
-    private fun adoptOrCreate(): User {
+    private fun adoptOrCreate(adminUsername: String): User {
         val adopted = userRepository.findAll()
             .firstOrNull { it.email == null && it.name == adminName }
 
         if (adopted != null) {
+            adopted.username = adminUsername
             adopted.email = adminEmail
             adopted.role = Role.ADMIN
             logger.info("기존 '{}' 행에 admin 계정({})을 붙였습니다", adminName, adminEmail)
@@ -82,7 +91,13 @@ class AdminBootstrap(
 
         logger.info("admin 계정을 새로 만듭니다: {} ({})", adminName, adminEmail)
         return userRepository.save(
-            User(name = adminName, color = ADMIN_COLOR, email = adminEmail, role = Role.ADMIN),
+            User(
+                username = adminUsername,
+                name = adminName,
+                color = ADMIN_COLOR,
+                email = adminEmail,
+                role = Role.ADMIN,
+            ),
         )
     }
 

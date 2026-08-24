@@ -21,6 +21,10 @@ class User(
     @GeneratedValue(strategy = GenerationType.UUID)
     val id: UUID? = null,
 
+    /** URL에 쓰는 전역 식별자. 기존 행 백필이 끝난 뒤 DB에서 NOT NULL로 고정한다. */
+    @Column(unique = true)
+    var username: String? = temporaryUsername(),
+
     var name: String,
 
     /** UI에 쓰는 tailwind 색상 클래스 — 예: "bg-emerald-500" */
@@ -46,4 +50,9 @@ class User(
 
     @Enumerated(EnumType.STRING)
     var role: Role = Role.MEMBER,
-)
+) {
+    companion object {
+        /** 새 코드가 만드는 임시 사용자도 URL 없이 남지 않게 한다. */
+        fun temporaryUsername(): String = "user-${UUID.randomUUID().toString().replace("-", "").take(24)}"
+    }
+}

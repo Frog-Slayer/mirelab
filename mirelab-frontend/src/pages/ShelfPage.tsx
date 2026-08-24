@@ -19,10 +19,10 @@ import { SlotType, WorkKind, WorkStatus } from '@/types'
  * 어느 스터디로 보낼지는 그 책이 속한 스터디(`entry.study`)를 따른다. 서재에는 내가 속한
  * 스터디 전부의 책이 섞여 꽂히므로, 지금 보고 있는 스터디와 다를 수 있다.
  */
-function entryHref(entry: ShelfEntry, currentStudySlug: string) {
+function entryHref(entry: ShelfEntry, currentStudySlug?: string) {
   return entry.study
     ? `/${entry.study.slug}/books/${entry.work.id}`
-    : `/${currentStudySlug}/shelf/${entry.work.id}`
+    : `/${currentStudySlug ?? ''}/shelf/${entry.work.id}`
 }
 
 const statusPriority: Record<string, number> = {
@@ -52,21 +52,60 @@ export default function ShelfPage() {
 
   if (!user || !study || !shelf) return <p className="text-sm text-neutral-400">불러오는 중…</p>
 
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-5 border-b border-neutral-200 pb-6">
+        <h1 className="text-3xl font-semibold tracking-[-0.03em]">내 서재</h1>
+      </div>
+
+      {adding && (
+        <AddDialog
+          onClose={() => setAdding(false)}
+          onSubmit={(input) => {
+            create.mutate(input)
+            setAdding(false)
+          }}
+        />
+      )}
+
+      <ShelfContents shelf={shelf} currentStudySlug={study.slug} onAdd={() => setAdding(true)} />
+    </div>
+  )
+}
+
+export function ShelfContents({
+  shelf,
+  currentStudySlug,
+  onAdd,
+}: {
+  shelf: { slots: SlotDef[]; entries: ShelfEntry[] }
+  currentStudySlug?: string
+  onAdd?: () => void
+}) {
   const { slots, entries } = shelf
-  const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
+  const ratingSlotOf = (entry: ShelfEntry) =>
+    slots.find(
+      (slot) =>
+        slot.type === SlotType.RATING && (!entry.study || slot.studyId === entry.study.id),
+    ) ?? slots.find((slot) => slot.type === SlotType.RATING)
 
   const myRating = (entry: ShelfEntry) => {
-    const v = entry.values.find((x) => x.slotDefId === ratingSlot?.id)
+    const v = entry.values.find((x) => x.slotDefId === ratingSlotOf(entry)?.id)
     return v && 'n' in v.value ? v.value.n : null
   }
 
   // 내가 매긴 점수 순. 아직 안 매긴 책은 뒤로 민다
   const sorted = [...entries].sort((a, b) => (myRating(b) ?? -1) - (myRating(a) ?? -1))
-  const blurbSlot = slots.find((s) => s.type === SlotType.TEXT_SHORT)
   const displayEntries = sorted.map((entry) => ({
     entry,
     rating: myRating(entry),
-    blurb: textValue(entry, blurbSlot),
+    blurb: textValue(
+      entry,
+      slots.find(
+        (slot) =>
+          slot.type === SlotType.TEXT_SHORT && (!entry.study || slot.studyId === entry.study.id),
+      ),
+    ),
   }))
 
   const toItem = (item: DisplayEntry): BookcaseItem => ({
@@ -76,7 +115,7 @@ export default function ShelfPage() {
     year: item.entry.work.year,
     kind: item.entry.work.kind,
     status: item.entry.work.status,
-    href: entryHref(item.entry, study.slug),
+    href: entryHref(item.entry, currentStudySlug),
     source: item.entry.study?.name ?? null,
     average: item.rating ?? undefined,
     voterCount: item.rating !== null ? 1 : 0,
@@ -98,22 +137,8 @@ export default function ShelfPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-5 border-b border-neutral-200 pb-6">
-        <h1 className="text-3xl font-semibold tracking-[-0.03em]">내 서재</h1>
-        <RatingHistogram entries={entries} myRating={myRating} />
-      </div>
-
-      {adding && (
-        <AddDialog
-          onClose={() => setAdding(false)}
-          onSubmit={(input) => {
-            create.mutate(input)
-            setAdding(false)
-          }}
-        />
-      )}
-
-      <Bookcase completed={completedItems} others={otherItems} onAdd={() => setAdding(true)} />
+      <RatingHistogram entries={entries} myRating={myRating} />
+      <Bookcase completed={completedItems} others={otherItems} onAdd={onAdd} />
     </div>
   )
 }

@@ -18,7 +18,7 @@ data class AuthResult(
 )
 
 data class SignupProfile(val email: String, val googleName: String, val pictureUrl: String?)
-data class CompleteSignupRequest(val name: String, val color: String)
+data class CompleteSignupRequest(val username: String, val name: String, val color: String)
 
 @RestController
 @RequestMapping("/api/auth")
@@ -54,6 +54,7 @@ class AuthController(
         val user = accessRequestService.completeProfile(
             identity.requestId,
             identity.email,
+            body.username,
             body.name,
             body.color,
         )
