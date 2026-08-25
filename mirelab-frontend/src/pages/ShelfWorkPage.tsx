@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
@@ -9,9 +10,10 @@ import {
   getShelfEntry,
   saveShelfDocument,
   saveShelfValue,
+  setShelfPublication,
   setShelfWorkStatus,
 } from '@/lib/shelfApi'
-import type { SlotDef, SlotValueData } from '@/types'
+import type { Post, SlotDef, SlotValueData } from '@/types'
 import { SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
 
 const statusLabel: Record<string, string> = {
@@ -160,6 +162,12 @@ export default function ShelfWorkPage() {
         </div>
       </header>
 
+      <PublicationControls
+        key={`${workId}-${data.publication?.id ?? 'new'}-${data.publication?.sharedStudyIds.join(',') ?? ''}`}
+        workId={workId}
+        publication={data.publication}
+      />
+
       <section
         aria-label="개인 노트"
         className="min-h-96 rounded-xl border border-neutral-200 bg-white px-3 py-5 shadow-sm sm:px-6"
@@ -173,6 +181,82 @@ export default function ShelfWorkPage() {
         />
       </section>
     </div>
+  )
+}
+
+function PublicationControls({
+  workId,
+  publication,
+}: {
+  workId: string
+  publication: Post | null
+}) {
+  const qc = useQueryClient()
+  const [title, setTitle] = useState(publication?.title ?? '')
+  const update = useMutation({
+    mutationFn: (published: boolean) => setShelfPublication(workId, { title, published }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['shelfEntry'] })
+      void qc.invalidateQueries({ queryKey: ['userPosts'] })
+      void qc.invalidateQueries({ queryKey: ['studyPosts'] })
+      void qc.invalidateQueries({ queryKey: ['blogProfile'] })
+    },
+  })
+
+  return (
+    <section className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex flex-wrap items-start gap-4">
+        <div>
+          <h2 className="font-medium">발행</h2>
+          <p className="mt-1 text-sm text-neutral-500">
+            이 책의 자유형식 기록을 독서스터디와 내 블로그에 공개합니다.
+          </p>
+        </div>
+        <span className={`ml-auto rounded-full px-2 py-1 text-xs ${publication?.published ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}>
+          {publication?.published ? '공개 중' : '비공개'}
+        </span>
+      </div>
+      <label className="mt-5 block text-sm text-neutral-600">
+        글 제목
+        <input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="제목을 입력하세요"
+          className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2 text-base outline-none focus:border-neutral-400"
+        />
+      </label>
+      <div className="mt-5 flex items-center gap-3">
+        {publication?.published ? (
+          <>
+            <button
+              type="button"
+              onClick={() => update.mutate(true)}
+              disabled={update.isPending || !title.trim()}
+              className="app-button app-button-primary"
+            >
+              제목 저장
+            </button>
+            <button
+              type="button"
+              onClick={() => update.mutate(false)}
+              disabled={update.isPending}
+              className="app-button"
+            >
+              비공개로 전환
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => update.mutate(true)}
+            disabled={update.isPending || !title.trim()}
+            className="app-button app-button-primary"
+          >
+            발행
+          </button>
+        )}
+      </div>
+    </section>
   )
 }
 

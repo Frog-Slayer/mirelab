@@ -8,4 +8,6 @@ interface PostRepository : JpaRepository<Post, UUID> {
     fun findByAuthorIdOrderByUpdatedAtDesc(authorId: UUID): List<Post>
 
     fun findByWorkIdOrderByPublishedAtDesc(workId: UUID): List<Post>
+
+    fun findFirstByWorkIdAndAuthorIdOrderByCreatedAtDesc(workId: UUID, authorId: UUID): Post?
 }

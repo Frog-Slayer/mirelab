@@ -30,7 +30,7 @@ class Post(
     var title: String = "",
 
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
-    @Column(name = "body_json")
+    @Column(name = "body_json", columnDefinition = "text")
     var bodyJson: String? = null,
 
     @Column(nullable = false, length = 200)

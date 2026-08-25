@@ -8,6 +8,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.util.UUID
 
+const val READING_STUDY_SLUG = "reading"
+
 @Entity
 @Table(name = "studies")
 class Study(

@@ -5,7 +5,7 @@ import Avatar from '@/components/Avatar'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { getBlogProfile, getUserPosts, createPost } from '@/lib/postApi'
 import { addPersonalWork, getUserShelf } from '@/lib/shelfApi'
-import { getMyStudies } from '@/lib/studyApi'
+import { READING_STUDY_SLUG } from '@/lib/studyApi'
 import { AddDialog, ShelfContents } from '@/pages/ShelfPage'
 
 export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
@@ -30,11 +30,6 @@ export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
     queryKey: ['userShelf', username, user?.id],
     queryFn: () => getUserShelf(username),
     enabled: !!user && !!username && tab === 'books',
-  })
-  const { data: studies = [] } = useQuery({
-    queryKey: ['myStudies', user?.id],
-    queryFn: getMyStudies,
-    enabled: !!user && own,
   })
   const create = useMutation({
     mutationFn: () => createPost(),
@@ -123,7 +118,7 @@ export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
           )}
           <ShelfContents
             shelf={shelf}
-            currentStudySlug={studies[0]?.slug}
+            currentStudySlug={READING_STUDY_SLUG}
             onAdd={own ? () => setAddingBook(true) : undefined}
           />
         </>

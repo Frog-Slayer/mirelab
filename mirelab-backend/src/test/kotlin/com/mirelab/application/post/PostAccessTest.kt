@@ -5,14 +5,20 @@ import com.mirelab.domain.post.PostShare
 import com.mirelab.domain.study.Study
 import com.mirelab.domain.study.StudyMember
 import com.mirelab.domain.user.User
+import com.mirelab.domain.work.Work
+import com.mirelab.domain.work.WorkKind
+import com.mirelab.domain.work.WorkStatus
 import com.mirelab.infra.post.PostRepository
 import com.mirelab.infra.post.PostShareRepository
 import com.mirelab.infra.study.StudyMemberRepository
 import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.user.UserRepository
+import com.mirelab.infra.work.WorkRepository
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.transaction.annotation.Transactional
@@ -27,6 +33,7 @@ class PostAccessTest @Autowired constructor(
     private val userRepository: UserRepository,
     private val studyRepository: StudyRepository,
     private val memberRepository: StudyMemberRepository,
+    private val workRepository: WorkRepository,
 ) {
     @Test
     fun `초안은 공유 스터디 멤버에게도 보이지 않는다`() {
@@ -59,6 +66,27 @@ class PostAccessTest @Autowired constructor(
 
         assertTrue(posts.map { it.id }.contains(fixture.post.id))
         assertFalse(posts.map { it.id }.contains(privatePost.id))
+    }
+
+    @Test
+    fun `공개 글에 연결된 개인 책 설명은 공유받은 독자에게도 보인다`() {
+        val fixture = fixture(published = true)
+        fixture.post.work = workRepository.save(
+            Work(
+                owner = fixture.author,
+                kind = WorkKind.BOOK,
+                title = "개인 책",
+                author = "지은이",
+                year = 2026,
+                status = WorkStatus.READING,
+                description = "책 설명",
+            ),
+        )
+        postRepository.save(fixture.post)
+
+        val response = postService.get(fixture.post.id!!, fixture.viewer.id!!)
+
+        assertEquals("책 설명", assertNotNull(response.work).description)
     }
 
     private fun fixture(published: Boolean): Fixture {

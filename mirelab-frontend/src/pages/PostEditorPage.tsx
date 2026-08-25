@@ -4,7 +4,6 @@ import { useNavigate, useParams } from 'react-router'
 import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { deletePost, getPost, updatePost } from '@/lib/postApi'
-import { getShelf } from '@/lib/shelfApi'
 import { getMyStudies } from '@/lib/studyApi'
 import type { Post, SlotValueData } from '@/types'
 
@@ -23,6 +22,9 @@ export default function PostEditorPage() {
   const { data: post } = useQuery({ queryKey: ['post', postId], queryFn: () => getPost(postId) })
   if (!post || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
   if (post.author.id !== user.id) return <p className="text-sm text-rose-700">작성자만 수정할 수 있습니다.</p>
+  if (post.work?.ownerId === user.id && post.work.studyId === null) {
+    return <p className="text-sm text-neutral-500">개인 책에 연결된 글은 책장 상세에서 수정해 주세요.</p>
+  }
   return <Editor key={post.id} post={post} username={username} />
 }
 
@@ -42,7 +44,6 @@ function Editor({ post, username }: { post: Post; username: string }) {
   const persistRef = useRef<(snapshot?: Draft) => void>(() => undefined)
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error'>('saved')
   const { data: studies = [] } = useQuery({ queryKey: ['myStudies'], queryFn: getMyStudies })
-  const { data: shelf } = useQuery({ queryKey: ['shelf'], queryFn: getShelf })
 
   const change = (patch: Partial<Draft>, saveNow = false) => {
     const next = { ...draftRef.current, ...patch }
@@ -117,20 +118,7 @@ function Editor({ post, username }: { post: Post; username: string }) {
         className="mt-8 w-full text-4xl font-semibold tracking-[-0.04em] outline-none placeholder:text-neutral-300"
       />
 
-      <div className="mt-6 grid gap-4 rounded-lg border border-neutral-200 p-4 sm:grid-cols-2">
-        <label className="text-sm text-neutral-600">
-          연결 작품
-          <select
-            value={draft.workId ?? ''}
-            onChange={(event) => change({ workId: event.target.value || null }, true)}
-            className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2"
-          >
-            <option value="">연결하지 않음</option>
-            {shelf?.entries.map((entry) => (
-              <option key={entry.work.id} value={entry.work.id}>{entry.work.title}</option>
-            ))}
-          </select>
-        </label>
+      <div className="mt-6 rounded-lg border border-neutral-200 p-4">
         <fieldset>
           <legend className="text-sm text-neutral-600">공개 대상</legend>
           <div className="mt-2 flex flex-wrap gap-3">

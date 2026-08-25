@@ -65,4 +65,11 @@ class ShelfController(private val shelfService: ShelfService) {
         shelfService.setStatus(principal.userId, workId, body.status)
         return ResponseEntity.noContent().build()
     }
+
+    @PatchMapping("/{workId}/publication")
+    fun updatePublication(
+        @AuthenticationPrincipal principal: AuthPrincipal,
+        @PathVariable workId: UUID,
+        @RequestBody body: ShelfPublicationInput,
+    ) = shelfService.updatePublication(principal.userId, workId, body)
 }

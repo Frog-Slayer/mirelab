@@ -5,6 +5,7 @@ import com.mirelab.application.work.WorkAccessChecker
 import com.mirelab.application.work.toResponse
 import com.mirelab.domain.post.Post
 import com.mirelab.domain.post.PostShare
+import com.mirelab.domain.study.READING_STUDY_SLUG
 import com.mirelab.infra.post.PostRepository
 import com.mirelab.infra.post.PostShareRepository
 import com.mirelab.infra.study.StudyRepository
@@ -86,21 +87,72 @@ class PostService(
         return toResponse(postRepository.save(Post(author = author, title = input.title.trim())))
     }
 
+    /** 개인 책의 문서를 글 목록에 노출하기 위한 단 하나의 발행 레코드. */
+    @Transactional(readOnly = true)
+    fun personalWorkPublication(workId: UUID, authorId: UUID): PostResponse? =
+        postRepository.findFirstByWorkIdAndAuthorIdOrderByCreatedAtDesc(workId, authorId)
+            ?.let { toResponse(it) }
+
+    /**
+     * 개인 책 화면의 발행 설정을 저장한다. 본문과 제목의 원본은 언제나 Work 쪽이다.
+     * 따라서 별도 글 편집기에서 두 사본이 갈라지지 않는다.
+     */
+    @Transactional
+    fun updatePersonalWorkPublication(
+        authorId: UUID,
+        workId: UUID,
+        title: String,
+        published: Boolean,
+    ): PostResponse {
+        val work = requirePersonalWork(workId, authorId)
+        val readingStudy = studyRepository.findBySlug(READING_STUDY_SLUG)
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "독서 스터디가 없습니다")
+        val readingStudyId = requireNotNull(readingStudy.id)
+        val myStudyIds = workAccessChecker.myStudyIds(authorId)
+        if (readingStudyId !in myStudyIds) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN, "독서 스터디 멤버만 책 기록을 발행할 수 있습니다")
+        }
+        val author = userRepository.findById(authorId).orElseThrow()
+        val post = postRepository.findFirstByWorkIdAndAuthorIdOrderByCreatedAtDesc(workId, authorId)
+            ?: postRepository.save(Post(author = author, work = work))
+        val trimmedTitle = title.trim()
+        if (published && trimmedTitle.isBlank()) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "공개할 글의 제목을 입력해 주세요")
+        }
+        post.title = trimmedTitle
+        post.bodyJson = work.personalBodyJson
+        post.excerpt = excerptOf(work.personalBodyJson)
+        post.setPublished(published)
+        post.updatedAt = Instant.now()
+        val postId = requireNotNull(post.id)
+        postShareRepository.deleteByPostId(postId)
+        postShareRepository.flush()
+        postShareRepository.save(PostShare(post = post, study = readingStudy))
+        return toResponse(postRepository.save(post))
+    }
+
+    /** 발행 뒤 책장에서 계속 쓴 내용도 공개 글에 즉시 따라가게 한다. */
+    @Transactional
+    fun syncPersonalWorkDocument(workId: UUID, authorId: UUID, bodyJson: String?) {
+        postRepository.findFirstByWorkIdAndAuthorIdOrderByCreatedAtDesc(workId, authorId)?.let { post ->
+            post.bodyJson = bodyJson
+            post.excerpt = excerptOf(bodyJson)
+            post.updatedAt = Instant.now()
+        }
+    }
+
     @Transactional
     fun update(postId: UUID, authorId: UUID, input: UpdatePostRequest): PostResponse {
         val post = requireAuthor(postId, authorId)
+        if (post.work?.study == null && post.work?.owner?.id == authorId) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "개인 책에 연결된 글은 책장에서 수정해 주세요")
+        }
+        if (input.workId != post.work?.id) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "글 편집기에서는 연결 작품을 변경할 수 없습니다")
+        }
         val myStudyIds = workAccessChecker.myStudyIds(authorId)
         if (!myStudyIds.containsAll(input.sharedStudyIds)) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "내가 속하지 않은 스터디에는 공유할 수 없습니다")
-        }
-        val work = input.workId?.let { workId ->
-            workRepository.findById(workId).orElseThrow {
-                ResponseStatusException(HttpStatus.NOT_FOUND, "없는 작품입니다")
-            }.also {
-                if (!workAccessChecker.canAccess(it, authorId, myStudyIds)) {
-                    throw ResponseStatusException(HttpStatus.BAD_REQUEST, "접근할 수 없는 작품에는 글을 연결할 수 없습니다")
-                }
-            }
         }
         val title = input.title.trim()
         if (input.published && title.isBlank()) {
@@ -110,7 +162,6 @@ class PostService(
         post.title = title
         post.bodyJson = input.bodyJson
         post.excerpt = excerptOf(input.bodyJson)
-        post.work = work
         post.setPublished(input.published)
         post.updatedAt = Instant.now()
         postShareRepository.deleteByPostId(postId)
@@ -133,6 +184,15 @@ class PostService(
         }
     }
 
+    private fun requirePersonalWork(workId: UUID, authorId: UUID) =
+        workRepository.findById(workId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "없는 책입니다")
+        }.also { work ->
+            if (work.study != null || work.owner?.id != authorId) {
+                throw ResponseStatusException(HttpStatus.FORBIDDEN, "내 개인 책만 발행할 수 있습니다")
+            }
+        }
+
     private fun find(postId: UUID): Post = postRepository.findById(postId).orElseThrow {
         ResponseStatusException(HttpStatus.NOT_FOUND, "없는 글입니다")
     }
@@ -144,9 +204,9 @@ class PostService(
     ): PostSummaryResponse {
         val postId = requireNotNull(post.id)
         val shareIds = accessChecker.sharedStudyIds(postId)
-        val visibleWork = post.work?.takeIf { work ->
-            viewerId == null || workAccessChecker.canAccess(work, viewerId, viewerStudyIds)
-        }
+        // 글 자체를 볼 권한이 확인된 뒤 만드는 응답이다. 공개 글에 연결된 개인 책의
+        // 표지·설명도 글 문맥의 일부이므로, 작품 단독 접근 권한과 무관하게 함께 내린다.
+        val visibleWork = post.work
         return PostSummaryResponse(
             postId,
             post.author.toResponse(),

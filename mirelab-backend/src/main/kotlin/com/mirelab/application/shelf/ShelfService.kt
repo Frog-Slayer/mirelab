@@ -2,6 +2,8 @@ package com.mirelab.application.shelf
 
 import com.mirelab.application.slot.SlotValueResponse
 import com.mirelab.application.slot.toResponse
+import com.mirelab.application.post.PostResponse
+import com.mirelab.application.post.PostService
 import com.mirelab.application.study.toResponse
 import com.mirelab.application.work.WorkAccessChecker
 import com.mirelab.application.work.WorkResponse
@@ -39,6 +41,7 @@ class ShelfService(
     private val slotValueRepository: SlotValueRepository,
     private val userRepository: UserRepository,
     private val workAccessChecker: WorkAccessChecker,
+    private val postService: PostService,
 ) {
     @Transactional(readOnly = true)
     fun list(ownerId: UUID, viewerId: UUID = ownerId): ShelfResponse {
@@ -89,6 +92,7 @@ class ShelfService(
             slotDefs.map { it.toResponse() },
             values.map { it.toResponse() },
             work.personalBodyJson,
+            postService.personalWorkPublication(workId, userId),
         )
     }
 
@@ -96,7 +100,17 @@ class ShelfService(
     fun saveDocument(userId: UUID, workId: UUID, input: ShelfDocumentInput) {
         val work = requirePersonalWork(workId, userId)
         work.personalBodyJson = input.bodyJson
+        postService.syncPersonalWorkDocument(workId, userId, input.bodyJson)
     }
+
+    @Transactional
+    fun updatePublication(userId: UUID, workId: UUID, input: ShelfPublicationInput): PostResponse =
+        postService.updatePersonalWorkPublication(
+            userId,
+            workId,
+            input.title,
+            input.published,
+        )
 
     @Transactional
     fun setStatus(userId: UUID, workId: UUID, status: WorkStatus) {

@@ -1,6 +1,8 @@
 import { ApiError, api } from '@/lib/api'
 import type { Study, User } from '@/types'
 
+export const READING_STUDY_SLUG = 'reading'
+
 export interface StudyResponse {
   id: string
   slug: string

@@ -1,5 +1,6 @@
 package com.mirelab.dev
 
+import com.mirelab.domain.study.READING_STUDY_SLUG
 import java.util.UUID
 import org.springframework.boot.CommandLineRunner
 import org.springframework.context.annotation.Profile
@@ -31,13 +32,13 @@ class DevDataSeeder(
         val existing = jdbcTemplate.query(
             "select id from studies where slug = ?",
             { rs, _ -> rs.getObject("id", UUID::class.java) },
-            READING_SLUG,
+            READING_STUDY_SLUG,
         ).firstOrNull()
         if (existing != null) return existing
 
         jdbcTemplate.update(
             "insert into studies (id, slug, name, has_works) values (?, ?, ?, ?)",
-            READING_STUDY_ID, READING_SLUG, "독서 스터디", true,
+            READING_STUDY_ID, READING_STUDY_SLUG, "독서 스터디", true,
         )
         return READING_STUDY_ID
     }
@@ -70,8 +71,6 @@ class DevDataSeeder(
 
     private companion object {
         val READING_STUDY_ID: UUID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-        const val READING_SLUG = "reading"
-
         val SLOT_DEFS = listOf(
             SlotDefSeed(UUID.fromString("c45bf0b4-6906-4b76-bf45-3ac62b165180"), "평점", "RATING", 1),
             SlotDefSeed(UUID.fromString("c9090e36-abd3-4c44-808c-cab9258e45b2"), "한줄평", "TEXT_SHORT", 2),
