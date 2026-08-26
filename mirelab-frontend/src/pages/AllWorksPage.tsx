@@ -50,6 +50,44 @@ function byOldest(a: string | null | undefined, b: string | null | undefined): n
   return a.localeCompare(b)
 }
 
+type RatingSort = 'asc' | 'desc' | null
+/** 상태는 끌 수 없다 — 완료 → 진행 중 → 후보(default) 아니면 그 반대(reversed) 둘 중 하나 */
+type StatusSort = 'default' | 'reversed'
+
+/**
+ * 평점 정렬 버튼을 안 눌렀으면(ratingSort === null) 상태 → 날짜 → 제목 → id 순 기본
+ * 정렬을 쓴다. 상태는 완료 → 진행 중 → 후보가 기본이고, 정렬 버튼으로 그 반대 방향만
+ * 토글한다 — "정렬 해제"는 없다(둘 중 하나는 항상 켜져 있다).
+ *
+ * 평점 정렬을 눌러서 동점이 나와도 이 기본 정렬로 떨어뜨린다. 완료·진행 중은 그 상태가
+ * 된 시점, 후보는 책장에 담긴 시점 순이고, 그마저 같으면(테스트 데이터처럼 날짜가 비어
+ * 있는 경우) 제목 → id 순으로 가른다.
+ */
+function compareWorks(
+  a: LibraryEntry,
+  b: LibraryEntry,
+  ratingSort: RatingSort,
+  statusSort: StatusSort,
+): number {
+  if (ratingSort) {
+    const base = a.average - b.average
+    const directed = ratingSort === 'asc' ? base : -base
+    if (directed !== 0) return directed
+  }
+
+  const statusBase = statusPriority[a.status] - statusPriority[b.status]
+  const statusDifference = statusSort === 'reversed' ? -statusBase : statusBase
+  if (statusDifference !== 0) return statusDifference
+
+  const byDate = byOldest(sortKey(a), sortKey(b))
+  if (byDate !== 0) return byDate
+
+  const byTitle = a.title.localeCompare(b.title, 'ko')
+  if (byTitle !== 0) return byTitle
+
+  return a.id.localeCompare(b.id)
+}
+
 const statusLabel = {
   [WorkStatus.READING]: '진행 중',
   [WorkStatus.CANDIDATE]: '후보',
@@ -85,17 +123,7 @@ export default function AllWorksPage() {
 
   if (!study) return null
 
-  const shown = works
-    .filter((work) => filter === 'ALL' || work.kind === filter)
-    .sort((a, b) => {
-      const statusDifference = statusPriority[a.status] - statusPriority[b.status]
-      if (statusDifference !== 0) return statusDifference
-
-      const byDate = byOldest(sortKey(a), sortKey(b))
-      if (byDate !== 0) return byDate
-
-      return a.title.localeCompare(b.title, 'ko')
-    })
+  const shown = works.filter((work) => filter === 'ALL' || work.kind === filter)
 
   return (
     <div className="flex flex-col gap-6">
@@ -153,23 +181,86 @@ export default function AllWorksPage() {
   )
 }
 
+function RatingSortHeader({
+  sort,
+  onToggle,
+}: {
+  sort: RatingSort
+  onToggle: () => void
+}) {
+  return (
+    <th scope="col" className="w-28 border-l border-neutral-200 p-0 font-medium">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full cursor-pointer items-center justify-center gap-1 px-4 py-2 hover:text-neutral-900"
+      >
+        평점
+        <span aria-hidden className={sort ? 'text-neutral-700' : 'text-neutral-300'}>
+          {sort === 'desc' ? '▼' : '▲'}
+        </span>
+      </button>
+    </th>
+  )
+}
+
+/** 상태는 항상 어느 한 방향으로든 정렬돼 있어서(끌 수 없음) 화살표를 늘 진하게 보여준다 */
+function StatusSortHeader({
+  sort,
+  onToggle,
+}: {
+  sort: StatusSort
+  onToggle: () => void
+}) {
+  return (
+    <th scope="col" className="w-20 border-l border-neutral-200 p-0 font-medium">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full cursor-pointer items-center justify-center gap-1 px-2 py-2 hover:text-neutral-900"
+      >
+        상태
+        <span aria-hidden className="text-neutral-700">
+          {sort === 'default' ? '▼' : '▲'}
+        </span>
+      </button>
+    </th>
+  )
+}
+
 function AllWorksTable({ works, slug }: { works: LibraryEntry[]; slug: string }) {
+  const [ratingSort, setRatingSort] = useState<RatingSort>(null)
+  const [statusSort, setStatusSort] = useState<StatusSort>('default')
+
   if (works.length === 0) {
     return <p className="py-10 text-center text-sm text-neutral-400">표시할 작품이 없습니다.</p>
+  }
+
+  const sorted = [...works].sort((a, b) => compareWorks(a, b, ratingSort, statusSort))
+
+  // 안 눌렀을 땐 기본 정렬. 한 번 누르면 오름차순 ↔ 내림차순만 토글한다 — 기본 정렬로
+  // 돌아가는 "해제" 단계는 없다.
+  const toggleRatingSort = () => {
+    setRatingSort((current) => (current === 'asc' ? 'desc' : 'asc'))
+  }
+
+  // 상태는 끌 수 없다 — 기본(완료→진행 중→후보) ↔ 반대 방향만 토글한다.
+  const toggleStatusSort = () => {
+    setStatusSort((current) => (current === 'default' ? 'reversed' : 'default'))
   }
 
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[800px] table-fixed border-collapse text-left text-sm">
           <thead className="bg-neutral-50 text-xs text-neutral-500">
             <tr>
-              <th scope="col" className="px-5 py-2 text-center font-medium">
+              <th scope="col" className="w-14 px-2 py-2 text-center font-medium">
                 구분
               </th>
               <th
                 scope="col"
-                className="w-14 border-l border-neutral-200 px-4 py-2 text-center font-medium"
+                className="w-40 border-l border-neutral-200 px-4 py-2 text-center font-medium"
               >
                 작품
               </th>
@@ -179,33 +270,23 @@ function AllWorksTable({ works, slug }: { works: LibraryEntry[]; slug: string })
               >
                 저자/감독
               </th>
+              <StatusSortHeader sort={statusSort} onToggle={toggleStatusSort} />
+              <RatingSortHeader sort={ratingSort} onToggle={toggleRatingSort} />
               <th
                 scope="col"
-                className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
-              >
-                상태
-              </th>
-              <th
-                scope="col"
-                className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
-              >
-                평점
-              </th>
-              <th
-                scope="col"
-                className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
+                className="w-60 border-l border-neutral-200 px-4 py-2 text-center font-medium"
               >
                 선정 사유
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-100">
-            {works.map((work) => (
+            {sorted.map((work) => (
               <tr key={work.id} className={`transition-colors ${statusRowClass[work.status]}`}>
-                <td className="px-5 py-2 text-center text-neutral-500">
+                <td className="px-2 py-2 text-center text-neutral-500">
                   {work.kind === WorkKind.BOOK ? '책' : '영화'}
                 </td>
-                <td className="w-14 border-l border-neutral-200 px-4 py-2 text-left">
+                <td className="overflow-hidden border-l border-neutral-200 px-4 py-2 text-left">
                   <Link
                     to={`/${slug}/books/${work.id}`}
                     className="group flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
@@ -228,7 +309,7 @@ function AllWorksTable({ works, slug }: { works: LibraryEntry[]; slug: string })
                     {work.author || '—'}
                   </div>
                 </td>
-                <td className="border-l border-neutral-200 px-4 py-2 text-center">
+                <td className="border-l border-neutral-200 px-2 py-2 text-center">
                   <span
                     className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ring-1 ring-inset ${statusBadgeClass[work.status]}`}
                   >
@@ -247,7 +328,7 @@ function AllWorksTable({ works, slug }: { works: LibraryEntry[]; slug: string })
                 </td>
                 <td className="border-l border-neutral-200 px-4 py-2 text-left text-neutral-600">
                   {work.reason ? (
-                    <div className="max-w-72 truncate" title={work.reason}>
+                    <div className="truncate" title={work.reason}>
                       {work.reason}
                     </div>
                   ) : (
