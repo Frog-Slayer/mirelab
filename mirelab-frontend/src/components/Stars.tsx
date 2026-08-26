@@ -46,6 +46,7 @@ function StarInput({
   size: keyof typeof sizes
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const [dragging, setDragging] = useState(false)
 
   const valueAt = (clientX: number) => {
     const box = ref.current?.getBoundingClientRect()
@@ -63,7 +64,22 @@ function StarInput({
         aria-valuemax={5}
         aria-valuenow={value}
         aria-label="별점"
-        onClick={(e) => onChange(valueAt(e.clientX))}
+        onPointerDown={(e) => {
+          // 별 사이를 눌러 훑기 시작할 때 브라우저 기본 드래그(텍스트 선택)가
+          // 끼어들면 별 다섯 개가 한 덩이로 선택돼버린다 — 슬라이더로만 쓰게 막는다
+          e.preventDefault()
+          e.currentTarget.setPointerCapture(e.pointerId)
+          setDragging(true)
+          onChange(valueAt(e.clientX))
+        }}
+        onPointerMove={(e) => {
+          if (dragging) onChange(valueAt(e.clientX))
+        }}
+        onPointerUp={(e) => {
+          e.currentTarget.releasePointerCapture(e.pointerId)
+          setDragging(false)
+        }}
+        onPointerCancel={() => setDragging(false)}
         onKeyDown={(e) => {
           const step = e.shiftKey ? 0.5 : 0.1
           if (e.key === 'ArrowRight' || e.key === 'ArrowUp') onChange(snap(value + step))
@@ -73,7 +89,7 @@ function StarInput({
           else return
           e.preventDefault()
         }}
-        className={`inline-flex cursor-pointer touch-none rounded-xs ${sizes[size]}`}
+        className={`inline-flex cursor-pointer touch-none select-none rounded-xs ${sizes[size]}`}
       >
         {[0, 1, 2, 3, 4].map((i) => (
           <PartialStar key={i} fill={Math.min(Math.max(value - i, 0), 1)} />

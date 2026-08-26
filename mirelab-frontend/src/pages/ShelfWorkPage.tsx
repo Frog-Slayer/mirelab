@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
+import RatingControl from '@/components/RatingControl'
 import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
 import SlotField from '@/components/slots/SlotField'
 import { useCurrentUser } from '@/hooks/currentUser'
@@ -73,6 +74,8 @@ export default function ShelfWorkPage() {
   const blurbSlot = slots.find(
     (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
   )
+  const ratingValue = ratingSlot && valueOf(ratingSlot)?.value
+  const rating = ratingValue && 'n' in ratingValue ? ratingValue.n : 0
   const documentBlocks = parseBlocks(data.personalBodyJson)
   const step = nextStatus[work.status]
 
@@ -130,14 +133,13 @@ export default function ShelfWorkPage() {
           {(ratingSlot || blurbSlot) && (
             <div className="mt-auto flex flex-col gap-2 pt-2">
               {ratingSlot && (
-                <SlotField
-                  slot={ratingSlot}
-                  value={valueOf(ratingSlot)?.value}
-                  onSave={(value) =>
+                <RatingControl
+                  value={rating}
+                  onSave={(next) =>
                     save.mutate({
                       targetId,
                       slotDefId: ratingSlot.id,
-                      value,
+                      value: { n: next },
                       draft: false,
                     })
                   }

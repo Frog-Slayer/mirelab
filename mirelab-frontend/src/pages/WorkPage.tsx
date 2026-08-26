@@ -157,25 +157,6 @@ export default function WorkPage() {
     },
   })
   const save = useMutation({ mutationFn: saveValue, onSuccess: refresh })
-  // 공개 토글의 표시 상태는 서버 값(work.publishedRatingUserIds)이라, 실패하면 버튼이
-  // 슬그머니 제자리로 돌아갈 뿐 아무 말이 없다 — 눌러도 안 되는 버튼을 계속 누르게 되니
-  // 실패는 반드시 화면에 남긴다.
-  const changeRatingVisibility = useMutation({
-    mutationFn: (published: boolean) => setRatingPublished(workId, published),
-    onSuccess: () => {
-      setPublishError(null)
-      refresh()
-    },
-    onError: (error) => {
-      setPublishError(
-        error instanceof ApiError && error.status === 404
-          ? '별점을 먼저 저장한 뒤에 공개할 수 있어요.'
-          : '공개 설정을 바꾸지 못했어요. 잠시 뒤 다시 시도해 주세요.',
-      )
-      // 서버가 실제로 어떤 상태인지 다시 받아와 화면과 어긋난 채로 두지 않는다.
-      refresh()
-    },
-  })
   const drop = useMutation({
     mutationFn: () => removeWork(workId),
     onSuccess: () => {
@@ -222,6 +203,37 @@ export default function WorkPage() {
   const blurbOf = (userId: string) => {
     const v = values.find((x) => x.slotDefId === blurbSlot?.id && x.userId === userId)
     return v && 'text' in v.value ? v.value.text : ''
+  }
+
+  // RateDialog 는 저장을 눌러야 한 번에 반영한다. 별점·한줄평은 서로 관계가 없으니
+  // 동시에 보내고, 공개 전환만 별점이 서버에 먼저 있어야 하니 그 뒤에 보낸다.
+  // useMutation 의 onSuccess(refresh)는 쿼리 전체를 다시 받아오는 무거운 동작이라
+  // 그걸 매 단계마다 기다리면(mutateAsync) 유난히 느려진다 — 그래서 여기서는 실제
+  // 저장 요청만 기다리고, 화면 갱신은 다 끝난 뒤 한 번만 한다.
+  const saveRating = async (input: { rating?: number; blurb?: string; published?: boolean }) => {
+    setPublishError(null)
+    try {
+      await Promise.all([
+        input.rating !== undefined && ratingSlot
+          ? saveValue({ targetId: work.id, slotDefId: ratingSlot.id, value: { n: input.rating }, draft: false })
+          : Promise.resolve(),
+        input.blurb !== undefined && blurbSlot
+          ? saveValue({ targetId: work.id, slotDefId: blurbSlot.id, value: { text: input.blurb }, draft: false })
+          : Promise.resolve(),
+      ])
+      if (input.published !== undefined) {
+        await setRatingPublished(workId, input.published)
+      }
+    } catch (error) {
+      setPublishError(
+        error instanceof ApiError && error.status === 404
+          ? '별점을 먼저 저장한 뒤에 공개할 수 있어요.'
+          : '저장하지 못했어요. 잠시 뒤 다시 시도해 주세요.',
+      )
+      throw error
+    } finally {
+      refresh()
+    }
   }
 
   return (
@@ -429,12 +441,8 @@ export default function WorkPage() {
               ratingValue={myValueOf(ratingSlot.id)?.value}
               blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
               published={work.publishedRatingUserIds.includes(user.id)}
-              onPublishedChange={(published) => changeRatingVisibility.mutate(published)}
-              changingPublished={changeRatingVisibility.isPending}
               publishError={publishError}
-              onSaveSlot={(slotDefId, value) =>
-                save.mutate({ targetId: work.id, slotDefId, value, draft: false })
-              }
+              onSave={saveRating}
               onClose={() => {
                 setPublishError(null)
                 setRatingOpen(false)
