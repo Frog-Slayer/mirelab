@@ -10,6 +10,7 @@ import {
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import PickNote from '@/components/PickNote'
+import RankSticker from '@/components/RankSticker'
 import Stars from '@/components/Stars'
 import { formatRating } from '@/lib/format'
 import type { User } from '@/types'
@@ -38,6 +39,8 @@ export interface BookcaseItem {
   description?: string
   coverUrl?: string
   actors?: string[]
+  /** 1~3 이면 표지 모서리에 금·은·동 순위 스티커를 붙인다 */
+  rank?: number
 }
 
 const statusLabel: Record<WorkStatus, string> = {
@@ -271,9 +274,9 @@ const ROW_GAP = ROOM_BELOW + PLANK_HEIGHT + ROOM_ABOVE
  *
  * 표지 있는 책은 이미지 원본 비율을 따라가느라 높이 상한이 없어서(BookCover), 이 값을
  * max-height 로도 함께 걸어 선반 위로 삐져나오지 못하게 한다. 영화 티켓도 계산식대로면
- * 최대 215 라 이 값을 넘으므로 [MovieTicket] 에서 같이 조인다.
+ * 최대 193 이라 이 값을 넘으므로 [MovieTicket] 에서 같이 조인다.
  */
-const SLOT_HEIGHT = 196
+const SLOT_HEIGHT = 176
 
 /** 칸 하나의 전체 높이 — 빈 책장도 이만큼은 자리를 차지한다 */
 const COMPARTMENT_HEIGHT = ROOM_ABOVE + SLOT_HEIGHT + ROOM_BELOW
@@ -446,11 +449,11 @@ function MovieTicket({
   const palette = ticketPalettes[hash % ticketPalettes.length]
   const rotation = ticketRotations[hash % ticketRotations.length]
   // 포스터가 있어도 일반 티켓과 비슷한 덩치를 유지하되, 포스터 면과 스텁을 함께 감싼다.
-  const posterWidth = 88 + (hash % 8)
-  const ticketWidth = item.coverUrl ? posterWidth + 16 : 96
+  const posterWidth = 79 + (hash % 7)
+  const ticketWidth = item.coverUrl ? posterWidth + 14 : 86
   const ticketHeight = Math.min(
     SLOT_HEIGHT,
-    item.coverUrl ? Math.round(posterWidth * 1.5) + 72 : 192,
+    item.coverUrl ? Math.round(posterWidth * 1.5) + 65 : 173,
   )
 
   return (
@@ -511,6 +514,9 @@ function MovieTicket({
                 <span className="truncate text-[10px] opacity-75">{item.author || '미상'}</span>
               </>
             )}
+            {item.rank && item.rank <= 3 && (
+              <RankSticker rank={item.rank as 1 | 2 | 3} size="sm" className="top-1 left-1 -rotate-6" />
+            )}
           </div>
           <div
             className="flex h-9 shrink-0 items-center justify-between px-1"
@@ -540,8 +546,8 @@ function BookCover({
   const hash = hashTitle(item.title)
   // 실제 표지는 폭만 정하고 이미지 자체의 원본 비율을 따른다.
   // 텍스트 표지는 조금 낮게 잡아 가판대가 지나치게 우뚝해 보이지 않게 한다.
-  const height = 168 + (hash % 14)
-  const width = item.coverUrl ? 110 + (hash % 10) : 96 + (hash % 12)
+  const height = 151 + (hash % 13)
+  const width = item.coverUrl ? 99 + (hash % 9) : 86 + (hash % 11)
   const lean = hash % 5 === 0 ? '-rotate-2' : hash % 7 === 0 ? 'rotate-1' : ''
   const palette = spineColors[hash % spineColors.length]
   const titleSize = item.title.length > 34 ? 10 : item.title.length > 22 ? 11 : 13
@@ -590,6 +596,9 @@ function BookCover({
           <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-white/90 shadow-sm">
             <StatusGlyph status={item.status} />
           </span>
+          {item.rank && item.rank <= 3 && (
+            <RankSticker rank={item.rank as 1 | 2 | 3} size="sm" className="top-1 left-1 -rotate-6" />
+          )}
         </Link>
 
         <BookPreview item={item} users={users} group="cover" mobileOpen={longPress.open} />

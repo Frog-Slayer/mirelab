@@ -153,7 +153,7 @@ export default function RootLayout() {
 function StudyNav({ study }: { study: Study }) {
   const base = `/${study.slug}`
 
-  // 홈(명예의 전당 + 책장)을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
+  // 홈(책장)을 스터디의 얼굴로 두고, 자주 쓰는 기록 축만 전면에 둔다.
   // "내 서재" 는 여기 없다 — 다 같이 보는 것들 사이에 개인 화면이 끼면 축이 섞인다.
   // 프로필 사진 메뉴(UserMenu)로 옮겼다.
   const items = study.hasWorks
