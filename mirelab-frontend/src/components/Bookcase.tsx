@@ -1,4 +1,12 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import PickNote from '@/components/PickNote'
@@ -64,6 +72,80 @@ const ticketPalettes = [
 ]
 
 const ticketRotations = ['-rotate-2', '-rotate-1', '', 'rotate-1', 'rotate-2']
+
+const LONG_PRESS_DELAY = 500
+const LONG_PRESS_MOVE_TOLERANCE = 10
+
+/**
+ * 터치의 짧은 탭은 링크로 보내고, 길게 누를 때만 미리보기를 연다.
+ * 손가락으로 스크롤하기 시작하면 롱프레스를 취소하며, 미리보기를 연 터치는 링크 클릭으로
+ * 이어지지 않게 막는다.
+ */
+function useLongPressPreview(onActivate?: () => void) {
+  const [open, setOpen] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const startRef = useRef({ x: 0, y: 0 })
+  const suppressClickRef = useRef(false)
+
+  const clearTimer = () => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }
+
+  useEffect(() => clearTimer, [])
+
+  useEffect(() => {
+    if (!open) return
+
+    const close = () => setOpen(false)
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [open])
+
+  const onPointerDown = (event: ReactPointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType !== 'touch') return
+
+    clearTimer()
+    startRef.current = { x: event.clientX, y: event.clientY }
+    suppressClickRef.current = false
+    timerRef.current = setTimeout(() => {
+      suppressClickRef.current = true
+      setOpen(true)
+      onActivate?.()
+      timerRef.current = null
+    }, LONG_PRESS_DELAY)
+  }
+
+  const onPointerMove = (event: ReactPointerEvent<HTMLAnchorElement>) => {
+    if (event.pointerType !== 'touch' || timerRef.current === null) return
+
+    const dx = event.clientX - startRef.current.x
+    const dy = event.clientY - startRef.current.y
+    if (Math.hypot(dx, dy) > LONG_PRESS_MOVE_TOLERANCE) clearTimer()
+  }
+
+  const onClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (!suppressClickRef.current) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    suppressClickRef.current = false
+  }
+
+  return {
+    open,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: clearTimer,
+      onPointerCancel: clearTimer,
+      onClick,
+      onContextMenu: (event: ReactMouseEvent<HTMLAnchorElement>) => event.preventDefault(),
+    },
+  }
+}
 
 export function BookcaseStatusFilters({
   value,
@@ -359,6 +441,7 @@ function MovieTicket({
   users: User[]
   onActivate?: (id: string) => void
 }) {
+  const longPress = useLongPressPreview(() => onActivate?.(item.id))
   const hash = hashTitle(item.title)
   const palette = ticketPalettes[hash % ticketPalettes.length]
   const rotation = ticketRotations[hash % ticketRotations.length]
@@ -375,70 +458,70 @@ function MovieTicket({
     // li 에 걸면 빈 윗공간에만 얹어도 카드가 뜨고, 카드가 책 위가 아니라 칸 위에 붙는다.
     <li>
       <div className="group/ticket relative">
-      <Link
-        to={item.href}
-        onMouseEnter={() => onActivate?.(item.id)}
-        onFocus={() => onActivate?.(item.id)}
-        onTouchStart={() => onActivate?.(item.id)}
-        aria-label={`${item.title}, ${item.author}, 영화, ${statusLabel[item.status]}`}
-        className={`relative flex origin-bottom flex-col justify-between overflow-hidden p-2 shadow-[3px_3px_5px_rgba(0,0,0,0.22)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.24)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${rotation}`}
-        style={{
-          width: ticketWidth,
-          height: ticketHeight,
-          backgroundColor: palette.paper,
-          color: palette.text,
-          clipPath:
-            'polygon(5px 0, 12% 3px, 24% 0, 36% 3px, 48% 0, 60% 3px, 72% 0, 84% 3px, calc(100% - 5px) 0, 100% 5px, calc(100% - 3px) 12%, 100% 24%, calc(100% - 3px) 36%, 100% 48%, calc(100% - 3px) 60%, 100% 72%, calc(100% - 3px) 84%, 100% calc(100% - 5px), calc(100% - 5px) 100%, 88% calc(100% - 3px), 76% 100%, 64% calc(100% - 3px), 52% 100%, 40% calc(100% - 3px), 28% 100%, 16% calc(100% - 3px), 5px 100%, 0 calc(100% - 5px), 3px 88%, 0 76%, 3px 64%, 0 52%, 3px 40%, 0 28%, 3px 16%, 0 5px)',
-          filter: 'drop-shadow(4px 6px 5px rgba(42, 29, 19, 0.34))',
-        }}
-      >
-        <div
-          className={`relative flex border-2 ${item.coverUrl ? 'min-h-0 flex-1 flex-col overflow-hidden' : 'min-h-0 flex-1 flex-col justify-between p-2.5'}`}
-          style={{ backgroundColor: palette.panel, borderColor: palette.text }}
+        <Link
+          to={item.href}
+          {...longPress.handlers}
+          onMouseEnter={() => onActivate?.(item.id)}
+          onFocus={() => onActivate?.(item.id)}
+          aria-label={`${item.title}, ${item.author}, 영화, ${statusLabel[item.status]}`}
+          className={`relative flex origin-bottom flex-col justify-between overflow-hidden p-2 shadow-[3px_3px_5px_rgba(0,0,0,0.22)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.24)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${rotation}`}
+          style={{
+            width: ticketWidth,
+            height: ticketHeight,
+            backgroundColor: palette.paper,
+            color: palette.text,
+            clipPath:
+              'polygon(5px 0, 12% 3px, 24% 0, 36% 3px, 48% 0, 60% 3px, 72% 0, 84% 3px, calc(100% - 5px) 0, 100% 5px, calc(100% - 3px) 12%, 100% 24%, calc(100% - 3px) 36%, 100% 48%, calc(100% - 3px) 60%, 100% 72%, calc(100% - 3px) 84%, 100% calc(100% - 5px), calc(100% - 5px) 100%, 88% calc(100% - 3px), 76% 100%, 64% calc(100% - 3px), 52% 100%, 40% calc(100% - 3px), 28% 100%, 16% calc(100% - 3px), 5px 100%, 0 calc(100% - 5px), 3px 88%, 0 76%, 3px 64%, 0 52%, 3px 40%, 0 28%, 3px 16%, 0 5px)',
+            filter: 'drop-shadow(4px 6px 5px rgba(42, 29, 19, 0.34))',
+          }}
         >
-          {item.coverUrl ? (
-            <>
-              <div className="flex h-5 shrink-0 items-center justify-between px-2">
-                <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
-                <span
-                  className="grid size-4 place-items-center rounded-full shadow-sm"
-                  style={{ backgroundColor: palette.text }}
-                >
-                  <StatusGlyph status={item.status} />
-                </span>
-              </div>
-              <Cover
-                work={item}
-                size="lg"
-                className="min-h-0 flex-1 !aspect-auto rounded-none border-0 object-contain"
-              />
-            </>
-          ) : (
-            <>
-              <div className="flex items-start justify-between gap-2">
-                <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
-                <span
-                  className="grid size-4 place-items-center rounded-full"
-                  style={{ backgroundColor: palette.text }}
-                >
-                  <StatusGlyph status={item.status} />
-                </span>
-              </div>
-              <span className="break-all text-sm leading-tight font-semibold">{item.title}</span>
-              <span className="truncate text-[10px] opacity-75">{item.author || '미상'}</span>
-            </>
-          )}
-        </div>
-        <div
-          className="flex h-9 shrink-0 items-center justify-between px-1"
-          style={{ color: palette.ink }}
-        >
-          <span className="h-4 w-11 bg-[repeating-linear-gradient(90deg,currentColor_0_2px,transparent_2px_3px,currentColor_3px_4px,transparent_4px_6px)] opacity-75" />
-          <span className="text-[8px] tabular-nums">{item.year}</span>
-        </div>
-      </Link>
+          <div
+            className={`relative flex border-2 ${item.coverUrl ? 'min-h-0 flex-1 flex-col overflow-hidden' : 'min-h-0 flex-1 flex-col justify-between p-2.5'}`}
+            style={{ backgroundColor: palette.panel, borderColor: palette.text }}
+          >
+            {item.coverUrl ? (
+              <>
+                <div className="flex h-5 shrink-0 items-center justify-between px-2">
+                  <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
+                  <span
+                    className="grid size-4 place-items-center rounded-full shadow-sm"
+                    style={{ backgroundColor: palette.text }}
+                  >
+                    <StatusGlyph status={item.status} />
+                  </span>
+                </div>
+                <Cover
+                  work={item}
+                  size="lg"
+                  className="min-h-0 flex-1 !aspect-auto rounded-none border-0 object-contain"
+                />
+              </>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
+                  <span
+                    className="grid size-4 place-items-center rounded-full"
+                    style={{ backgroundColor: palette.text }}
+                  >
+                    <StatusGlyph status={item.status} />
+                  </span>
+                </div>
+                <span className="break-all text-sm leading-tight font-semibold">{item.title}</span>
+                <span className="truncate text-[10px] opacity-75">{item.author || '미상'}</span>
+              </>
+            )}
+          </div>
+          <div
+            className="flex h-9 shrink-0 items-center justify-between px-1"
+            style={{ color: palette.ink }}
+          >
+            <span className="h-4 w-11 bg-[repeating-linear-gradient(90deg,currentColor_0_2px,transparent_2px_3px,currentColor_3px_4px,transparent_4px_6px)] opacity-75" />
+            <span className="text-[8px] tabular-nums">{item.year}</span>
+          </div>
+        </Link>
 
-        <BookPreview item={item} users={users} group="ticket" />
+        <BookPreview item={item} users={users} group="ticket" mobileOpen={longPress.open} />
       </div>
     </li>
   )
@@ -453,6 +536,7 @@ function BookCover({
   users: User[]
   onActivate?: (id: string) => void
 }) {
+  const longPress = useLongPressPreview(() => onActivate?.(item.id))
   const hash = hashTitle(item.title)
   // 실제 표지는 폭만 정하고 이미지 자체의 원본 비율을 따른다.
   // 텍스트 표지는 조금 낮게 잡아 가판대가 지나치게 우뚝해 보이지 않게 한다.
@@ -466,49 +550,49 @@ function BookCover({
     // 호버 카드를 안쪽 div 에 거는 이유는 MovieTicket 과 같다
     <li>
       <div className="group/cover relative">
-      <Link
-        to={item.href}
-        onMouseEnter={() => onActivate?.(item.id)}
-        onFocus={() => onActivate?.(item.id)}
-        onTouchStart={() => onActivate?.(item.id)}
-        aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}${
-          item.source !== undefined ? `, ${item.source ?? '혼자 읽음'}` : ''
-        }`}
-        className={`relative block origin-bottom overflow-hidden rounded-t-sm border border-black/25 bg-white shadow-[3px_3px_5px_rgba(0,0,0,0.24),inset_3px_0_rgba(255,255,255,0.35)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.28)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
-        // 표지는 원본 비율대로 서되 칸을 넘지는 못한다. 넘치는 만큼은 아래가 잘리는데,
-        // 책 표지는 제목이 위에 있으니 위를 남기고 아래를 자르는 쪽이 알아보기 좋다
-        // (Link 에 이미 overflow-hidden 이 걸려 있다).
-        style={item.coverUrl ? { width, maxHeight: SLOT_HEIGHT } : { height, width }}
-      >
-        {item.coverUrl ? (
-          <Cover
-            work={item}
-            size="lg"
-            className="h-auto w-full !aspect-auto rounded-none border-0 bg-white"
-          />
-        ) : (
-          <div
-            className="flex h-full w-full flex-col justify-between p-3.5"
-            style={{ backgroundColor: palette.background, color: palette.color }}
-          >
-            <span className="h-px w-7 bg-current opacity-60" aria-hidden />
-            <span
-              className="break-all leading-[1.35] font-semibold"
-              style={{ fontSize: titleSize }}
+        <Link
+          to={item.href}
+          {...longPress.handlers}
+          onMouseEnter={() => onActivate?.(item.id)}
+          onFocus={() => onActivate?.(item.id)}
+          aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}${
+            item.source !== undefined ? `, ${item.source ?? '혼자 읽음'}` : ''
+          }`}
+          className={`relative block origin-bottom overflow-hidden rounded-t-sm border border-black/25 bg-white shadow-[3px_3px_5px_rgba(0,0,0,0.24),inset_3px_0_rgba(255,255,255,0.35)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.28)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
+          // 표지는 원본 비율대로 서되 칸을 넘지는 못한다. 넘치는 만큼은 아래가 잘리는데,
+          // 책 표지는 제목이 위에 있으니 위를 남기고 아래를 자르는 쪽이 알아보기 좋다
+          // (Link 에 이미 overflow-hidden 이 걸려 있다).
+          style={item.coverUrl ? { width, maxHeight: SLOT_HEIGHT } : { height, width }}
+        >
+          {item.coverUrl ? (
+            <Cover
+              work={item}
+              size="lg"
+              className="h-auto w-full !aspect-auto rounded-none border-0 bg-white"
+            />
+          ) : (
+            <div
+              className="flex h-full w-full flex-col justify-between p-3.5"
+              style={{ backgroundColor: palette.background, color: palette.color }}
             >
-              {item.title}
-            </span>
-            <span className="text-[9px] leading-tight opacity-75">
-              {item.author || '작자 미상'}
-            </span>
-          </div>
-        )}
-        <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-white/90 shadow-sm">
-          <StatusGlyph status={item.status} />
-        </span>
-      </Link>
+              <span className="h-px w-7 bg-current opacity-60" aria-hidden />
+              <span
+                className="break-all leading-[1.35] font-semibold"
+                style={{ fontSize: titleSize }}
+              >
+                {item.title}
+              </span>
+              <span className="text-[9px] leading-tight opacity-75">
+                {item.author || '작자 미상'}
+              </span>
+            </div>
+          )}
+          <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-white/90 shadow-sm">
+            <StatusGlyph status={item.status} />
+          </span>
+        </Link>
 
-        <BookPreview item={item} users={users} group="cover" />
+        <BookPreview item={item} users={users} group="cover" mobileOpen={longPress.open} />
       </div>
     </li>
   )
@@ -518,10 +602,12 @@ function BookPreview({
   item,
   users,
   group,
+  mobileOpen,
 }: {
   item: BookcaseItem
   users: User[]
   group: 'cover' | 'ticket'
+  mobileOpen: boolean
 }) {
   // Tailwind가 hover 변형을 빌드할 수 있도록 클래스 이름은 정적으로 둔다.
   const visibilityClass =
@@ -531,7 +617,9 @@ function BookPreview({
 
   return (
     <div
-      className={`pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 opacity-0 transition-opacity duration-150 ${visibilityClass}`}
+      className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 transition-opacity duration-150 ${
+        mobileOpen ? 'visible opacity-100' : `invisible opacity-0 ${visibilityClass}`
+      }`}
     >
       <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
         <div className="w-10 flex-none">
