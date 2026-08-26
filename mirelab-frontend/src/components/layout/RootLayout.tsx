@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Link, NavLink, Outlet, useMatch, useNavigate, useParams } from 'react-router'
+import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
 import NotificationsMenu from '@/components/layout/NotificationsMenu'
@@ -19,16 +19,6 @@ import type { Study } from '@/types'
  * max-width 를 주면 그 padding 만큼 기둥이 어긋난다.
  */
 const CONTENT_COLUMN = 'mx-auto w-full max-w-6xl px-6'
-
-/**
- * 책장을 펼치는 화면만 쓰는 넓은 기둥.
- *
- * 작품 목록은 책이 한 줄에 몇 권 들어가느냐가 전부라 폭이 넓을수록 잘 보인다. 반면
- * 글을 읽는 화면들은 줄이 길어지면 되레 읽기 힘들어서 기본 기둥을 그대로 둔다.
- * 헤더·푸터도 기본 기둥이라, 이 화면에서만 본문이 헤더보다 넓게 삐져나온다 — 의도한
- * 것이다.
- */
-const WIDE_COLUMN = 'mx-auto w-full max-w-[96rem] px-3'
 
 export default function RootLayout() {
   const { user } = useCurrentUser()
@@ -59,13 +49,6 @@ export default function RootLayout() {
   })
 
   const current = studies.find((s) => s.slug === studySlug) ?? null
-
-  // 어느 화면이 넓은 기둥을 쓰는지는 여기서 정한다 — 본문의 폭은 <main> 이 쥐고 있어서
-  // 페이지 쪽에서 스스로 넓힐 방법이 없다(부모보다 넓어지려면 음수 마진 같은 편법이
-  // 필요한데, 그러면 화면마다 다른 값이 생겨 유지가 안 된다).
-  // books/:workId(작품 상세)는 글을 읽는 화면이라 여기 걸리지 않아야 한다 — useMatch 는
-  // 기본이 완전 일치라 `/:studySlug/books` 만 잡힌다.
-  const wideMain = !!useMatch('/:studySlug/books')
 
   return (
     <div
@@ -135,7 +118,7 @@ export default function RootLayout() {
             recordDrawerOpen ? 'xl:w-[28rem]' : ''
           }`}
         />
-        <main className={`${wideMain ? WIDE_COLUMN : CONTENT_COLUMN} flex-1 py-6 sm:py-8`}>
+        <main className={`${CONTENT_COLUMN} flex-1 py-6 sm:py-8`}>
           <Outlet context={recordDrawer} />
         </main>
       </div>

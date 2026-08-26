@@ -69,7 +69,7 @@ const statusRowClass = {
 } satisfies Record<LibraryEntry['status'], string>
 
 export default function AllWorksPage() {
-  const { study, members } = useStudy()
+  const { study } = useStudy()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<Filter>('ALL')
   const [adding, setAdding] = useState(false)
@@ -147,23 +147,13 @@ export default function AllWorksPage() {
       {isPending ? (
         <p className="text-sm text-neutral-400">불러오는 중…</p>
       ) : (
-        <AllWorksTable works={shown} slug={study.slug} users={members} />
+        <AllWorksTable works={shown} slug={study.slug} />
       )}
     </div>
   )
 }
 
-function AllWorksTable({
-  works,
-  slug,
-  users,
-}: {
-  works: LibraryEntry[]
-  slug: string
-  users: Array<{ id: string; name: string }>
-}) {
-  const userName = new Map(users.map((user) => [user.id, user.name]))
-
+function AllWorksTable({ works, slug }: { works: LibraryEntry[]; slug: string }) {
   if (works.length === 0) {
     return <p className="py-10 text-center text-sm text-neutral-400">표시할 작품이 없습니다.</p>
   }
@@ -171,7 +161,7 @@ function AllWorksTable({
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1000px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[640px] border-collapse text-left text-sm">
           <thead className="bg-neutral-50 text-xs text-neutral-500">
             <tr>
               <th scope="col" className="px-5 py-2 text-center font-medium">
@@ -179,13 +169,13 @@ function AllWorksTable({
               </th>
               <th
                 scope="col"
-                className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
+                className="w-14 border-l border-neutral-200 px-4 py-2 text-center font-medium"
               >
                 작품
               </th>
               <th
                 scope="col"
-                className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
+                className="w-32 border-l border-neutral-200 px-4 py-2 text-center font-medium"
               >
                 저자/감독
               </th>
@@ -203,12 +193,6 @@ function AllWorksTable({
               </th>
               <th
                 scope="col"
-                className="border-l border-neutral-200 px-5 py-2 text-center font-medium"
-              >
-                담은 사람
-              </th>
-              <th
-                scope="col"
                 className="border-l border-neutral-200 px-4 py-2 text-center font-medium"
               >
                 선정 사유
@@ -221,7 +205,7 @@ function AllWorksTable({
                 <td className="px-5 py-2 text-center text-neutral-500">
                   {work.kind === WorkKind.BOOK ? '책' : '영화'}
                 </td>
-                <td className="border-l border-neutral-200 px-4 py-2 text-left">
+                <td className="w-14 border-l border-neutral-200 px-4 py-2 text-left">
                   <Link
                     to={`/${slug}/books/${work.id}`}
                     className="group flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
@@ -230,14 +214,19 @@ function AllWorksTable({
                       <Cover work={work} size="xxs" />
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate font-medium text-neutral-900 group-hover:text-emerald-700">
+                      <div
+                        className="truncate font-medium text-neutral-900 group-hover:text-emerald-700"
+                        title={work.title}
+                      >
                         {work.title}
                       </div>
                     </div>
                   </Link>
                 </td>
                 <td className="border-l border-neutral-200 px-4 py-2 text-neutral-500">
-                  {work.author || '—'}
+                  <div className="max-w-32 truncate" title={work.author || undefined}>
+                    {work.author || '—'}
+                  </div>
                 </td>
                 <td className="border-l border-neutral-200 px-4 py-2 text-center">
                   <span
@@ -255,9 +244,6 @@ function AllWorksTable({
                   ) : (
                     <span className="block text-neutral-400">—</span>
                   )}
-                </td>
-                <td className="border-l border-neutral-200 px-5 py-2 text-center text-neutral-500">
-                  {work.addedBy ? (userName.get(work.addedBy) ?? '알 수 없음') : '—'}
                 </td>
                 <td className="border-l border-neutral-200 px-4 py-2 text-left text-neutral-600">
                   {work.reason ? (
