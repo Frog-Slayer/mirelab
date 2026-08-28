@@ -44,12 +44,12 @@ export default function RecentWorks({
             to={item.href}
             className="group flex gap-1.5 overflow-hidden rounded-lg border border-neutral-200 bg-white p-1.5 transition hover:border-emerald-300"
           >
-            <div className="aspect-[2/3] w-[34%] flex-none overflow-hidden rounded-md bg-neutral-100">
+            <div className="aspect-[2/3] w-[34%] flex-none overflow-hidden rounded-md bg-white">
               {item.coverUrl ? (
                 // 표지는 원래 세로 책 비율이라 칸에 넣으면 잘리는데, 그대로 둔다.
                 <img src={item.coverUrl} alt={item.title} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center p-1 text-center text-[9px] font-medium text-neutral-400">
+                <div className="flex h-full w-full items-center justify-center bg-neutral-100 p-1 text-center text-[9px] font-medium text-neutral-400">
                   {item.title}
                 </div>
               )}

@@ -20,7 +20,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-end justify-between gap-4 border-b border-neutral-200 pb-3">
-        <h2 className="text-xl font-semibold tracking-[-0.03em]">멤버들의 글</h2>
+        <h2 className="text-xl font-semibold tracking-[-0.03em]">최근 이야기</h2>
         <button
           type="button"
           onClick={() => window.alert('피드 모아둔 페이지로 갈 거임 ㅇㅇ')}
@@ -37,7 +37,8 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
             to={`/@${post.author.username}/posts/${post.id}`}
             className="group flex overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-emerald-300"
           >
-            <div className="relative aspect-[4/3] w-40 flex-none overflow-hidden bg-neutral-100 sm:w-56">
+            {/* 너비 비율(30%)은 유지하고, 기존 4:3보다 높이만 약 50% 수준으로 낮춘다 */}
+            <div className="relative aspect-[1/0.375] w-[30%] flex-none overflow-hidden bg-white">
               {post.work?.coverUrl ? (
                 // 표지는 원래 세로 책 비율이라 가로로 긴 칸에 넣으면 잘리는데, 그대로 둔다.
                 <img
@@ -46,7 +47,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-medium text-neutral-400">
+                <div className="flex h-full w-full items-center justify-center bg-neutral-100 p-3 text-center text-xs font-medium text-neutral-400">
                   {post.work?.title ?? (post.title || '제목 없음')}
                 </div>
               )}
