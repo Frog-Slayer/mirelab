@@ -1,10 +1,20 @@
 import { Link } from 'react-router'
 import Avatar from '@/components/Avatar'
-import Cover from '@/components/Cover'
 import type { PostSummary } from '@/types'
+import { WorkKind } from '@/types'
 
 /** 여기서는 최근 글 미리보기만 — 전체 목록은 "더보기"로 이동해서 본다 */
 const POST_LIST_LIMIT = 5
+
+const workTagLabel: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: '독후감',
+  [WorkKind.MOVIE]: '영화 감상',
+}
+
+const workTagClass: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20',
+  [WorkKind.MOVIE]: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
+}
 
 export default function PostList({ posts }: { posts: PostSummary[] }) {
   return (
@@ -20,36 +30,51 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
         </button>
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-4">
         {posts.slice(0, POST_LIST_LIMIT).map((post) => (
           <Link
             key={post.id}
             to={`/@${post.author.username}/posts/${post.id}`}
-            className="group flex flex-col rounded-lg border border-neutral-200 bg-white p-3.5 transition hover:border-emerald-300"
+            className="group flex overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-emerald-300"
           >
-            <div className="flex items-center gap-2">
-              <Avatar user={post.author} size="sm" />
-              <span className="text-xs font-medium text-neutral-700">{post.author.name}</span>
-              <time
-                className="ml-auto text-xs text-neutral-400"
-                dateTime={post.publishedAt ?? post.updatedAt}
-              >
-                {formatDate(post.publishedAt ?? post.updatedAt)}
-              </time>
-            </div>
-            <div className="mt-2 flex gap-3">
-              {post.work && (
-                <div className="w-12 flex-none">
-                  <Cover work={post.work} size="sm" />
+            <div className="relative aspect-[4/3] w-40 flex-none overflow-hidden bg-neutral-100 sm:w-56">
+              {post.work?.coverUrl ? (
+                // 표지는 원래 세로 책 비율이라 가로로 긴 칸에 넣으면 잘리는데, 그대로 둔다.
+                <img
+                  src={post.work.coverUrl}
+                  alt={post.work.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-medium text-neutral-400">
+                  {post.work?.title ?? (post.title || '제목 없음')}
                 </div>
               )}
-              <div className="min-w-0 flex-1">
-                <h3 className="line-clamp-1 text-base leading-snug font-semibold group-hover:underline">
-                  {post.title || '제목 없음'}
-                </h3>
-                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-neutral-600">
-                  {post.excerpt || '본문을 읽어보세요.'}
-                </p>
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+              {post.work && (
+                <span
+                  className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${workTagClass[post.work.kind]}`}
+                >
+                  {workTagLabel[post.work.kind]}
+                </span>
+              )}
+              <h3 className="line-clamp-1 text-base leading-snug font-semibold group-hover:underline">
+                {post.title || '제목 없음'}
+              </h3>
+              <p className="line-clamp-2 text-sm leading-relaxed text-neutral-600">
+                {post.excerpt || '본문을 읽어보세요.'}
+              </p>
+              <div className="mt-auto flex items-center gap-2">
+                <Avatar user={post.author} size="sm" />
+                <span className="text-xs font-medium text-neutral-700">{post.author.name}</span>
+                <time
+                  className="text-xs text-neutral-400"
+                  dateTime={post.publishedAt ?? post.updatedAt}
+                >
+                  · {formatDate(post.publishedAt ?? post.updatedAt)}
+                </time>
               </div>
             </div>
           </Link>

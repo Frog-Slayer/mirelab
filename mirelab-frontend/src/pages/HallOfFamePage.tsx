@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { Bookcase, type BookcaseItem } from '@/components/Bookcase'
 import PostList from '@/components/PostList'
+import RecentWorks from '@/components/RecentWorks'
 import { useStudy } from '@/hooks/useStudy'
 import { getLibrary, type LibraryEntry } from '@/lib/workApi'
 import { getStudyPosts } from '@/lib/postApi'
@@ -9,6 +10,8 @@ import { WorkStatus } from '@/types'
 
 /** 책장 위 칸에는 별점 상위 10개까지만 꽂는다 */
 const BOOKCASE_LIMIT = 10
+/** 최근 추가된 후보 작품은 4개까지만 보여준다 (그리드 한 줄과 맞춘 개수) */
+const RECENT_WORKS_LIMIT = 4
 
 export default function HallOfFamePage() {
   const { study, members } = useStudy()
@@ -52,6 +55,14 @@ export default function HallOfFamePage() {
     .slice(0, BOOKCASE_LIMIT)
     .map((work, index) => toItem(work, index + 1))
 
+  // 아직 안 읽은 후보 중 최근에 담긴 순서로 보여준다. addedAt이 없는 옛 데이터는
+  // epoch 취급되어 자연히 맨 뒤로 밀린다.
+  const candidateWorks = allWorks.filter((w) => w.status === WorkStatus.CANDIDATE)
+  const recentItems = [...candidateWorks]
+    .sort((a, b) => new Date(b.addedAt ?? 0).getTime() - new Date(a.addedAt ?? 0).getTime())
+    .slice(0, RECENT_WORKS_LIMIT)
+    .map((work) => toItem(work))
+
   return (
     <div className="flex flex-col gap-10">
       <section className="flex flex-col gap-6">
@@ -73,37 +84,11 @@ export default function HallOfFamePage() {
         <Bookcase completed={completedItems} others={[]} users={members} />
       </section>
 
-      {posts.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <PostList posts={posts} />
-          <PlaceholderSection />
-        </div>
+      {posts.length > 0 && <PostList posts={posts} />}
+
+      {recentItems.length > 0 && (
+        <RecentWorks items={recentItems} users={members} studySlug={study.slug} />
       )}
     </div>
-  )
-}
-
-/** 오른쪽 절반에 뭐가 들어갈지 아직 안 정해져서 자리만 잡아둔다 */
-function PlaceholderSection() {
-  return (
-    <section className="flex flex-col gap-4">
-      <div className="border-b border-neutral-200 pb-3">
-        <h2 className="text-xl font-semibold tracking-[-0.03em]">임시 공간</h2>
-      </div>
-
-      <div className="flex flex-col gap-2.5">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            aria-hidden
-            className="animate-pulse rounded-lg border border-neutral-200 bg-white p-3.5"
-          >
-            <div className="h-4 w-1/3 rounded bg-neutral-200" />
-            <div className="mt-3 h-3 w-full rounded bg-neutral-100" />
-            <div className="mt-2 h-3 w-2/3 rounded bg-neutral-100" />
-          </div>
-        ))}
-      </div>
-    </section>
   )
 }
