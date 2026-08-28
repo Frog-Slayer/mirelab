@@ -165,7 +165,7 @@ function ArchiveCover({
     <Link
       to={item.href}
       {...longPress.handlers}
-      className="group relative flex flex-col items-center gap-1.5 hover:z-20"
+      className="group flex flex-col items-center gap-1.5"
     >
       {/*
         폭은 반드시 이 바깥 div 로 잡는다 — Cover 는 size="lg" 일 때 스스로 w-full 을
@@ -178,7 +178,7 @@ function ArchiveCover({
       </div>
       <span className="text-xs text-neutral-400">{order}</span>
 
-      <WorkTooltip item={item} users={users} open={longPress.open} />
+      <WorkTooltip item={item} users={users} anchor={longPress.anchor} open={longPress.open} />
     </Link>
   )
 }

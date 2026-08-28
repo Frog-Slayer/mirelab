@@ -19,6 +19,12 @@ const LONG_PRESS_MOVE_TOLERANCE = 10
  */
 export function useLongPressPreview(onActivate?: () => void) {
   const [open, setOpen] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  /**
+   * 미리보기의 기준이 되는 요소. ref 대신 이벤트의 currentTarget 으로 잡는다 — 링크가
+   * ref 를 안으로 넘겨주는지에 기대지 않아도 되고, 실제로 가리킨 그 요소가 확실히 잡힌다.
+   */
+  const [anchor, setAnchor] = useState<HTMLAnchorElement | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const startRef = useRef({ x: 0, y: 0 })
   const suppressClickRef = useRef(false)
@@ -43,6 +49,7 @@ export function useLongPressPreview(onActivate?: () => void) {
   const onPointerDown = (event: ReactPointerEvent<HTMLAnchorElement>) => {
     if (event.pointerType !== 'touch') return
 
+    setAnchor(event.currentTarget)
     clearTimer()
     startRef.current = { x: event.clientX, y: event.clientY }
     suppressClickRef.current = false
@@ -71,7 +78,9 @@ export function useLongPressPreview(onActivate?: () => void) {
   }
 
   return {
-    open,
+    /** 마우스를 올렸거나(데스크톱) 길게 눌렀을 때(터치) */
+    open: hovered || open,
+    anchor,
     handlers: {
       onPointerDown,
       onPointerMove,
@@ -79,6 +88,11 @@ export function useLongPressPreview(onActivate?: () => void) {
       onPointerCancel: clearTimer,
       onClick,
       onContextMenu: (event: ReactMouseEvent<HTMLAnchorElement>) => event.preventDefault(),
+      onMouseEnter: (event: ReactMouseEvent<HTMLAnchorElement>) => {
+        setAnchor(event.currentTarget)
+        setHovered(true)
+      },
+      onMouseLeave: () => setHovered(false),
     },
   }
 }
