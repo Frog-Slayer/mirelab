@@ -7,8 +7,12 @@ import { formatDday, formatMeetAt } from '@/lib/format'
 import type { Study } from '@/types'
 
 /**
- * 지금 진행 중인 모임으로 들어가는 입구. 닫으면 작은 알약 버튼으로 접힌다 —
- * 다시 펴는 법을 안 남기면 아예 못 찾는다. 다른 모임이 다음 차례가 되면 자동으로 다시 펼쳐진다.
+ * 지금 진행 중인 모임으로 들어가는 입구. 닫으면 그 모임에 대해서는 다시 뜨지 않고,
+ * 다른 모임이 다음 차례가 되면 새로 뜬다. 일정 탭에서 언제든 다시 볼 수 있으므로
+ * 접어두는 알약은 두지 않는다 — 오른쪽 아래 자리를 계속 차지하기 때문.
+ *
+ * 화면에서의 위치는 여기서 정하지 않는다. 오른쪽 아래에 뜨는 것들끼리 겹치지 않게
+ * [FloatingStack] 이 자리를 잡아준다.
  */
 export default function ThisSessionBanner({ study }: { study: Study | null }) {
   const [closedId, setClosedId] = useState<string | null>(null)
@@ -22,24 +26,10 @@ export default function ThisSessionBanner({ study }: { study: Study | null }) {
   if (!study || !current) return null
 
   const { session, work } = current
-  const closed = closedId === session.id
-
-  if (closed) {
-    return (
-      <button
-        type="button"
-        onClick={() => setClosedId(null)}
-        aria-label="다음 모임 다시 보기"
-        title={`다음 모임 · ${formatDday(session.meetAt) ?? '날짜 미정'}`}
-        className="fixed right-4 bottom-4 z-40 rounded-full border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-emerald-700 shadow-lg hover:border-emerald-300"
-      >
-        {formatDday(session.meetAt) ?? '모임'}
-      </button>
-    )
-  }
+  if (closedId === session.id) return null
 
   return (
-    <div className="fixed right-4 bottom-4 z-40 w-[min(22rem,calc(100vw-2rem))]">
+    <div className="pointer-events-auto relative w-[min(22rem,calc(100vw-2rem))]">
       <button
         type="button"
         onClick={() => setClosedId(session.id)}

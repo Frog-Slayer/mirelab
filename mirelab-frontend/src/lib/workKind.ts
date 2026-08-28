@@ -1,4 +1,4 @@
-import { BookOpen, Film, Gamepad2 } from 'lucide-react'
+import { BookOpen, Clapperboard, Gamepad2 } from 'lucide-react'
 import { WorkKind } from '@/types'
 
 /** 종류를 보여주는 곳이 여러 군데라(카드·아카이브·목록) 라벨과 색을 여기 한 벌만 둔다 */
@@ -8,15 +8,15 @@ export const kindLabel: Record<WorkKind, string> = {
   [WorkKind.GAME]: '게임',
 }
 
-export const kindBadgeClass: Record<WorkKind, string> = {
-  [WorkKind.BOOK]: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
-  [WorkKind.MOVIE]: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
-  [WorkKind.GAME]: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
+export const kindTextClass: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: 'text-red-600',
+  [WorkKind.MOVIE]: 'text-blue-600',
+  [WorkKind.GAME]: 'text-emerald-600',
 }
 
 export const kindIcon: Record<WorkKind, typeof BookOpen> = {
   [WorkKind.BOOK]: BookOpen,
-  [WorkKind.MOVIE]: Film,
+  [WorkKind.MOVIE]: Clapperboard,
   [WorkKind.GAME]: Gamepad2,
 }
 

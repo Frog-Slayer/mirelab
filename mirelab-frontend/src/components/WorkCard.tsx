@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { BookcaseItem } from '@/components/Bookcase'
-import { kindBadgeClass, kindLabel } from '@/lib/workKind'
-
-const BADGE_CLASS = 'inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-medium'
+import KindTag from '@/components/KindTag'
 
 /** 표지 + 배지/제목/저자, 그 아래 footer(선정인·사유 또는 별점)로 채우는 작품 카드 */
 export default function WorkCard({ item, footer }: { item: BookcaseItem; footer: ReactNode }) {
@@ -25,9 +23,7 @@ export default function WorkCard({ item, footer }: { item: BookcaseItem; footer:
 
       <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
         <div className="flex flex-col gap-0.5">
-          <span className={`${BADGE_CLASS} ${kindBadgeClass[item.kind]}`}>
-            {kindLabel[item.kind]}
-          </span>
+          <KindTag kind={item.kind} />
           <h3 className="line-clamp-1 text-sm leading-snug font-semibold group-hover:underline">
             {item.title}
           </h3>

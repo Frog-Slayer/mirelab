@@ -3,14 +3,18 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import BookLookupField from '@/components/BookLookupField'
+import KindTag from '@/components/KindTag'
+import PickNote from '@/components/PickNote'
 import Stars from '@/components/Stars'
+import { FloatingAction } from '@/components/layout/FloatingStack'
 import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { useStudy } from '@/hooks/useStudy'
 import { parseYearFromPubDate } from '@/lib/bookApi'
 import { formatRating } from '@/lib/format'
 import { addWork, getLibrary, type LibraryEntry } from '@/lib/workApi'
-import { KIND_ORDER, kindBadgeClass, kindIcon, kindLabel } from '@/lib/workKind'
+import { KIND_ORDER, kindIcon, kindLabel } from '@/lib/workKind'
+import type { User } from '@/types'
 import { WorkKind, WorkStatus } from '@/types'
 
 type Filter = 'ALL' | WorkKind
@@ -81,7 +85,7 @@ function formatRecordedAt(value: string) {
 }
 
 export default function AllWorksPage() {
-  const { study } = useStudy()
+  const { study, members } = useStudy()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<Filter>('ALL')
   const [sort, setSort] = useState<SortKey>('recent')
@@ -119,30 +123,34 @@ export default function AllWorksPage() {
             진행 중인 책과 후보를 포함한 전체 {works.length}편
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="relative">
-            <span className="sr-only">작품 검색</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="작품 제목, 저자, 감독 검색"
-              className="w-64 rounded-full border border-neutral-200 py-2 pr-10 pl-4 text-sm outline-none focus:border-neutral-400"
-            />
-            <Search
-              className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-neutral-400"
-              aria-hidden
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="app-button app-button-primary"
-          >
-            작품 추가
-          </button>
-        </div>
+
+        <label className="relative">
+          <span className="sr-only">작품 검색</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="작품 제목, 저자, 감독 검색"
+            className="w-64 rounded-full border border-neutral-200 py-2 pr-10 pl-4 text-sm outline-none focus:border-neutral-400"
+          />
+          <Search
+            className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-neutral-400"
+            aria-hidden
+          />
+        </label>
       </div>
+
+      <FloatingAction>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          aria-label="작품 추가"
+          title="작품 추가"
+          className="grid size-14 cursor-pointer place-items-center rounded-full bg-neutral-900 text-2xl leading-none text-white shadow-lg transition hover:bg-neutral-700 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none"
+        >
+          <span aria-hidden>+</span>
+        </button>
+      </FloatingAction>
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4">
         <div className="flex flex-wrap items-center gap-2">
@@ -166,7 +174,7 @@ export default function AllWorksPage() {
           })}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           {sortOptions.map((option) => (
             <button
               key={option.key}
@@ -198,7 +206,7 @@ export default function AllWorksPage() {
       {isPending ? (
         <p className="text-sm text-neutral-400">불러오는 중…</p>
       ) : (
-        <WorkCardList works={shown} slug={study.slug} />
+        <WorkCardList works={shown} slug={study.slug} members={members} />
       )}
     </div>
   )
@@ -232,7 +240,15 @@ function KindFilterChip({
   )
 }
 
-function WorkCardList({ works, slug }: { works: LibraryEntry[]; slug: string }) {
+function WorkCardList({
+  works,
+  slug,
+  members,
+}: {
+  works: LibraryEntry[]
+  slug: string
+  members: User[]
+}) {
   if (works.length === 0) {
     return <p className="py-10 text-center text-sm text-neutral-400">표시할 작품이 없습니다.</p>
   }
@@ -261,11 +277,7 @@ function WorkCardList({ works, slug }: { works: LibraryEntry[]; slug: string }) 
 
             <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
               <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${kindBadgeClass[work.kind]}`}
-                >
-                  {kindLabel[work.kind]}
-                </span>
+                <KindTag kind={work.kind} />
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${statusBadgeClass[work.status]}`}
                 >
@@ -294,22 +306,11 @@ function WorkCardList({ works, slug }: { works: LibraryEntry[]; slug: string }) 
                 </p>
               )}
 
-              {/* 선정 사유와 기록 줄은 한 덩이로 카드 아래에 붙인다 — mt-auto 를 둘 다에
-                  걸면 남는 공간이 둘로 쪼개져서 사이가 벌어진다 */}
-              <div className="mt-auto flex flex-col gap-2 pt-1">
-                {work.reason && (
-                  <p className="line-clamp-1 text-sm font-semibold text-neutral-800">
-                    {work.reason}
-                  </p>
-                )}
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs text-neutral-400">
-                    {recorded ? `최근 기록 ${formatRecordedAt(recorded)}` : '기록 없음'}
-                  </span>
-                  <span className="rounded-full border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 transition group-hover:border-neutral-400 group-hover:text-neutral-900">
-                    상세 보기
-                  </span>
-                </div>
+              <div className="mt-auto flex min-w-0 items-baseline gap-3 pt-1">
+                <PickNote addedBy={work.addedBy} reason={work.reason} users={members} />
+                <span className="shrink-0 text-xs text-neutral-400">
+                  {recorded ? `최근 기록 ${formatRecordedAt(recorded)}` : '기록 없음'}
+                </span>
               </div>
             </div>
           </Link>

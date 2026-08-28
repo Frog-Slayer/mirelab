@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
+import { FloatingStack } from '@/components/layout/FloatingStack'
 import NotificationsMenu from '@/components/layout/NotificationsMenu'
 import UserMenu from '@/components/layout/UserMenu'
 import { useCurrentUser } from '@/hooks/currentUser'
@@ -127,8 +128,13 @@ export default function RootLayout() {
         <p className={`${CONTENT_COLUMN} text-xs text-neutral-400`}>mirelab</p>
       </footer>
 
-      {/* 스터디 안 어느 화면에서든 다음 모임으로 바로 들어가는 플로팅 카드 */}
-      <ThisSessionBanner study={current} />
+      {/*
+        오른쪽 아래에 뜨는 것들을 한 스택에 모은다 — 페이지가 얹는 플로팅 버튼이
+        위, 다음 모임 카드가 아래. 각자 fixed 로 자리를 잡으면 서로 겹친다.
+      */}
+      <FloatingStack>
+        <ThisSessionBanner study={current} />
+      </FloatingStack>
     </div>
   )
 }
