@@ -49,9 +49,9 @@ export default function BookLookupField({
 
   return (
     <div className="flex flex-col gap-2">
-      {isFetching && <p className="text-xs text-neutral-400">검색 중…</p>}
+      {isFetching && <p className="text-xs text-neutral-500">검색 중…</p>}
       {!isFetching && isFetched && suggestions.length === 0 && (
-        <p className="text-xs text-neutral-400">검색 결과가 없습니다.</p>
+        <p className="text-xs text-neutral-500">검색 결과가 없습니다.</p>
       )}
 
       {suggestions.length > 0 && (
@@ -64,16 +64,16 @@ export default function BookLookupField({
                   setLastPicked(book.cover)
                   onPick(book)
                 }}
-                className="flex max-w-28 flex-none cursor-pointer flex-col items-center gap-1.5 rounded-sm border border-transparent p-2 text-center hover:border-neutral-200 hover:bg-neutral-50"
+                className="flex max-w-28 flex-none cursor-pointer flex-col items-center gap-1.5 rounded-md border border-transparent p-2 text-center hover:border-neutral-200 hover:bg-neutral-50"
               >
                 {book.cover ? (
                   <img
                     src={book.cover.replace('/cover200/', '/cover500/')}
                     alt=""
-                    className="h-32 w-auto flex-none rounded-sm shadow-sm"
+                    className="h-32 w-auto flex-none rounded-md ring-1 ring-neutral-950/[0.08]"
                   />
                 ) : (
-                  <div className="flex h-32 w-22 flex-none items-center justify-center rounded-sm bg-neutral-100 text-xs text-neutral-400">
+                  <div className="flex h-32 w-22 flex-none items-center justify-center rounded-md bg-neutral-100 text-xs text-neutral-500">
                     표지 없음
                   </div>
                 )}

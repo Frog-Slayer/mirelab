@@ -17,5 +17,5 @@ export default function AuthCallbackPage() {
     else if (status === 'anonymous') navigate('/login?error=oauth_failed', { replace: true })
   }, [status, navigate])
 
-  return <p className="px-6 py-16 text-center text-sm text-neutral-400">로그인 중…</p>
+  return <p className="px-6 py-16 text-center text-sm text-neutral-500">로그인 중…</p>
 }

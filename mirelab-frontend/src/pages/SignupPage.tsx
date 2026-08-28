@@ -43,7 +43,9 @@ export default function SignupPage() {
   }
 
   if (loading) {
-    return <p className="px-6 py-16 text-center text-sm text-neutral-400">가입 정보를 불러오는 중…</p>
+    return (
+      <p className="px-6 py-16 text-center text-sm text-neutral-500">가입 정보를 불러오는 중…</p>
+    )
   }
 
   if (!email) {
@@ -55,7 +57,7 @@ export default function SignupPage() {
           <button
             type="button"
             onClick={startGoogleLogin}
-            className="mt-6 w-full cursor-pointer rounded-md border border-neutral-200 py-2.5 text-sm font-medium hover:bg-neutral-50"
+            className="app-button app-button-secondary mt-6 w-full"
           >
             구글로 다시 로그인
           </button>
@@ -66,8 +68,8 @@ export default function SignupPage() {
 
   return (
     <div className="flex min-h-full items-center justify-center px-6 py-16">
-      <form onSubmit={submit} className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-[-0.03em]">가입 정보 입력</h1>
+      <form onSubmit={submit} className="app-card w-full max-w-md p-8 sm:p-10">
+        <h1 className="text-2xl font-semibold tracking-tight">가입 정보 입력</h1>
         <p className="mt-2 text-sm text-neutral-500">관리자 승인이 완료됐습니다.</p>
 
         <label className="mt-8 block text-sm">
@@ -83,9 +85,9 @@ export default function SignupPage() {
             spellCheck={false}
             autoFocus
             placeholder="yeongseo"
-            className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2.5 outline-none focus:border-neutral-400"
+            className="app-input mt-2 w-full"
           />
-          <span className="mt-1.5 block text-xs text-neutral-400">
+          <span className="mt-1.5 block text-xs text-neutral-500">
             블로그 주소에 사용하며 가입 후에는 바꿀 수 없습니다.
           </span>
         </label>
@@ -96,7 +98,7 @@ export default function SignupPage() {
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={40}
-            className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2.5 outline-none focus:border-neutral-400"
+            className="app-input mt-2 w-full"
           />
         </label>
 
@@ -124,13 +126,13 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-xs text-neutral-400">로그인 계정: {email}</p>
+        <p className="mt-6 text-xs text-neutral-500">로그인 계정: {email}</p>
         {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
 
         <button
           type="submit"
           disabled={!username.trim() || !name.trim() || saving}
-          className="mt-6 w-full cursor-pointer rounded-md bg-neutral-900 py-2.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="app-button app-button-primary mt-7 w-full disabled:cursor-not-allowed disabled:opacity-40"
         >
           {saving ? '가입하는 중…' : '가입하고 시작하기'}
         </button>

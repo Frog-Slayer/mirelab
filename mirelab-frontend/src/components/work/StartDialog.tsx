@@ -29,7 +29,7 @@ export default function StartDialog({
       onClick={(e) => {
         if (e.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(24rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl ring-1 ring-neutral-950/10 backdrop:bg-neutral-900/40 backdrop:backdrop-blur-sm"
     >
       <form
         onSubmit={(e) => {
@@ -60,7 +60,7 @@ export default function StartDialog({
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="rounded-sm border border-neutral-200 px-2 py-1 text-sm outline-none focus:border-neutral-400"
+            className="rounded-lg border border-neutral-200 px-2 py-1 text-sm outline-none focus:border-neutral-400"
           />
         </label>
 
@@ -108,7 +108,7 @@ function InlineDatePicker({
         <button
           type="button"
           onClick={() => move(-1)}
-          className="cursor-pointer rounded-sm border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
+          className="cursor-pointer rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
           aria-label="이전 달"
         >
           ‹
@@ -116,7 +116,7 @@ function InlineDatePicker({
         <button
           type="button"
           onClick={() => move(1)}
-          className="cursor-pointer rounded-sm border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
+          className="cursor-pointer rounded-md border border-neutral-200 px-1.5 py-0.5 text-xs text-neutral-500 hover:border-neutral-400"
           aria-label="다음 달"
         >
           ›
@@ -125,7 +125,7 @@ function InlineDatePicker({
 
       <div className="grid grid-cols-7 gap-0.5">
         {['일', '월', '화', '수', '목', '금', '토'].map((w) => (
-          <span key={w} className="py-1 text-center font-mono text-[10px] text-neutral-400">
+          <span key={w} className="py-1 text-center font-mono text-[10px] text-neutral-500">
             {w}
           </span>
         ))}

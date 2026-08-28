@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
 import Avatar from '@/components/Avatar'
 import type { PostSummary } from '@/types'
@@ -12,23 +13,18 @@ const workTagLabel: Record<WorkKind, string> = {
   [WorkKind.GAME]: '게임 기록',
 }
 
-const workTagClass: Record<WorkKind, string> = {
-  [WorkKind.BOOK]: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20',
-  [WorkKind.MOVIE]: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
-  [WorkKind.GAME]: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
-}
-
 export default function PostList({ posts }: { posts: PostSummary[] }) {
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-4 border-b border-neutral-200 pb-3">
-        <h2 className="text-xl font-semibold tracking-[-0.03em]">최근 이야기</h2>
+    <section className="flex flex-col gap-5">
+      <div className="flex items-end justify-between gap-4">
+        <h2 className="text-xl font-semibold tracking-tight">최근 이야기</h2>
         <button
           type="button"
           onClick={() => window.alert('피드 모아둔 페이지로 갈 거임 ㅇㅇ')}
-          className="shrink-0 cursor-pointer rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-900"
+          className="app-pill"
         >
-          더보기 +
+          더보기
+          <ArrowRight aria-hidden className="size-4" strokeWidth={2} />
         </button>
       </div>
 
@@ -37,7 +33,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
           <Link
             key={post.id}
             to={`/@${post.author.username}/posts/${post.id}`}
-            className="group flex overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-emerald-300"
+            className="app-tile group flex overflow-hidden hover:ring-emerald-400/60"
           >
             {/* 너비 비율(30%)은 유지하고, 기존 4:3보다 높이만 약 50% 수준으로 낮춘다 */}
             <div className="relative aspect-[1/0.375] w-[30%] flex-none overflow-hidden bg-white">
@@ -49,7 +45,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-neutral-100 p-3 text-center text-xs font-medium text-neutral-400">
+                <div className="flex h-full w-full items-center justify-center bg-neutral-100 p-3 text-center text-xs font-medium text-neutral-500">
                   {post.work?.title ?? (post.title || '제목 없음')}
                 </div>
               )}
@@ -57,9 +53,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
 
             <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
               {post.work && (
-                <span
-                  className={`inline-flex w-fit rounded-full px-2 py-0.5 text-[11px] font-medium ${workTagClass[post.work.kind]}`}
-                >
+                <span className="inline-flex w-fit rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
                   {workTagLabel[post.work.kind]}
                 </span>
               )}
@@ -73,7 +67,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
                 <Avatar user={post.author} size="sm" />
                 <span className="text-xs font-medium text-neutral-700">{post.author.name}</span>
                 <time
-                  className="text-xs text-neutral-400"
+                  className="text-xs text-neutral-500"
                   dateTime={post.publishedAt ?? post.updatedAt}
                 >
                   · {formatDate(post.publishedAt ?? post.updatedAt)}
@@ -88,5 +82,7 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(value))
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(
+    new Date(value),
+  )
 }

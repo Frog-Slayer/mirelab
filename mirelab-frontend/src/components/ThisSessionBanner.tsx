@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowRight, X } from 'lucide-react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
@@ -36,12 +37,12 @@ export default function ThisSessionBanner({ study }: { study: Study | null }) {
         aria-label="닫기"
         className="absolute top-2 right-2 z-10 grid size-6 cursor-pointer place-items-center rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
       >
-        ✕
+        <X aria-hidden className="size-4" strokeWidth={2} />
       </button>
 
       <Link
         to={work ? `/${study.slug}/books/${work.id}` : `/${study.slug}/sessions`}
-        className="group relative flex items-center gap-4 rounded-xl border border-neutral-200 bg-white p-4 shadow-lg transition-colors hover:border-emerald-300"
+        className="app-tile group relative flex items-center gap-4 p-4 shadow-md hover:ring-emerald-400/60"
       >
         {work && <Cover work={work} size="sm" />}
 
@@ -53,9 +54,11 @@ export default function ThisSessionBanner({ study }: { study: Study | null }) {
           <span className="text-base font-semibold">{work?.title ?? '모임'}</span>
         </div>
 
-        <span className="absolute right-3 bottom-2 text-lg text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-700">
-          →
-        </span>
+        <ArrowRight
+          aria-hidden
+          className="absolute right-3 bottom-2.5 size-4 text-neutral-400 transition-transform group-hover:translate-x-1 group-hover:text-emerald-700"
+          strokeWidth={2}
+        />
       </Link>
     </div>
   )

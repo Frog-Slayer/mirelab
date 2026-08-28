@@ -56,10 +56,7 @@ export default function WorkTooltip({
 
       // 표지 가운데에 맞추되, 양옆이 화면을 넘으면 넘은 만큼 안으로 민다.
       const centered = from.left + from.width / 2 - size.width / 2
-      const left = Math.max(
-        MARGIN,
-        Math.min(centered, window.innerWidth - size.width - MARGIN),
-      )
+      const left = Math.max(MARGIN, Math.min(centered, window.innerWidth - size.width - MARGIN))
 
       // 기본은 표지 위. 헤더(스크롤해도 붙어 있다)에 닿을 만큼 위가 좁으면 아래로 뒤집는다.
       const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0
@@ -88,7 +85,7 @@ export default function WorkTooltip({
       style={{ ...style, width: WIDTH }}
       className="pointer-events-none fixed z-50 transition-opacity duration-150"
     >
-      <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
+      <div className="app-tile flex items-center gap-5 p-4 text-left shadow-md">
         <div className="w-10 flex-none">
           <Cover work={item} size="sm" />
         </div>

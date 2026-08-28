@@ -73,10 +73,11 @@ const statusLabel = {
   [WorkStatus.DONE]: '완료',
 } satisfies Record<LibraryEntry['status'], string>
 
+/* 목록에서 상태를 빠르게 훑을 수 있도록 완료·진행·후보를 서로 다른 옅은 색으로 구분한다. */
 const statusBadgeClass = {
-  [WorkStatus.DONE]: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  [WorkStatus.READING]: 'bg-blue-50 text-blue-700 ring-blue-600/20',
-  [WorkStatus.CANDIDATE]: 'bg-amber-50 text-amber-700 ring-amber-600/20',
+  [WorkStatus.DONE]: 'bg-emerald-50 text-emerald-700',
+  [WorkStatus.READING]: 'bg-blue-50 text-blue-700',
+  [WorkStatus.CANDIDATE]: 'bg-amber-50 text-amber-700',
 } satisfies Record<LibraryEntry['status'], string>
 
 function formatRecordedAt(value: string) {
@@ -118,7 +119,7 @@ export default function AllWorksPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-3xl font-semibold tracking-[-0.03em]">작품 목록</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">작품 목록</h1>
           <p className="text-sm text-neutral-500">
             진행 중인 책과 후보를 포함한 전체 {works.length}편
           </p>
@@ -146,7 +147,7 @@ export default function AllWorksPage() {
           onClick={() => setAdding(true)}
           aria-label="작품 추가"
           title="작품 추가"
-          className="grid size-14 cursor-pointer place-items-center rounded-full bg-neutral-900 text-2xl leading-none text-white shadow-lg transition hover:bg-neutral-700 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none"
+          className="grid size-14 cursor-pointer place-items-center rounded-full bg-[#245445] text-2xl leading-none text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#1d473a] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none"
         >
           <span aria-hidden>+</span>
         </button>
@@ -154,11 +155,7 @@ export default function AllWorksPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <KindFilterChip
-            active={filter === 'ALL'}
-            label="전체"
-            onClick={() => setFilter('ALL')}
-          />
+          <KindFilterChip active={filter === 'ALL'} label="전체" onClick={() => setFilter('ALL')} />
           {KIND_ORDER.map((kind) => {
             const Icon = kindIcon[kind]
 
@@ -183,7 +180,7 @@ export default function AllWorksPage() {
               className={`cursor-pointer text-sm transition-colors ${
                 sort === option.key
                   ? 'font-semibold text-neutral-900'
-                  : 'text-neutral-400 hover:text-neutral-700'
+                  : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
               {option.label}
@@ -204,7 +201,7 @@ export default function AllWorksPage() {
       )}
 
       {isPending ? (
-        <p className="text-sm text-neutral-400">불러오는 중…</p>
+        <p className="text-sm text-neutral-500">불러오는 중…</p>
       ) : (
         <WorkCardList works={shown} slug={study.slug} members={members} />
       )}
@@ -250,7 +247,7 @@ function WorkCardList({
   members: User[]
 }) {
   if (works.length === 0) {
-    return <p className="py-10 text-center text-sm text-neutral-400">표시할 작품이 없습니다.</p>
+    return <p className="py-10 text-center text-sm text-neutral-500">표시할 작품이 없습니다.</p>
   }
 
   return (
@@ -262,14 +259,14 @@ function WorkCardList({
           <Link
             key={work.id}
             to={`/${slug}/books/${work.id}`}
-            className="group flex overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-emerald-300"
+            className="app-tile group flex overflow-hidden hover:ring-emerald-400/60"
           >
             <div className="aspect-[4/3] w-40 flex-none overflow-hidden bg-neutral-100 sm:w-52">
               {work.coverUrl ? (
                 // 표지는 원래 세로 비율이라 가로로 긴 칸에 넣으면 잘리는데, 그대로 둔다.
                 <img src={work.coverUrl} alt={work.title} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-medium text-neutral-400">
+                <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-medium text-neutral-500">
                   {work.title}
                 </div>
               )}
@@ -279,7 +276,7 @@ function WorkCardList({
               <div className="flex flex-wrap items-center gap-2">
                 <KindTag kind={work.kind} />
                 <span
-                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${statusBadgeClass[work.status]}`}
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${statusBadgeClass[work.status]}`}
                 >
                   {statusLabel[work.status]}
                 </span>
@@ -308,7 +305,7 @@ function WorkCardList({
 
               <div className="mt-auto flex min-w-0 items-baseline gap-3 pt-1">
                 <PickNote addedBy={work.addedBy} reason={work.reason} users={members} />
-                <span className="shrink-0 text-xs text-neutral-400">
+                <span className="shrink-0 text-xs text-neutral-500">
                   {recorded ? `최근 기록 ${formatRecordedAt(recorded)}` : '기록 없음'}
                 </span>
               </div>
@@ -358,7 +355,7 @@ function AddWorkDialog({
       onClick={(event) => {
         if (event.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl ring-1 ring-neutral-950/10 backdrop:bg-neutral-900/40 backdrop:backdrop-blur-sm"
     >
       <form
         onKeyDown={(event) => {
@@ -396,7 +393,7 @@ function AddWorkDialog({
         <select
           value={kind}
           onChange={(event) => setKind(event.target.value as WorkKind)}
-          className="cursor-pointer self-start rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
+          className="app-input cursor-pointer self-start"
         >
           {KIND_ORDER.map((option) => (
             <option key={option} value={option}>

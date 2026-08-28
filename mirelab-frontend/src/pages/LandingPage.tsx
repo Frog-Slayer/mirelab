@@ -28,13 +28,11 @@ export default function LandingPage() {
   const destination = '/login'
 
   return (
-    <div className="min-h-full overflow-hidden bg-[#f4f1e9] text-[#18251d]">
+    <div className="min-h-full overflow-hidden bg-white text-[#18211d]">
       <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-6 py-6 lg:px-8">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="mirelab 홈">
-          <span className="grid size-8 place-items-center rounded-full bg-emerald-900 text-sm font-semibold text-white">
-            m
-          </span>
-          <span className="text-lg font-semibold tracking-[-0.04em]">mirelab</span>
+        <Link to="/" className="flex items-baseline gap-1.5" aria-label="mirelab 홈">
+          <span className="font-serif text-xl font-semibold tracking-[-0.045em]">mirelab</span>
+          <span className="size-1.5 rounded-full bg-emerald-700" aria-hidden />
         </Link>
 
         <Link
@@ -64,7 +62,7 @@ export default function LandingPage() {
             <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
               <Link
                 to={destination}
-                className="inline-flex min-h-12 items-center gap-3 rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(6,78,59,0.2)] transition-transform hover:-translate-y-0.5"
+                className="inline-flex min-h-12 items-center gap-3 rounded-full bg-emerald-900 px-6 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
               >
                 구글로 시작하기
                 <span aria-hidden>→</span>
@@ -111,36 +109,52 @@ export default function LandingPage() {
 
 function StudyPreview() {
   return (
-    <div className="relative mx-auto w-full max-w-md lg:justify-self-end" aria-label="스터디 기록 미리보기">
-      <div className="absolute -inset-5 rotate-3 rounded-[2.5rem] bg-emerald-900/10" aria-hidden />
-      <div className="relative overflow-hidden rounded-[2rem] border border-emerald-950/10 bg-[#fffdf8] p-5 shadow-[0_30px_80px_rgba(34,58,43,0.16)] sm:p-7">
+    <div
+      className="relative mx-auto w-full max-w-md lg:justify-self-end"
+      aria-label="스터디 기록 미리보기"
+    >
+      <div
+        className="absolute -inset-4 rotate-2 rounded-[1.75rem] bg-emerald-900/[0.07]"
+        aria-hidden
+      />
+      <div className="relative overflow-hidden rounded-[1.5rem] border border-emerald-950/10 bg-white p-5 sm:p-7">
         <div className="flex items-center justify-between border-b border-emerald-950/10 pb-5">
           <div>
             <p className="text-xs text-[#7d857f]">나의 스터디</p>
             <div className="mt-2 flex gap-1.5">
-              <span className="rounded-full bg-emerald-900 px-2.5 py-1 text-[10px] font-medium text-white">독서</span>
-              <span className="rounded-full bg-[#ebe7dc] px-2.5 py-1 text-[10px] font-medium text-[#606a63]">경제</span>
+              <span className="rounded-full bg-emerald-900 px-2.5 py-1 text-[10px] font-medium text-white">
+                독서
+              </span>
+              <span className="rounded-full bg-[#edf0f2] px-2.5 py-1 text-[10px] font-medium text-[#566168]">
+                경제
+              </span>
             </div>
           </div>
           <div className="flex -space-x-2" aria-label="참여 멤버 3명">
-            <span className="size-7 rounded-full border-2 border-[#fffdf8] bg-emerald-500" />
-            <span className="size-7 rounded-full border-2 border-[#fffdf8] bg-sky-500" />
-            <span className="size-7 rounded-full border-2 border-[#fffdf8] bg-amber-500" />
+            <span className="size-7 rounded-full border-2 border-white bg-emerald-500" />
+            <span className="size-7 rounded-full border-2 border-white bg-sky-500" />
+            <span className="size-7 rounded-full border-2 border-white bg-violet-400" />
           </div>
         </div>
 
         <div className="grid grid-cols-[6.5rem_1fr] gap-5 py-6">
-          <div className="relative aspect-[2/3] overflow-hidden rounded-sm bg-emerald-950 p-4 text-white shadow-lg">
-            <div className="absolute inset-x-0 top-0 h-1 bg-amber-300" />
+          <div className="relative aspect-[2/3] overflow-hidden rounded-sm bg-emerald-950 p-4 text-white">
+            <div className="absolute inset-x-0 top-0 h-1 bg-emerald-300" />
             <p className="text-[10px] tracking-[0.16em] text-emerald-200 uppercase">Study Note</p>
             <p className="mt-5 text-lg leading-tight font-semibold">생각을 넓히는 다음 주제</p>
-            <span className="absolute right-4 bottom-4 text-xl text-amber-300">✦</span>
+            <span className="absolute right-4 bottom-4 text-xl text-emerald-300">✦</span>
           </div>
           <div className="flex min-w-0 flex-col justify-between py-1">
             <div>
-              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-medium text-amber-800">진행 중</span>
-              <h2 className="mt-4 text-xl font-semibold tracking-[-0.035em]">한 가지 주제, 여러 시선</h2>
-              <p className="mt-2 text-xs leading-5 text-[#7a827c]">서로 다른 생각이 모여 더 오래 남는 기록이 됩니다.</p>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-medium text-emerald-800">
+                진행 중
+              </span>
+              <h2 className="mt-4 text-xl font-semibold tracking-[-0.035em]">
+                한 가지 주제, 여러 시선
+              </h2>
+              <p className="mt-2 text-xs leading-5 text-[#7a827c]">
+                서로 다른 생각이 모여 더 오래 남는 기록이 됩니다.
+              </p>
             </div>
             <div className="mt-5">
               <div className="mb-2 flex justify-between text-[11px] text-[#7a827c]">
@@ -160,7 +174,7 @@ function StudyPreview() {
             ['의견', '8'],
             ['기록', '12'],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-xl bg-[#f1f3ed] px-3 py-3">
+            <div key={label} className="rounded-xl bg-[#f1f3f5] px-3 py-3">
               <p className="text-[10px] text-[#7a827c]">{label}</p>
               <p className="mt-1 font-mono text-lg font-semibold text-emerald-900">{value}</p>
             </div>
@@ -169,7 +183,9 @@ function StudyPreview() {
 
         <div className="mt-3 rounded-xl border border-emerald-950/10 px-4 py-3">
           <p className="text-[10px] text-[#7a827c]">최근 남긴 생각</p>
-          <p className="mt-1.5 text-xs leading-5 text-[#465249]">“함께 보니 혼자서는 지나쳤던 질문이 보였다.”</p>
+          <p className="mt-1.5 text-xs leading-5 text-[#465249]">
+            “함께 보니 혼자서는 지나쳤던 질문이 보였다.”
+          </p>
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Star } from 'lucide-react'
 import { Link } from 'react-router'
 import Avatar from '@/components/Avatar'
 import KindTag from '@/components/KindTag'
@@ -83,7 +84,7 @@ export default function BlurbTicker({
 
   return (
     <div
-      className="relative overflow-hidden rounded-xl border border-neutral-200 bg-white"
+      className="app-card relative overflow-hidden"
       style={{ height: ROW_HEIGHT }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
@@ -91,7 +92,7 @@ export default function BlurbTicker({
       {/* 배경의 인용부호 — 글자 위로 겹쳐도 방해되지 않게 옅게 깔고 클릭도 통과시킨다 */}
       <span
         aria-hidden
-        className="pointer-events-none absolute right-4 -bottom-6 z-0 font-serif text-8xl leading-none text-neutral-100 select-none"
+        className="pointer-events-none absolute right-5 -bottom-8 z-0 font-serif text-8xl leading-none text-neutral-200 select-none"
       >
         ”
       </span>
@@ -117,15 +118,7 @@ export default function BlurbTicker({
   )
 }
 
-function Row({
-  blurb,
-  users,
-  studySlug,
-}: {
-  blurb: Blurb
-  users: User[]
-  studySlug: string
-}) {
+function Row({ blurb, users, studySlug }: { blurb: Blurb; users: User[]; studySlug: string }) {
   const writer = users.find((user) => user.id === blurb.userId)
 
   return (
@@ -141,7 +134,7 @@ function Row({
         </div>
       )}
 
-      <div className="h-12 w-8 flex-none overflow-hidden rounded-sm bg-neutral-100">
+      <div className="app-cover h-12 w-8 flex-none overflow-hidden rounded-md bg-neutral-100">
         {blurb.coverUrl ? (
           <img src={blurb.coverUrl} alt={blurb.title} className="h-full w-full object-cover" />
         ) : (
@@ -166,14 +159,15 @@ function Row({
 
         <div className="flex min-w-0 items-center gap-2">
           <span
-            className={`inline-flex flex-none items-center rounded-full border border-neutral-200 bg-white px-2 py-0.5 text-xs font-semibold tabular-nums ${ratingToneClass(blurb.rating)}`}
+            className={`inline-flex flex-none items-center gap-1 rounded-full border border-neutral-200 bg-white px-2 py-0.5 text-xs font-semibold tabular-nums ${ratingToneClass(blurb.rating)}`}
           >
-            ★{formatRating(blurb.rating)}
+            <Star aria-hidden className="size-3 fill-current" />
+            {formatRating(blurb.rating)}
           </span>
           <p className="min-w-0 truncate text-sm text-neutral-700">{blurb.text}</p>
         </div>
 
-        <div className="text-xs text-neutral-400">
+        <div className="text-xs text-neutral-500">
           평균 <span className="tabular-nums">★{formatRating(blurb.average)}</span>
         </div>
       </div>
@@ -181,10 +175,7 @@ function Row({
   )
 }
 
-/**
- * 점수가 높을수록 뜨거운 색으로. 2.5 미만은 검정, 3.5 미만은 노랑, 그 위는 빨강.
- * 경계값(2.5·3.5)은 위쪽 색에 속한다.
- */
+/** 점수의 의미색은 유지하고 배지 표면만 흰색으로 통일한다. */
 function ratingToneClass(rating: number): string {
   if (rating >= 3.5) return 'text-red-600'
   if (rating >= 2.5) return 'text-amber-500'

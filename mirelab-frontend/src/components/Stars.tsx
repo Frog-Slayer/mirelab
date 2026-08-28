@@ -128,7 +128,7 @@ function NumberEntry({ value, onChange }: { value: number; onChange: (next: numb
         setEditing(false)
         setText(value.toFixed(1))
       }}
-      className="w-14 rounded-sm border border-neutral-200 px-2 py-1 text-center font-mono text-sm tabular-nums outline-none focus:border-neutral-400"
+      className="w-14 rounded-lg border border-neutral-200 px-2 py-1 text-center font-mono text-sm tabular-nums outline-none focus:border-neutral-400"
     />
   )
 }

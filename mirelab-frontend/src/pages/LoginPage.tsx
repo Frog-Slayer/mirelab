@@ -40,15 +40,15 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-full items-center justify-center px-6 py-16">
-      <div className="w-full max-w-sm">
-        <Link to="/" className="text-2xl font-semibold tracking-[-0.03em]">
-          mirelab
+      <div className="app-card w-full max-w-md p-8 sm:p-10">
+        <Link to="/" className="font-serif text-3xl font-semibold tracking-[-0.045em]">
+          mirelab<span className="text-[#39725f]">.</span>
         </Link>
         <p className="mt-2 text-sm text-neutral-500">스터디 기록을 함께 쌓는 곳</p>
 
         {notice && (
           <p
-            className={`mt-6 rounded-md px-3 py-2.5 text-sm ${
+            className={`mt-7 rounded-xl px-4 py-3 text-sm ${
               notice.tone === 'error'
                 ? 'bg-rose-50 text-rose-800'
                 : 'bg-neutral-100 text-neutral-700'
@@ -61,13 +61,13 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={startGoogleLogin}
-          className="mt-8 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-md border border-neutral-200 py-2.5 text-sm font-medium hover:bg-neutral-50"
+          className="app-button app-button-secondary mt-8 w-full"
         >
           <GoogleLogo />
           구글로 계속하기
         </button>
 
-        <p className="mt-4 text-xs text-neutral-400">
+        <p className="mt-4 text-xs text-neutral-500">
           처음 로그인하면 가입 신청이 접수되고, 관리자 승인 후에 들어올 수 있습니다.
         </p>
       </div>

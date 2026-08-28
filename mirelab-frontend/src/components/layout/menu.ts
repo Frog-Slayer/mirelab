@@ -5,7 +5,7 @@
  * 담기는 내용에 따라 다르므로 부르는 쪽이 정한다.
  */
 export const MENU_PANEL_CLASS =
-  'absolute right-0 z-20 mt-2 rounded-md border border-neutral-200 bg-white py-1 shadow-lg'
+  'absolute right-0 z-20 mt-2 rounded-xl bg-white py-1.5 shadow-xl ring-1 ring-neutral-950/[0.08]'
 
 /**
  * 메뉴 항목 하나의 생김새. Link 든 button 이든 똑같이 보이도록 한 곳에 모아둔다 —

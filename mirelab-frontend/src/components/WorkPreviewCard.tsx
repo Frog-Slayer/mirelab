@@ -56,7 +56,7 @@ export default function WorkPreviewCard({
   }, [reason])
 
   return (
-    <div className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+    <div className="app-card flex flex-col gap-6 p-6 sm:p-8">
       <div className="flex gap-6">
         <div className="flex w-40 flex-none flex-col justify-center sm:w-48">
           <div className="relative">
@@ -74,21 +74,21 @@ export default function WorkPreviewCard({
           </div>
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-0.5">
-          <span className="text-xs font-medium text-neutral-400">
+          <span className="text-xs font-medium text-neutral-500">
             {kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
           </span>
           <input
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="제목"
-            className="w-full rounded-sm border-none bg-transparent px-0 text-3xl leading-tight font-semibold tracking-[-0.03em] outline-none placeholder:text-neutral-300 sm:text-4xl"
+            className="w-full rounded-lg border-none bg-transparent px-0 text-3xl leading-tight font-semibold tracking-tight outline-none placeholder:text-neutral-300 sm:text-4xl"
           />
           <div className="flex items-center gap-1.5">
             <input
               value={author}
               onChange={(e) => onAuthorChange(e.target.value)}
               placeholder={kind === WorkKind.MOVIE ? '감독' : '저자'}
-              className="min-w-0 flex-1 rounded-sm border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
+              className="min-w-0 flex-1 rounded-lg border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
             />
             <span className="text-base text-neutral-300">·</span>
             <input
@@ -96,7 +96,7 @@ export default function WorkPreviewCard({
               onChange={(e) => onYearChange(e.target.value ? Number(e.target.value) : undefined)}
               placeholder="연도"
               inputMode="numeric"
-              className="w-14 flex-none rounded-sm border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
+              className="w-14 flex-none rounded-lg border-none bg-transparent px-0 text-base text-neutral-500 outline-none placeholder:text-neutral-300"
             />
           </div>
           <textarea
@@ -105,7 +105,7 @@ export default function WorkPreviewCard({
             onChange={(e) => onDescriptionChange(e.target.value)}
             placeholder="줄거리"
             rows={1}
-            className="w-full max-w-xl resize-none overflow-hidden rounded-sm border-none bg-transparent px-0 text-sm leading-relaxed text-neutral-600 outline-none placeholder:text-neutral-300"
+            className="w-full max-w-xl resize-none overflow-hidden rounded-lg border-none bg-transparent px-0 text-sm leading-relaxed text-neutral-600 outline-none placeholder:text-neutral-300"
           />
           {onReasonChange && (
             <div className="mt-auto pt-2">
@@ -115,7 +115,7 @@ export default function WorkPreviewCard({
                 onChange={(e) => onReasonChange(e.target.value)}
                 placeholder="왜 고르셨나요 — 작품 기록에 함께 남습니다"
                 rows={1}
-                className="w-full max-w-xl resize-none overflow-hidden rounded-sm border-none bg-transparent px-0 text-sm text-neutral-500 outline-none placeholder:text-neutral-300"
+                className="w-full max-w-xl resize-none overflow-hidden rounded-lg border-none bg-transparent px-0 text-sm text-neutral-500 outline-none placeholder:text-neutral-300"
               />
             </div>
           )}

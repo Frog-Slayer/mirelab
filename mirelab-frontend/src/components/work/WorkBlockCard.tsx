@@ -27,7 +27,7 @@ export default function WorkBlockCard({
   const [title, setTitle] = useState(block.title)
 
   return (
-    <article className="flex flex-col rounded-xl border border-neutral-200 bg-white px-5 py-5">
+    <article className="app-tile flex flex-col px-5 py-5">
       <div className="flex items-start justify-between gap-4 px-4 sm:px-[54px]">
         {editingTitle ? (
           <form
@@ -61,9 +61,7 @@ export default function WorkBlockCard({
           </form>
         ) : (
           <>
-            <h2 className="work-block-h1">
-              {block.title}
-            </h2>
+            <h2 className="work-block-h1">{block.title}</h2>
             {canEdit &&
               (confirming ? (
                 <div className="flex flex-none items-center gap-2 text-xs">
@@ -84,14 +82,14 @@ export default function WorkBlockCard({
                   <button
                     type="button"
                     onClick={() => setEditingTitle(true)}
-                    className="text-neutral-400 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-neutral-600 hover:decoration-neutral-500"
+                    className="text-neutral-500 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-neutral-600 hover:decoration-neutral-500"
                   >
                     제목 수정
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirming(true)}
-                    className="text-neutral-400 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-rose-600 hover:decoration-rose-400"
+                    className="text-neutral-500 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-rose-600 hover:decoration-rose-400"
                   >
                     삭제
                   </button>
@@ -105,7 +103,7 @@ export default function WorkBlockCard({
         <CollaborativeBody blockId={block.id} user={currentUser} />
       </div>
 
-      <div className="mt-3 flex items-center gap-1.5 border-t border-neutral-100 px-4 pt-3 text-xs text-neutral-400 sm:px-[54px]">
+      <div className="mt-3 flex items-center gap-1.5 border-t border-neutral-100 px-4 pt-3 text-xs text-neutral-500 sm:px-[54px]">
         {author && <span className={`size-1.5 rounded-full ${author.color}`} aria-hidden />}
         <span>{author?.name ?? '알 수 없음'}</span>
         <span aria-hidden>·</span>

@@ -61,7 +61,7 @@ export default function ShelfWorkPage() {
     },
   })
 
-  if (isPending) return <p className="text-sm text-neutral-400">불러오는 중…</p>
+  if (isPending) return <p className="text-sm text-neutral-500">불러오는 중…</p>
   if (!data || !user || !currentStudy)
     return <p className="text-sm text-neutral-500">내 서재에 없는 책입니다.</p>
 
@@ -88,13 +88,13 @@ export default function ShelfWorkPage() {
         ← 내 서재
       </Link>
 
-      <header className="flex gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+      <header className="app-card flex gap-6 p-6 sm:p-8">
         <div className="w-40 flex-none sm:w-44">
           <Cover work={work} size="lg" />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-2.5 pt-0.5">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-neutral-400">
+            <span className="text-xs font-medium text-neutral-500">
               {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
             </span>
             <span
@@ -107,17 +107,17 @@ export default function ShelfWorkPage() {
               {statusLabel[work.status]}
             </span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-[-0.03em]">{work.title}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{work.title}</h1>
           <p className="text-sm text-neutral-500">
             {work.author} · {work.year}
           </p>
           {work.actors && work.actors.length > 0 && (
-            <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
+            <p className="text-xs text-neutral-500">출연 {work.actors.join(' · ')}</p>
           )}
           {work.description && (
             <p className="max-w-xl text-sm leading-relaxed text-neutral-600">{work.description}</p>
           )}
-          <span className="text-xs text-neutral-400">{study ? study.name : '혼자 읽은 책'}</span>
+          <span className="text-xs text-neutral-500">{study ? study.name : '혼자 읽은 책'}</span>
 
           {step && (
             <button
@@ -170,10 +170,7 @@ export default function ShelfWorkPage() {
         publication={data.publication}
       />
 
-      <section
-        aria-label="개인 노트"
-        className="min-h-96 rounded-xl border border-neutral-200 bg-white px-3 py-5 shadow-sm sm:px-6"
-      >
+      <section aria-label="개인 노트" className="app-card min-h-96 px-3 py-5 sm:px-6">
         <PersonalBlockNoteField
           key={`${workId}-${user.id}`}
           value={{ blocks: documentBlocks }}
@@ -206,7 +203,7 @@ function PublicationControls({
   })
 
   return (
-    <section className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+    <section className="app-card p-5 sm:p-6">
       <div className="flex flex-wrap items-start gap-4">
         <div>
           <h2 className="font-medium">발행</h2>
@@ -214,7 +211,9 @@ function PublicationControls({
             이 책의 자유형식 기록을 독서스터디와 내 블로그에 공개합니다.
           </p>
         </div>
-        <span className={`ml-auto rounded-full px-2 py-1 text-xs ${publication?.published ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}>
+        <span
+          className={`ml-auto rounded-full px-2 py-1 text-xs ${publication?.published ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}
+        >
           {publication?.published ? '공개 중' : '비공개'}
         </span>
       </div>
@@ -224,7 +223,7 @@ function PublicationControls({
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="제목을 입력하세요"
-          className="mt-2 w-full rounded-md border border-neutral-200 px-3 py-2 text-base outline-none focus:border-neutral-400"
+          className="app-input mt-2 w-full text-base"
         />
       </label>
       <div className="mt-5 flex items-center gap-3">

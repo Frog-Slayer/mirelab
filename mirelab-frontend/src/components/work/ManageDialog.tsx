@@ -60,7 +60,7 @@ export default function ManageDialog({
       onClick={(e) => {
         if (e.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(40rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl ring-1 ring-neutral-950/10 backdrop:bg-neutral-900/40 backdrop:backdrop-blur-sm"
     >
       <div className="flex flex-col gap-5 p-5">
         <div className="flex items-start justify-between gap-4">
@@ -131,7 +131,7 @@ export default function ManageDialog({
             <select
               value={next}
               onChange={(e) => setNext(e.target.value as WorkStatus)}
-              className="flex-1 cursor-pointer rounded-sm border border-neutral-200 px-3 py-2 text-sm"
+              className="app-input flex-1 cursor-pointer"
             >
               <option value={WorkStatusValues.CANDIDATE}>후보</option>
               <option value={WorkStatusValues.READING}>읽는 중</option>
@@ -154,15 +154,14 @@ export default function ManageDialog({
         <div className="flex flex-col gap-2 border-t border-neutral-200 pt-4">
           <span className="text-xs font-medium text-neutral-500">삭제</span>
           <p className="text-xs text-neutral-500">
-            계속하려면 아래에{' '}
-            <span className="font-medium text-neutral-700">{requiredPhrase}</span> 를 정확히
-            입력하세요.
+            계속하려면 아래에 <span className="font-medium text-neutral-700">{requiredPhrase}</span>{' '}
+            를 정확히 입력하세요.
           </p>
           <input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={requiredPhrase}
-            className="rounded-sm border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+            className="app-input"
           />
           <button
             type="button"

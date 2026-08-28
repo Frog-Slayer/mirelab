@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
+import { Plus } from 'lucide-react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import PickNote from '@/components/PickNote'
@@ -19,24 +19,16 @@ export interface BookcaseItem {
   kind: WorkKind
   status: WorkStatus
   href: string
-  /**
-   * 어디서 온 책인지 — 스터디 이름이면 스터디 책, `null`이면 혼자 담은 책.
-   * `undefined`면 이 구분이 의미 없는 곳(명예의 전당 등)이라 표시를 안 한다.
-   */
   source?: string | null
-  /** 평점·고른 이유 — 있으면 호버 시 카드에 같이 보여준다 */
   average?: number
   voterCount?: number
-  /** 공개된 개별 점수들 — 평균이 같을 때 순위를 가르는 데 쓴다 */
   publishedRatings?: number[]
   addedBy?: string
   reason?: string
   description?: string
   coverUrl?: string
   actors?: string[]
-  /** 1~3 이면 표지 모서리에 금·은·동 순위 스티커를 붙인다 */
   rank?: number
-  /** 완료 연도별로 묶어 보여줄 때 쓴다 */
   finishedAt?: string | null
 }
 
@@ -46,32 +38,24 @@ const statusLabel: Record<WorkStatus, string> = {
   [WorkStatus.DONE]: '완료',
 }
 
+const kindLabel: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: 'Book',
+  [WorkKind.MOVIE]: 'Film',
+  [WorkKind.GAME]: 'Game',
+}
+
+const placeholderTone: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: 'bg-[#dfe9e5] text-[#24443a]',
+  [WorkKind.MOVIE]: 'bg-[#e3e7ed] text-[#303946]',
+  [WorkKind.GAME]: 'bg-[#e2e8ec] text-[#293943]',
+}
+
 const filterOptions: { value: BookcaseFilter; label: string }[] = [
   { value: 'ALL', label: '전체' },
   { value: WorkStatus.CANDIDATE, label: '후보' },
   { value: WorkStatus.READING, label: '읽는 중' },
   { value: WorkStatus.DONE, label: '완료' },
 ]
-
-const spineColors = [
-  { background: '#36594d', color: '#f4f7f5' },
-  { background: '#9d594f', color: '#fff8f5' },
-  { background: '#4d6380', color: '#f5f7fb' },
-  { background: '#c59d43', color: '#302710' },
-  { background: '#665272', color: '#faf6fc' },
-  { background: '#d7d1c5', color: '#393630' },
-  { background: '#34434e', color: '#f3f6f7' },
-]
-
-const ticketPalettes = [
-  { paper: '#f1e4bc', panel: '#a6383d', ink: '#6f3135', text: '#f7eaca' },
-  { paper: '#e5dcc3', panel: '#3e5a74', ink: '#263e52', text: '#f6f0df' },
-  { paper: '#e7dfbf', panel: '#496b62', ink: '#2e4d46', text: '#f5f0dc' },
-  { paper: '#ead8c1', panel: '#775263', ink: '#512f3f', text: '#f9e9e5' },
-  { paper: '#eee0b9', panel: '#98713a', ink: '#634719', text: '#fff3cf' },
-]
-
-const ticketRotations = ['-rotate-2', '-rotate-1', '', 'rotate-1', 'rotate-2']
 
 export function BookcaseStatusFilters({
   value,
@@ -86,7 +70,10 @@ export function BookcaseStatusFilters({
     filter === 'ALL' ? items.length : items.filter((item) => item.status === filter).length
 
   return (
-    <div className="flex flex-wrap items-center gap-2" aria-label="작품 상태 필터">
+    <div
+      className="flex w-fit flex-wrap items-center gap-1 rounded-full bg-neutral-100 p-1"
+      aria-label="작품 상태 필터"
+    >
       {filterOptions.map((option) => {
         const selected = value === option.value
 
@@ -96,17 +83,14 @@ export function BookcaseStatusFilters({
             type="button"
             aria-pressed={selected}
             onClick={() => onChange(option.value)}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${
+            className={`inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-colors focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${
               selected
-                ? 'border-neutral-800 bg-neutral-900 text-white'
-                : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-400 hover:text-neutral-900'
+                ? 'bg-white font-medium text-neutral-900 ring-1 ring-neutral-950/[0.06]'
+                : 'text-neutral-500 hover:text-neutral-800'
             }`}
           >
-            {option.value !== 'ALL' && <StatusGlyph status={option.value} inverted={selected} />}
             <span>{option.label}</span>
-            <span className={selected ? 'text-neutral-300' : 'text-neutral-400'}>
-              {count(option.value)}
-            </span>
+            <span className="text-xs tabular-nums text-neutral-400">{count(option.value)}</span>
           </button>
         )
       })}
@@ -121,411 +105,162 @@ export function Bookcase({
   onActivate,
   onAdd,
 }: {
-  /** 완료된 작품 — 위 칸을 차지한다. 별점순 정렬은 부르는 쪽 책임 */
   completed: BookcaseItem[]
-  /** 읽는 중 · 후보 — 완료작과 칸을 나눠 아래에 둔다 */
   others: BookcaseItem[]
-  /** 호버 카드에서 "누가 골랐는지" 를 보여주려면 필요 */
   users?: User[]
   onActivate?: (id: string) => void
-  /** 있으면 읽는 중·후보 칸 맨 끝에 "+"를 두어 책 추가 모달을 띄운다 */
   onAdd?: () => void
 }) {
-  const hasCompleted = completed.length > 0
-  const hasOthers = others.length > 0 || !!onAdd
-  const empty = !hasCompleted && !hasOthers
+  if (completed.length === 0 && others.length === 0) {
+    return (
+      <Collection title="컬렉션" count={0}>
+        {onAdd ? <AddItem onAdd={onAdd} /> : <EmptyCollection />}
+      </Collection>
+    )
+  }
 
   return (
-    <section
-      aria-label="책장"
-      className="rounded-xl border-8 border-[#71543d] bg-[#a89b8c] shadow-[inset_0_0_20px_rgba(56,40,27,0.24),0_8px_22px_rgba(38,31,24,0.14)]"
-    >
-      {empty ? (
-        <ShelfCompartment>
-          <EmptySlot onAdd={onAdd} />
-        </ShelfCompartment>
-      ) : (
-        <>
-          {hasCompleted && (
-            <ShelfCompartment>
-              {completed.map((item) => (
-                <BookDisplay key={item.id} item={item} users={users} onActivate={onActivate} />
-              ))}
-            </ShelfCompartment>
-          )}
-          {hasCompleted && hasOthers && <div className="h-3 bg-[#6f5139]" aria-hidden />}
-          {hasOthers && (
-            <ShelfCompartment>
-              {others.map((item) => (
-                <BookDisplay key={item.id} item={item} users={users} onActivate={onActivate} />
-              ))}
-              {onAdd && <EmptySlot onAdd={onAdd} />}
-            </ShelfCompartment>
-          )}
-        </>
+    <section aria-label="작품 컬렉션" className="flex flex-col gap-12">
+      {completed.length > 0 && (
+        <Collection title="읽은 작품" count={completed.length}>
+          {completed.map((item) => (
+            <CollectionItem key={item.id} item={item} users={users} onActivate={onActivate} />
+          ))}
+        </Collection>
+      )}
+
+      {(others.length > 0 || onAdd) && (
+        <Collection title="읽고 있거나 다음에 볼 작품" count={others.length}>
+          {others.map((item) => (
+            <CollectionItem key={item.id} item={item} users={users} onActivate={onActivate} />
+          ))}
+          {onAdd && <AddItem onAdd={onAdd} />}
+        </Collection>
       )}
     </section>
   )
 }
 
-const PLANK_CLASS =
-  'border-y border-[#5e4432] bg-[linear-gradient(#9a7450,#795637)] shadow-[0_6px_10px_rgba(42,29,19,0.25)]'
-
-/**
- * 선반 두께와 칸의 위아래 여백(px).
- *
- * 줄 사이 간격에는 선반이 겹쳐 놓이므로 `줄간격 = 아래여백 + 선반두께 + 위여백` 이
- * 정확히 성립해야 모든 칸의 높이가 같아진다. 이 관계를 Tailwind 클래스로 흩어놓으면
- * (pt-7 / gap-y-6 / pb-1.5) 눈에 안 보인 채로 어긋난다 — 실제로 첫 칸에는 위여백이
- * 통째로 들어가고 둘째 칸부터는 선반 두께를 뺀 나머지만 남아서, 첫 칸만 25px 쯤
- * 높았다. 그래서 세 값을 여기 못박고 간격을 계산해서 쓴다.
- *
- * rem 이 아니라 px 인 이유: 선반 위치는 measure() 가 잰 px 좌표로 찍는데(top), 여백만
- * rem 이면 root font-size 가 바뀔 때 둘이 어긋난다.
- */
-const PLANK_HEIGHT = 16
-const ROOM_ABOVE = 16
-const ROOM_BELOW = 4
-const ROW_GAP = ROOM_BELOW + PLANK_HEIGHT + ROOM_ABOVE
-
-/**
- * 칸 하나에 주어지는 높이. 모든 `<li>` 를 이 높이로 고정해서 줄 높이를 맞춘다 —
- * 안 그러면 줄마다 "그 줄에서 제일 큰 책"만큼 높아져서 칸 높이가 제각각이 된다.
- *
- * 책은 이 안에서 바닥에 붙어 서고(items-end), 남는 위쪽은 그냥 빈 공간이다. 실제
- * 책장처럼 칸은 일정하고 꽂힌 책만 들쭉날쭉해 보인다.
- *
- * 표지 있는 책은 이미지 원본 비율을 따라가느라 높이 상한이 없어서(BookCover), 이 값을
- * max-height 로도 함께 걸어 선반 위로 삐져나오지 못하게 한다. 영화 티켓도 계산식대로면
- * 최대 193 이라 이 값을 넘으므로 [MovieTicket] 에서 같이 조인다.
- */
-const SLOT_HEIGHT = 176
-
-/** 칸 하나의 전체 높이 — 빈 책장도 이만큼은 자리를 차지한다 */
-const COMPARTMENT_HEIGHT = ROOM_ABOVE + SLOT_HEIGHT + ROOM_BELOW
-
-/**
- * 칸 하나 — 폭이 남는 한 줄을 최대한 채우고, 다 못 들어가면 자연스럽게 다음 줄로
- * 넘어간다. 줄바꿈이 실제로 몇 번 일어나는지는 미리 알 수 없어서(책마다 폭이 다르고
- * 화면 폭도 다르니), 렌더링된 위치를 재서 줄이 바뀐 지점마다 선반을 하나씩 끼워 넣는다.
- */
-function ShelfCompartment({ children }: { children: React.ReactNode }) {
-  const listRef = useRef<HTMLOListElement>(null)
-  const [rowBreaks, setRowBreaks] = useState<number[]>([])
-
-  useLayoutEffect(() => {
-    const list = listRef.current
-    if (!list) return
-
-    const measure = () => {
-      const items = Array.from(list.children) as HTMLElement[]
-      // items-end 로 바닥을 맞추므로, 같은 줄이면 아래쪽 끝(offsetTop+offsetHeight)이 같다.
-      const rowBottoms = [...new Set(items.map((item) => item.offsetTop + item.offsetHeight))].sort(
-        (a, b) => a - b,
-      )
-      // 마지막 줄 아래는 칸 자체의 선반이 이미 있으니 그 앞줄들만 선반을 추가한다.
-      setRowBreaks(rowBottoms.slice(0, -1))
-    }
-
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(list)
-    return () => observer.disconnect()
-  }, [])
-
+function Collection({
+  title,
+  count,
+  children,
+}: {
+  title: string
+  count: number
+  children: React.ReactNode
+}) {
   return (
-    <div className="relative">
-      {/*
-        `[&>li]` 로 칸 높이를 여기서 한 번에 먹인다 — 책 컴포넌트마다 따로 걸면 새 종류를
-        추가할 때 하나만 빠져도 그 줄만 높이가 달라진다. li 는 자리(칸)이고, 그 안에서
-        책이 바닥에 붙는다.
-      */}
-      <ol
-        ref={listRef}
-        className="flex flex-wrap items-end gap-x-2.5 bg-[#a89b8c] bg-[linear-gradient(90deg,rgba(54,35,21,0.1)_1px,transparent_1px)] bg-size-[14px_14px] px-5 [&>li]:flex [&>li]:h-[var(--slot-h)] [&>li]:items-end"
-        style={
-          {
-            rowGap: ROW_GAP,
-            paddingTop: ROOM_ABOVE,
-            paddingBottom: ROOM_BELOW,
-            minHeight: COMPARTMENT_HEIGHT,
-            '--slot-h': `${SLOT_HEIGHT}px`,
-          } as CSSProperties
-        }
-      >
+    <section className="flex flex-col gap-5">
+      <div className="flex items-center gap-3">
+        <h2 className="text-sm font-semibold text-neutral-800">{title}</h2>
+        <span className="text-xs tabular-nums text-neutral-400">{count}</span>
+        <span className="h-px flex-1 bg-neutral-200/80" aria-hidden />
+      </div>
+      <ol className="grid grid-cols-[repeat(auto-fill,minmax(7.25rem,1fr))] gap-x-4 gap-y-8 sm:gap-x-5">
         {children}
       </ol>
-      {rowBreaks.map((bottom) => (
-        <div
-          key={bottom}
-          aria-hidden
-          className={`pointer-events-none absolute inset-x-0 ${PLANK_CLASS}`}
-          style={{ top: bottom + ROOM_BELOW, height: PLANK_HEIGHT }}
-        />
-      ))}
-      <div className={PLANK_CLASS} style={{ height: PLANK_HEIGHT }} />
-    </div>
+    </section>
   )
 }
 
-/**
- * 보여줄 게 없을 때도 빈 책장이 아니라 빈 칸 하나가 꽂힌 책장으로 보여준다.
- * onAdd 가 있으면 그 칸 자체가 "+" 버튼이 되어 책을 추가할 수 있다.
- */
-function EmptySlot({ onAdd }: { onAdd?: () => void }) {
-  if (onAdd) {
-    return (
-      <li>
-        <button
-          type="button"
-          onClick={onAdd}
-          aria-label="책 추가하기"
-          title="책 추가하기"
-          className="group relative flex h-40 w-24 origin-bottom cursor-pointer items-center justify-center overflow-hidden rounded-r-md rounded-l-sm border border-neutral-200 bg-white text-neutral-400 shadow-[3px_3px_5px_rgba(0,0,0,0.18)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:border-neutral-300 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.2)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none"
-        >
-          <span className="absolute inset-y-0 left-2 w-px bg-neutral-200" aria-hidden />
-          <span className="text-2xl leading-none transition-transform group-hover:scale-110 group-focus-visible:scale-110">
-            <span aria-hidden>+</span>
-          </span>
-        </button>
-      </li>
-    )
-  }
-
-  const cls =
-    'flex w-10 flex-none items-center justify-center rounded-t-[3px] border border-dashed text-lg'
+function CollectionItem({
+  item,
+  users,
+  onActivate,
+}: {
+  item: BookcaseItem
+  users: User[]
+  onActivate?: (id: string) => void
+}) {
+  const longPress = useLongPressPreview(() => onActivate?.(item.id))
 
   return (
-    <li>
-      <span className="sr-only">표시할 작품이 없습니다</span>
-      <div aria-hidden className={`${cls} border-black/20 text-black/25`} style={{ height: 150 }}>
-        —
-      </div>
-    </li>
-  )
-}
-
-export function StatusGlyph({
-  status,
-  inverted = false,
-}: {
-  status: WorkStatus
-  inverted?: boolean
-}) {
-  if (status === WorkStatus.READING) {
-    return (
-      <span
-        className="h-4 w-2.5 shrink-0 bg-emerald-400 [clip-path:polygon(0_0,100%_0,100%_100%,50%_72%,0_100%)]"
-        aria-hidden
-      />
-    )
-  }
-
-  if (status === WorkStatus.DONE) {
-    return (
-      <span
-        className={`grid size-4 shrink-0 place-items-center rounded-full text-[11px] leading-none font-bold ${
-          inverted ? 'bg-white text-neutral-900' : 'bg-neutral-800 text-white'
-        }`}
-        aria-hidden
+    <li className="group/item relative min-w-0">
+      <Link
+        to={item.href}
+        {...longPress.handlers}
+        onMouseEnter={() => onActivate?.(item.id)}
+        onFocus={() => onActivate?.(item.id)}
+        className="block focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-3 focus-visible:outline-none"
+        aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}`}
       >
-        ✓
-      </span>
-    )
-  }
-
-  return (
-    <span
-      className={`size-3.5 shrink-0 rounded-full border-2 ${inverted ? 'border-white' : 'border-neutral-400'}`}
-      aria-hidden
-    />
-  )
-}
-
-function BookDisplay({
-  item,
-  users,
-  onActivate,
-}: {
-  item: BookcaseItem
-  users: User[]
-  onActivate?: (id: string) => void
-}) {
-  if (item.kind === WorkKind.MOVIE) {
-    return <MovieTicket item={item} users={users} onActivate={onActivate} />
-  }
-
-  return <BookCover item={item} users={users} onActivate={onActivate} />
-}
-
-function MovieTicket({
-  item,
-  users,
-  onActivate,
-}: {
-  item: BookcaseItem
-  users: User[]
-  onActivate?: (id: string) => void
-}) {
-  const longPress = useLongPressPreview(() => onActivate?.(item.id))
-  const hash = hashTitle(item.title)
-  const palette = ticketPalettes[hash % ticketPalettes.length]
-  const rotation = ticketRotations[hash % ticketRotations.length]
-  // 포스터가 있어도 일반 티켓과 비슷한 덩치를 유지하되, 포스터 면과 스텁을 함께 감싼다.
-  const posterWidth = 79 + (hash % 7)
-  const ticketWidth = item.coverUrl ? posterWidth + 14 : 86
-  const ticketHeight = Math.min(
-    SLOT_HEIGHT,
-    item.coverUrl ? Math.round(posterWidth * 1.5) + 65 : 173,
-  )
-
-  return (
-    // 칸(li)은 책보다 클 수 있으므로 호버 카드는 티켓을 감싼 안쪽 div 에 건다 —
-    // li 에 걸면 빈 윗공간에만 얹어도 카드가 뜨고, 카드가 책 위가 아니라 칸 위에 붙는다.
-    <li>
-      <div className="group/ticket relative">
-        <Link
-          to={item.href}
-          {...longPress.handlers}
-          onMouseEnter={() => onActivate?.(item.id)}
-          onFocus={() => onActivate?.(item.id)}
-          aria-label={`${item.title}, ${item.author}, 영화, ${statusLabel[item.status]}`}
-          className={`relative flex origin-bottom flex-col justify-between overflow-hidden p-2 shadow-[3px_3px_5px_rgba(0,0,0,0.22)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.24)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${rotation}`}
-          style={{
-            width: ticketWidth,
-            height: ticketHeight,
-            backgroundColor: palette.paper,
-            color: palette.text,
-            clipPath:
-              'polygon(5px 0, 12% 3px, 24% 0, 36% 3px, 48% 0, 60% 3px, 72% 0, 84% 3px, calc(100% - 5px) 0, 100% 5px, calc(100% - 3px) 12%, 100% 24%, calc(100% - 3px) 36%, 100% 48%, calc(100% - 3px) 60%, 100% 72%, calc(100% - 3px) 84%, 100% calc(100% - 5px), calc(100% - 5px) 100%, 88% calc(100% - 3px), 76% 100%, 64% calc(100% - 3px), 52% 100%, 40% calc(100% - 3px), 28% 100%, 16% calc(100% - 3px), 5px 100%, 0 calc(100% - 5px), 3px 88%, 0 76%, 3px 64%, 0 52%, 3px 40%, 0 28%, 3px 16%, 0 5px)',
-            filter: 'drop-shadow(4px 6px 5px rgba(42, 29, 19, 0.34))',
-          }}
-        >
-          <div
-            className={`relative flex border-2 ${item.coverUrl ? 'min-h-0 flex-1 flex-col overflow-hidden' : 'min-h-0 flex-1 flex-col justify-between p-2.5'}`}
-            style={{ backgroundColor: palette.panel, borderColor: palette.text }}
-          >
-            {item.coverUrl ? (
-              <>
-                <div className="flex h-5 shrink-0 items-center justify-between px-2">
-                  <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
-                  <span
-                    className="grid size-4 place-items-center rounded-full shadow-sm"
-                    style={{ backgroundColor: palette.text }}
-                  >
-                    <StatusGlyph status={item.status} />
-                  </span>
-                </div>
-                <Cover
-                  work={item}
-                  size="lg"
-                  className="min-h-0 flex-1 !aspect-auto rounded-none border-0 object-contain"
-                />
-              </>
-            ) : (
-              <>
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-[8px] font-bold tracking-[0.14em]">ADMIT ONE</span>
-                  <span
-                    className="grid size-4 place-items-center rounded-full"
-                    style={{ backgroundColor: palette.text }}
-                  >
-                    <StatusGlyph status={item.status} />
-                  </span>
-                </div>
-                <span className="break-all text-sm leading-tight font-semibold">{item.title}</span>
-                <span className="truncate text-[10px] opacity-75">{item.author || '미상'}</span>
-              </>
-            )}
-            {item.rank && item.rank <= 3 && (
-              <RankSticker rank={item.rank as 1 | 2 | 3} size="sm" className="top-1 left-1 -rotate-6" />
-            )}
-          </div>
-          <div
-            className="flex h-9 shrink-0 items-center justify-between px-1"
-            style={{ color: palette.ink }}
-          >
-            <span className="h-4 w-11 bg-[repeating-linear-gradient(90deg,currentColor_0_2px,transparent_2px_3px,currentColor_3px_4px,transparent_4px_6px)] opacity-75" />
-            <span className="text-[8px] tabular-nums">{item.year}</span>
-          </div>
-        </Link>
-
-        <BookPreview item={item} users={users} group="ticket" mobileOpen={longPress.open} />
-      </div>
-    </li>
-  )
-}
-
-function BookCover({
-  item,
-  users,
-  onActivate,
-}: {
-  item: BookcaseItem
-  users: User[]
-  onActivate?: (id: string) => void
-}) {
-  const longPress = useLongPressPreview(() => onActivate?.(item.id))
-  const hash = hashTitle(item.title)
-  // 실제 표지는 폭만 정하고 이미지 자체의 원본 비율을 따른다.
-  // 텍스트 표지는 조금 낮게 잡아 가판대가 지나치게 우뚝해 보이지 않게 한다.
-  const height = 151 + (hash % 13)
-  const width = item.coverUrl ? 99 + (hash % 9) : 86 + (hash % 11)
-  const lean = hash % 5 === 0 ? '-rotate-2' : hash % 7 === 0 ? 'rotate-1' : ''
-  const palette = spineColors[hash % spineColors.length]
-  const titleSize = item.title.length > 34 ? 10 : item.title.length > 22 ? 11 : 13
-
-  return (
-    // 호버 카드를 안쪽 div 에 거는 이유는 MovieTicket 과 같다
-    <li>
-      <div className="group/cover relative">
-        <Link
-          to={item.href}
-          {...longPress.handlers}
-          onMouseEnter={() => onActivate?.(item.id)}
-          onFocus={() => onActivate?.(item.id)}
-          aria-label={`${item.title}, ${item.author}, ${statusLabel[item.status]}${
-            item.source !== undefined ? `, ${item.source ?? '혼자 읽음'}` : ''
-          }`}
-          className={`relative block origin-bottom overflow-hidden rounded-t-sm border border-black/25 bg-white shadow-[3px_3px_5px_rgba(0,0,0,0.24),inset_3px_0_rgba(255,255,255,0.35)] transition duration-200 hover:z-[1] hover:-translate-y-2 hover:rotate-0 hover:shadow-[5px_8px_12px_rgba(0,0,0,0.28)] focus-visible:z-[1] focus-visible:-translate-y-2 focus-visible:rotate-0 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none ${lean}`}
-          // 표지는 원본 비율대로 서되 칸을 넘지는 못한다. 넘치는 만큼은 아래가 잘리는데,
-          // 책 표지는 제목이 위에 있으니 위를 남기고 아래를 자르는 쪽이 알아보기 좋다
-          // (Link 에 이미 overflow-hidden 이 걸려 있다).
-          style={item.coverUrl ? { width, maxHeight: SLOT_HEIGHT } : { height, width }}
-        >
+        <div className="relative aspect-[2/3] overflow-hidden rounded-lg bg-neutral-100 ring-1 ring-neutral-950/10 transition-transform duration-200 group-hover/item:-translate-y-1">
           {item.coverUrl ? (
-            <Cover
-              work={item}
-              size="lg"
-              className="h-auto w-full !aspect-auto rounded-none border-0 bg-white"
-            />
+            <Cover work={item} size="lg" className="h-full w-full rounded-lg object-cover" />
           ) : (
             <div
-              className="flex h-full w-full flex-col justify-between p-3.5"
-              style={{ backgroundColor: palette.background, color: palette.color }}
+              className={`flex h-full flex-col justify-between p-4 ${placeholderTone[item.kind]}`}
             >
-              <span className="h-px w-7 bg-current opacity-60" aria-hidden />
-              <span
-                className="break-all leading-[1.35] font-semibold"
-                style={{ fontSize: titleSize }}
-              >
+              <span className="text-[10px] font-semibold tracking-[0.16em] uppercase opacity-55">
+                {kindLabel[item.kind]}
+              </span>
+              <span className="line-clamp-5 text-base leading-snug font-semibold tracking-tight">
                 {item.title}
               </span>
-              <span className="text-[9px] leading-tight opacity-75">
-                {item.author || '작자 미상'}
-              </span>
+              <span className="truncate text-[10px] opacity-60">{item.author || '작자 미상'}</span>
             </div>
           )}
-          <span className="absolute top-1.5 right-1.5 grid size-5 place-items-center rounded-full bg-white/90 shadow-sm">
-            <StatusGlyph status={item.status} />
-          </span>
-          {item.rank && item.rank <= 3 && (
-            <RankSticker rank={item.rank as 1 | 2 | 3} size="sm" className="top-1 left-1 -rotate-6" />
-          )}
-        </Link>
 
-        <BookPreview item={item} users={users} group="cover" mobileOpen={longPress.open} />
-      </div>
+          <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full bg-white/88 px-2 py-1 text-[10px] font-medium text-neutral-700 ring-1 ring-neutral-950/[0.06] backdrop-blur-sm">
+            <span
+              className={`size-1.5 rounded-full ${
+                item.status === WorkStatus.READING
+                  ? 'bg-emerald-500'
+                  : item.status === WorkStatus.DONE
+                    ? 'bg-neutral-700'
+                    : 'bg-neutral-300'
+              }`}
+              aria-hidden
+            />
+            {statusLabel[item.status]}
+          </span>
+
+          {item.rank && item.rank <= 3 && (
+            <RankSticker
+              rank={item.rank as 1 | 2 | 3}
+              size="sm"
+              className="top-2 left-2 -rotate-6"
+            />
+          )}
+        </div>
+
+        <div className="mt-3 min-w-0">
+          <h3 className="truncate text-sm font-medium text-neutral-900">{item.title}</h3>
+          <p className="mt-0.5 truncate text-xs text-neutral-500">
+            {[item.author, item.year || null].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      </Link>
+
+      <BookPreview item={item} users={users} mobileOpen={longPress.open} />
+    </li>
+  )
+}
+
+function AddItem({ onAdd }: { onAdd: () => void }) {
+  return (
+    <li className="min-w-0">
+      <button
+        type="button"
+        onClick={onAdd}
+        className="group flex w-full cursor-pointer flex-col text-left focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-3 focus-visible:outline-none"
+      >
+        <span className="grid aspect-[2/3] w-full place-items-center rounded-lg border border-dashed border-neutral-300 bg-white/45 text-neutral-400 transition-colors group-hover:border-neutral-400 group-hover:bg-white group-hover:text-neutral-700">
+          <Plus aria-hidden className="size-5" strokeWidth={1.5} />
+        </span>
+        <span className="mt-3 text-sm font-medium text-neutral-500 group-hover:text-neutral-800">
+          작품 추가
+        </span>
+      </button>
+    </li>
+  )
+}
+
+function EmptyCollection() {
+  return (
+    <li className="col-span-full rounded-xl bg-neutral-100/70 px-5 py-10 text-center text-sm text-neutral-500">
+      아직 담긴 작품이 없습니다.
     </li>
   )
 }
@@ -533,27 +268,21 @@ function BookCover({
 function BookPreview({
   item,
   users,
-  group,
   mobileOpen,
 }: {
   item: BookcaseItem
   users: User[]
-  group: 'cover' | 'ticket'
   mobileOpen: boolean
 }) {
-  // Tailwind가 hover 변형을 빌드할 수 있도록 클래스 이름은 정적으로 둔다.
-  const visibilityClass =
-    group === 'ticket'
-      ? 'group-hover/ticket:visible group-hover/ticket:opacity-100 group-focus-within/ticket:visible group-focus-within/ticket:opacity-100'
-      : 'group-hover/cover:visible group-hover/cover:opacity-100 group-focus-within/cover:visible group-focus-within/cover:opacity-100'
-
   return (
     <div
-      className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-72 -translate-x-1/2 transition-opacity duration-150 ${
-        mobileOpen ? 'visible opacity-100' : `invisible opacity-0 ${visibilityClass}`
+      className={`pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-72 -translate-x-1/2 transition-opacity duration-150 ${
+        mobileOpen
+          ? 'visible opacity-100'
+          : 'invisible opacity-0 group-hover/item:visible group-hover/item:opacity-100 group-focus-within/item:visible group-focus-within/item:opacity-100'
       }`}
     >
-      <div className="flex items-center gap-5 rounded-lg border border-neutral-200 bg-white p-4 text-left shadow-lg">
+      <div className="app-tile flex items-center gap-5 p-4 text-left shadow-md">
         <div className="w-10 flex-none">
           <Cover work={item} size="sm" />
         </div>
@@ -578,8 +307,4 @@ function BookPreview({
       </div>
     </div>
   )
-}
-
-function hashTitle(title: string) {
-  return [...title].reduce((sum, char) => sum + char.charCodeAt(0), 0)
 }

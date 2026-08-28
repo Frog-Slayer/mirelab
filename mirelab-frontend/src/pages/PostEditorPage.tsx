@@ -20,10 +20,13 @@ export default function PostEditorPage() {
   const username = studySlug.startsWith('@') ? studySlug.slice(1) : ''
   const { user } = useCurrentUser()
   const { data: post } = useQuery({ queryKey: ['post', postId], queryFn: () => getPost(postId) })
-  if (!post || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
-  if (post.author.id !== user.id) return <p className="text-sm text-rose-700">작성자만 수정할 수 있습니다.</p>
+  if (!post || !user) return <p className="text-sm text-neutral-500">불러오는 중…</p>
+  if (post.author.id !== user.id)
+    return <p className="text-sm text-rose-700">작성자만 수정할 수 있습니다.</p>
   if (post.work?.ownerId === user.id && post.work.studyId === null) {
-    return <p className="text-sm text-neutral-500">개인 책에 연결된 글은 책장 상세에서 수정해 주세요.</p>
+    return (
+      <p className="text-sm text-neutral-500">개인 책에 연결된 글은 책장 상세에서 수정해 주세요.</p>
+    )
   }
   return <Editor key={post.id} post={post} username={username} />
 }
@@ -95,17 +98,21 @@ function Editor({ post, username }: { post: Post; username: string }) {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="flex items-center gap-3 border-b border-neutral-200 pb-4">
-        <button type="button" onClick={() => navigate(`/@${username}/posts/${post.id}`)} className="text-sm text-neutral-500">
+        <button
+          type="button"
+          onClick={() => navigate(`/@${username}/posts/${post.id}`)}
+          className="text-sm text-neutral-500"
+        >
           ← 읽기
         </button>
-        <span className="ml-auto text-xs text-neutral-400">
+        <span className="ml-auto text-xs text-neutral-500">
           {saveState === 'saving' ? '저장 중…' : saveState === 'error' ? '저장 실패' : '저장됨'}
         </span>
         <button
           type="button"
           onClick={() => change({ published: !draft.published }, true)}
           disabled={!draft.published && !draft.title.trim()}
-          className={`cursor-pointer rounded-md px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${draft.published ? 'border border-neutral-200' : 'bg-neutral-900 text-white'}`}
+          className={`app-button disabled:cursor-not-allowed disabled:opacity-40 ${draft.published ? 'app-button-secondary' : 'app-button-primary'}`}
         >
           {draft.published ? '비공개로 전환' : '공개'}
         </button>
@@ -118,7 +125,7 @@ function Editor({ post, username }: { post: Post; username: string }) {
         className="mt-8 w-full text-4xl font-semibold tracking-[-0.04em] outline-none placeholder:text-neutral-300"
       />
 
-      <div className="mt-6 rounded-lg border border-neutral-200 p-4">
+      <div className="app-card mt-6 p-4">
         <fieldset>
           <legend className="text-sm text-neutral-600">공개 대상</legend>
           <div className="mt-2 flex flex-wrap gap-3">

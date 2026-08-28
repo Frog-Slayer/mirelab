@@ -58,12 +58,19 @@ export default function RootLayout() {
     >
       <header
         ref={headerRef}
-        className="sticky top-0 z-10 border-b border-neutral-200 bg-white/90 backdrop-blur-xl"
+        className="sticky top-0 z-10 bg-white/90 shadow-[0_1px_0_rgb(15_23_42/0.07)] backdrop-blur-xl"
       >
         {/* 배경과 아래 테두리는 화면 끝까지 가고, 내용만 본문과 같은 기둥에 선다 */}
-        <div className={`${CONTENT_COLUMN} flex items-center gap-5 py-3.5`}>
-          <Link to="/app" className="text-lg font-semibold tracking-[-0.03em]">
-            mirelab
+        <div className={`${CONTENT_COLUMN} flex items-center gap-4 py-4`}>
+          <Link
+            to="/app"
+            className="group flex items-baseline gap-1.5 font-serif text-xl font-semibold tracking-[-0.045em]"
+          >
+            <span>mirelab</span>
+            <span
+              className="size-1.5 rounded-full bg-[#39725f] transition-transform group-hover:scale-125"
+              aria-hidden
+            />
           </Link>
 
           {/* 스터디가 하나뿐이면 전환기 대신 이름만. 스터디 밖(내 서재)에서도 돌아갈 길이 필요하다 */}
@@ -71,7 +78,7 @@ export default function RootLayout() {
             <select
               value={current?.slug ?? ''}
               onChange={(e) => navigate(`/${e.target.value}`)}
-              className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-1 text-sm"
+              className="app-input min-h-8 cursor-pointer py-1 text-xs"
               aria-label="스터디 고르기"
             >
               {!current && <option value="">스터디 고르기</option>}
@@ -83,14 +90,19 @@ export default function RootLayout() {
             </select>
           ) : (
             studies[0] && (
-              <Link
-                to={`/${studies[0].slug}`}
-                className={`border-l border-neutral-200 pl-5 text-sm ${
-                  current ? 'text-neutral-500' : 'text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                {studies[0].name}
-              </Link>
+              <span className="flex items-center gap-4">
+                <span className="text-neutral-300" aria-hidden>
+                  /
+                </span>
+                <Link
+                  to={`/${studies[0].slug}`}
+                  className={`text-sm ${
+                    current ? 'text-neutral-500' : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  {studies[0].name}
+                </Link>
+              </span>
             )
           )}
 
@@ -119,13 +131,13 @@ export default function RootLayout() {
             recordDrawerOpen ? 'xl:w-[28rem]' : ''
           }`}
         />
-        <main className={`${CONTENT_COLUMN} flex-1 py-6 sm:py-8`}>
+        <main className={`${CONTENT_COLUMN} flex-1 py-8 sm:py-10`}>
           <Outlet context={recordDrawer} />
         </main>
       </div>
 
-      <footer className="border-t border-neutral-200 py-5">
-        <p className={`${CONTENT_COLUMN} text-xs text-neutral-400`}>mirelab</p>
+      <footer className="py-7">
+        <p className={`${CONTENT_COLUMN} text-xs text-neutral-400`}>mirelab · 함께 남기는 기록</p>
       </footer>
 
       {/*
@@ -157,18 +169,18 @@ function StudyNav({ study }: { study: Study }) {
       ]
 
   return (
-    <div className="border-t border-neutral-100">
+    <div>
       {/* 탭도 위 막대·본문과 같은 기둥에 선다 — 로고 바로 아래에서 시작해야 한 줄로 읽힌다 */}
-      <nav className={`${CONTENT_COLUMN} flex gap-6 overflow-x-auto text-sm`}>
+      <nav className={`${CONTENT_COLUMN} flex gap-7 overflow-x-auto text-sm`}>
         {items.map(({ to, label, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
             className={({ isActive }) =>
-              `relative py-3 whitespace-nowrap ${
+              `relative py-2.5 whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'font-medium text-emerald-800 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-emerald-700'
+                  ? 'font-medium text-neutral-900 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:rounded-full after:bg-[#39725f]'
                   : 'text-neutral-500 hover:text-neutral-900'
               }`
             }

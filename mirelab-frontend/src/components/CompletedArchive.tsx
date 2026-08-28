@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import RankSticker from '@/components/RankSticker'
@@ -6,22 +7,10 @@ import WorkTooltip from '@/components/WorkTooltip'
 import type { BookcaseItem } from '@/components/Bookcase'
 import { useLongPressPreview } from '@/hooks/useLongPressPreview'
 import { KIND_ORDER, kindIcon, kindLabel } from '@/lib/workKind'
+import { completedYearOf, topRanksByYear } from '@/lib/workRanking'
 import type { User } from '@/types'
 
-function yearOf(item: BookcaseItem) {
-  return item.finishedAt ? new Date(item.finishedAt).getFullYear() : null
-}
-
-/**
- * 최고·최저를 하나씩 뺀 나머지의 평균. 점수가 둘 이하면 다 잘려나가 남는 게 없으므로
- * 비교할 수 없다는 뜻으로 null 을 준다.
- */
-function trimmedAverage(scores: number[] | undefined): number | null {
-  if (!scores || scores.length < 3) return null
-
-  const middle = [...scores].sort((a, b) => a - b).slice(1, -1)
-  return middle.reduce((sum, score) => sum + score, 0) / middle.length
-}
+const yearOf = completedYearOf
 
 export default function CompletedArchive({
   items,
@@ -41,63 +30,57 @@ export default function CompletedArchive({
 
   const shown = items.filter((item) => yearOf(item) === activeYear)
 
-  /**
-   * 그 해의 공개 평점 1~3위. 순서는 완료순으로 두고 스티커만 얹으므로, 여기서는 등수만
-   * 따로 계산해 둔다. 아무도 공개로 매기지 않은 작품(voterCount 0)은 평균이 0 이라
-   * 등수에서 뺀다 — 안 그러면 "0점짜리 3위"가 생긴다.
-   *
-   * 평균이 같으면 최고·최저를 뺀 나머지의 평균으로 가른다 — 한 사람의 극단적인 점수에
-   * 덜 휘둘리는 쪽을 위로 본다. 점수가 둘 이하라 잘라낼 게 없거나 그마저 같으면 완료순
-   * 그대로 둔다(sort 가 안정 정렬이라 입력 순서인 완료순이 유지된다).
-   */
-  const rankById = new Map<string, 1 | 2 | 3>()
-  shown
-    .filter((item) => (item.voterCount ?? 0) > 0)
-    .sort((a, b) => {
-      const byAverage = (b.average ?? 0) - (a.average ?? 0)
-      if (byAverage !== 0) return byAverage
-
-      const aTrimmed = trimmedAverage(a.publishedRatings)
-      const bTrimmed = trimmedAverage(b.publishedRatings)
-      if (aTrimmed !== null && bTrimmed !== null) return bTrimmed - aTrimmed
-
-      return 0
-    })
-    .slice(0, 3)
-    .forEach((item, index) => rankById.set(item.id, (index + 1) as 1 | 2 | 3))
+  // 순서는 완료순으로 두고 스티커만 얹으므로, 등수는 따로 계산해 둔다.
+  // 규칙은 작품 상세와 같은 것을 쓴다([topRanksByYear]).
+  const rankById = topRanksByYear(
+    items.map((item) => ({
+      id: item.id,
+      average: item.average ?? 0,
+      voterCount: item.voterCount ?? 0,
+      finishedAt: item.finishedAt,
+      publishedRatings: item.publishedRatings,
+    })),
+  )
 
   const yearRange =
-    years.length === 0 ? null : years.length === 1 ? `${years[0]}` : `${years[years.length - 1]} – ${years[0]}`
+    years.length === 0
+      ? null
+      : years.length === 1
+        ? `${years[0]}`
+        : `${years[years.length - 1]} – ${years[0]}`
 
   return (
-    <section className="flex flex-col gap-6 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-6">
-      <div className="flex flex-col gap-4 border-b border-neutral-200 pb-2">
+    <section className="app-card flex flex-col gap-6 p-5 sm:p-7">
+      {/* 제목과 연도 탭 사이는 선이 아니라 여백으로 끊는다 — 판의 경계는 app-card 한 겹뿐이다 */}
+      <div className="flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-[-0.03em]">함께 읽은 책</h1>
-            <p className="mt-1 text-sm text-neutral-400">
+            <h1 className="text-3xl font-semibold tracking-tight">함께 읽은 책</h1>
+            <p className="mt-1 text-sm text-neutral-500">
               {items.length}작품{yearRange && ` · ${yearRange}`}
             </p>
           </div>
-          <Link
-            to={`/${studySlug}/books`}
-            className="shrink-0 rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-900"
-          >
-            전체보기 →
+          <Link to={`/${studySlug}/books`} className="app-pill">
+            전체보기
+            <ArrowRight aria-hidden className="size-4" strokeWidth={2} />
           </Link>
         </div>
 
+        {/*
+          연도는 한 줄에 나란히 놓인 같은 축의 선택지라, 고른 것만 검정으로 튀우는 대신
+          띠 위에서 흰 칸이 움직이는 모양(세그먼트)으로 보여준다.
+        */}
         {years.length > 1 && (
-          <div className="flex justify-center gap-6">
+          <div className="flex justify-center gap-3">
             {years.map((year) => (
               <button
                 key={year}
                 type="button"
                 onClick={() => setSelectedYear(year)}
-                className={`rounded-full px-5 py-1 text-base font-medium transition ${
+                className={`cursor-pointer rounded-full px-5 py-1.5 text-sm font-medium tabular-nums transition-colors ${
                   year === activeYear
                     ? 'bg-neutral-900 text-white'
-                    : 'text-neutral-500 hover:text-neutral-900'
+                    : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900'
                 }`}
               >
                 {year}
@@ -112,7 +95,7 @@ export default function CompletedArchive({
         걸어두면 화면이 넓어질수록 칸에서 남는 만큼이 그대로 여백이 되므로, 간격을
         px 로 크게 박아두지 않아도 넓은 화면에서 알아서 넉넉해진다.
       */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-4">
+      <div className="grid grid-cols-5 gap-3 sm:gap-4">
         {shown.map((item, index) => (
           <ArchiveCover
             key={item.id}
@@ -124,19 +107,22 @@ export default function CompletedArchive({
         ))}
       </div>
 
-      {/* 세 종류가 아래 공간을 정확히 3등분하고, 칸 사이는 세로선으로 나눈다 */}
-      <div className="grid grid-cols-3 divide-x divide-neutral-100 border-t border-neutral-100 pt-5">
+      {/* 배경 판 없이 숫자와 아이콘만 남기고, 얇은 구분선으로 세 종류를 나눈다. */}
+      <div className="grid grid-cols-3 border-t border-neutral-100 pt-5">
         {KIND_ORDER.map((kind) => {
           const Icon = kindIcon[kind]
 
           return (
-            <div key={kind} className="flex items-center justify-center gap-3 text-neutral-600">
-              <Icon className="size-6 text-neutral-400" aria-hidden />
+            <div
+              key={kind}
+              className="flex items-center justify-center gap-3 border-r border-neutral-100 last:border-r-0"
+            >
+              <Icon className="size-6 text-neutral-400" aria-hidden strokeWidth={1.75} />
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-neutral-900">
+                <span className="font-serif text-2xl font-semibold text-neutral-900 tabular-nums">
                   {items.filter((item) => item.kind === kind).length}
                 </span>
-                <span className="text-xs tracking-wide text-neutral-400">{kindLabel[kind]}</span>
+                <span className="text-xs text-neutral-500">{kindLabel[kind]}</span>
               </div>
             </div>
           )
@@ -162,21 +148,21 @@ function ArchiveCover({
   const longPress = useLongPressPreview()
 
   return (
-    <Link
-      to={item.href}
-      {...longPress.handlers}
-      className="group flex flex-col items-center gap-1.5"
-    >
+    <Link to={item.href} {...longPress.handlers} className="group flex flex-col items-center gap-2">
       {/*
         폭은 반드시 이 바깥 div 로 잡는다 — Cover 는 size="lg" 일 때 스스로 w-full 을
         붙이므로, className 으로 폭을 넘기면 같은 width 유틸리티끼리 부딪혀서
         어느 쪽이 이길지 Tailwind 의 출력 순서에 달리게 된다(실제로 w-full 이 이겼다).
       */}
       <div className="relative w-full max-w-28">
-        <Cover work={item} size="lg" className="w-full" />
+        <Cover
+          work={item}
+          size="lg"
+          className="w-full transition-transform group-hover:-translate-y-0.5"
+        />
         {rank && <RankSticker rank={rank} size="sm" className="-top-1.5 -left-1.5 -rotate-6" />}
       </div>
-      <span className="text-xs text-neutral-400">{order}</span>
+      <span className="text-xs text-neutral-500 tabular-nums">{order}</span>
 
       <WorkTooltip item={item} users={users} anchor={longPress.anchor} open={longPress.open} />
     </Link>

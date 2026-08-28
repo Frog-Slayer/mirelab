@@ -1,3 +1,4 @@
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
 import PickNote from '@/components/PickNote'
 import WorkCardGrid from '@/components/WorkCardGrid'
@@ -14,14 +15,13 @@ export default function RecentWorks({
   studySlug: string
 }) {
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-4 border-b border-neutral-200 pb-3">
-        <h2 className="text-xl font-semibold tracking-[-0.03em]">최근 추가된 작품</h2>
-        <Link
-          to={`/${studySlug}/books`}
-          className="shrink-0 rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-900"
-        >
-          더보기 +
+    <section className="flex flex-col gap-5">
+      {/* 제목 아래 가로선은 두지 않는다 — 섹션 사이 여백이 이미 경계 역할을 한다 */}
+      <div className="flex items-end justify-between gap-4">
+        <h2 className="text-xl font-semibold tracking-tight">최근 추가된 작품</h2>
+        <Link to={`/${studySlug}/books`} className="app-pill">
+          더보기
+          <ArrowRight aria-hidden className="size-4" strokeWidth={2} />
         </Link>
       </div>
 

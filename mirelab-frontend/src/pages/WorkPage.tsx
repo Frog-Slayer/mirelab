@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CalendarPlus, MoreHorizontal, Plus, Star } from 'lucide-react'
 import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import RankSticker, { type Rank } from '@/components/RankSticker'
@@ -17,6 +18,7 @@ import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import { ApiError } from '@/lib/api'
 import { formatRating } from '@/lib/format'
+import { completedYearOf, publishedRatingsOf, topRanksByYear } from '@/lib/workRanking'
 import { getWorkPosts } from '@/lib/postApi'
 import { addSession } from '@/lib/sessionApi'
 import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
@@ -175,7 +177,7 @@ export default function WorkPage() {
   const deleteBlock = useMutation({ mutationFn: removeWorkBlock, onSuccess: refresh })
 
   if (!isPending && data === null) return <NotFoundPage />
-  if (!data || !study || !user) return <p className="text-sm text-neutral-400">불러오는 중…</p>
+  if (!data || !study || !user) return <p className="text-sm text-neutral-500">불러오는 중…</p>
 
   const { work } = data
   const slots = workSlots?.slots ?? []
@@ -184,8 +186,23 @@ export default function WorkPage() {
     values.find((value) => value.slotDefId === slotId && value.userId === user.id)
   const step = nextStep[work.status]
 
-  const hallIndex = hallOfFame?.findIndex((w) => w.id === work.id) ?? -1
-  const hallRank = hallIndex >= 0 && hallIndex < 9 ? ((hallIndex + 1) as Rank) : null
+  /**
+   * 순위는 "다 읽은 그 해" 안에서 매긴다 — 홈 아카이브가 연도별로 묶여 있으므로 같은 축을
+   * 쓴다([topRanksByYear]). 올해 것은 연도를 굳이 밝히지 않고, 지난 해 것만 "2024년 2위"
+   * 처럼 근거를 붙여 어느 해 기준인지 드러낸다.
+   */
+  const yearRanks = topRanksByYear(
+    (hallOfFame ?? []).map((w) => ({
+      id: w.id,
+      average: w.average,
+      voterCount: w.voterCount,
+      finishedAt: w.finishedAt,
+      publishedRatings: publishedRatingsOf(w),
+    })),
+  )
+  const rank = (yearRanks.get(work.id) ?? null) as Rank | null
+  const rankYear = completedYearOf(work)
+  const showRankYear = rankYear !== null && rankYear !== new Date().getFullYear()
 
   // 평점·한줄평은 "내 기록" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
   const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
@@ -215,10 +232,20 @@ export default function WorkPage() {
     try {
       await Promise.all([
         input.rating !== undefined && ratingSlot
-          ? saveValue({ targetId: work.id, slotDefId: ratingSlot.id, value: { n: input.rating }, draft: false })
+          ? saveValue({
+              targetId: work.id,
+              slotDefId: ratingSlot.id,
+              value: { n: input.rating },
+              draft: false,
+            })
           : Promise.resolve(),
         input.blurb !== undefined && blurbSlot
-          ? saveValue({ targetId: work.id, slotDefId: blurbSlot.id, value: { text: input.blurb }, draft: false })
+          ? saveValue({
+              targetId: work.id,
+              slotDefId: blurbSlot.id,
+              value: { text: input.blurb },
+              draft: false,
+            })
           : Promise.resolve(),
       ])
       if (input.published !== undefined) {
@@ -254,9 +281,18 @@ export default function WorkPage() {
         onToggle={() => setDrawerOpen((v) => !v)}
       />
 
-      <div className="flex flex-col gap-10">
-        <header className="relative flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
-          {hallRank && <RankSticker rank={hallRank} className="-top-2 -left-2 -rotate-6" />}
+      <div className="flex flex-col gap-12">
+        <header className="app-card relative flex flex-col gap-6 p-6 sm:p-8">
+          {rank && (
+            <>
+              <RankSticker rank={rank} className="-top-2 -left-2 -rotate-6" />
+              {showRankYear && (
+                <span className="absolute -top-1 left-11 rounded-full bg-white px-2 py-0.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-950/[0.08]">
+                  {rankYear}년 {rank}위
+                </span>
+              )}
+            </>
+          )}
 
           <div className="flex items-center justify-end gap-2">
             {work.status === WorkStatus.READING && (
@@ -265,7 +301,8 @@ export default function WorkPage() {
                 onClick={() => setStartOpen(true)}
                 className="app-button app-button-secondary"
               >
-                + 일정 추가
+                <CalendarPlus aria-hidden className="size-4" strokeWidth={1.75} />
+                일정 추가
               </button>
             )}
             {step && (
@@ -288,7 +325,7 @@ export default function WorkPage() {
               className="app-button app-button-secondary app-icon-button"
               aria-label="정보 수정 · 상태 바꾸기 · 삭제"
             >
-              …
+              <MoreHorizontal aria-hidden className="size-4" strokeWidth={2} />
             </button>
           </div>
 
@@ -299,27 +336,27 @@ export default function WorkPage() {
               </div>
               <div className="flex flex-col gap-2.5 pt-0.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-neutral-400">
+                  <span className="text-xs font-medium text-neutral-500">
                     {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
                   </span>
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                       work.status === WorkStatus.READING
-                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700'
-                        : 'border-neutral-200 text-neutral-500'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-neutral-100 text-neutral-600'
                     }`}
                   >
                     {statusLabel[work.status]}
                   </span>
                 </div>
-                <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">
+                <h1 className="text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
                   {work.title}
                 </h1>
                 <p className="text-base text-neutral-500">
                   {work.author} · {work.year}
                 </p>
                 {work.actors && work.actors.length > 0 && (
-                  <p className="text-xs text-neutral-400">출연 {work.actors.join(' · ')}</p>
+                  <p className="text-xs text-neutral-500">출연 {work.actors.join(' · ')}</p>
                 )}
                 {work.description && (
                   <p className="min-h-[3.75rem] max-w-xl text-sm leading-relaxed text-neutral-600">
@@ -350,7 +387,7 @@ export default function WorkPage() {
                   <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
                 </>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-neutral-400">
+                <div className="flex items-center gap-2 text-sm text-neutral-500">
                   <span>평가 없음</span>
                   <Stars value={0} />
                 </div>
@@ -359,10 +396,12 @@ export default function WorkPage() {
           </div>
 
           {work.status !== WorkStatus.CANDIDATE && (
-            <div className="border-t border-neutral-100 pt-5">
-              <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
-                멤버별 평점
-              </span>
+            <div className="app-panel p-4 sm:p-5">
+              {/*
+                예전에는 mono·대문자·넓은 자간의 잔글씨였다. 한글에는 mono 도 대문자도 없어서
+                "멤버별 평점" 이 그냥 흐린 잔글씨로만 보였다 — 크기와 굵기로 소제목임을 밝힌다.
+              */}
+              <span className="text-xs font-semibold text-neutral-500">멤버별 평점</span>
               <div className="mt-3 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {members.map((m) => {
                   // 남의 점수는 공개한 것만 내려오므로, 점수가 없다고 안 매긴 건 아니다 —
@@ -375,17 +414,19 @@ export default function WorkPage() {
                     <>
                       <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
                         {score === undefined ? (
-                          <span className="text-neutral-300">{rated ? '비공개' : '아직'}</span>
+                          <span className="text-neutral-400">{rated ? '비공개' : '아직'}</span>
                         ) : (
                           <>
-                            <span aria-hidden>★</span>
-                            <span className="font-mono tabular-nums">{score.toFixed(1)}</span>
+                            <Star aria-hidden className="size-3 fill-amber-400 text-amber-400" />
+                            <span className="tabular-nums">{score.toFixed(1)}</span>
                           </>
                         )}
                       </span>
                       <div className="flex items-center gap-1.5 pr-10">
                         {mine ? (
-                          <span className="truncate text-sm font-medium text-neutral-800">{m.name}</span>
+                          <span className="truncate text-sm font-medium text-neutral-800">
+                            {m.name}
+                          </span>
                         ) : (
                           <Link
                             to={`/@${m.username}`}
@@ -417,15 +458,12 @@ export default function WorkPage() {
                       key={m.id}
                       type="button"
                       onClick={() => setRatingOpen(true)}
-                      className="relative flex h-full cursor-pointer flex-col gap-1.5 rounded-lg border border-emerald-300 bg-white p-3 text-left transition-colors hover:border-emerald-500"
+                      className="app-tile relative flex h-full cursor-pointer flex-col gap-1.5 p-3 text-left ring-emerald-400/70 hover:ring-emerald-500"
                     >
                       {content}
                     </button>
                   ) : (
-                    <div
-                      key={m.id}
-                      className="relative flex h-full flex-col gap-1.5 rounded-lg border border-neutral-200 bg-white p-3"
-                    >
+                    <div key={m.id} className="app-tile relative flex h-full flex-col gap-1.5 p-3">
                       {content}
                     </div>
                   )
@@ -477,7 +515,7 @@ export default function WorkPage() {
         )}
 
         {linkedPosts.length > 0 && (
-          <section className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <section className="app-card p-6">
             <h2 className="text-xl font-semibold">이 책에 연결된 글</h2>
             <div className="mt-4 divide-y divide-neutral-100">
               {linkedPosts.map((post) => (
@@ -488,17 +526,19 @@ export default function WorkPage() {
                 >
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium hover:underline">{post.title || '제목 없음'}</h3>
-                    {!post.published && <span className="text-xs text-neutral-400">초안</span>}
+                    {!post.published && <span className="text-xs text-neutral-500">초안</span>}
                   </div>
-                  {post.excerpt && <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{post.excerpt}</p>}
-                  <p className="mt-2 text-xs text-neutral-400">{post.author.name}</p>
+                  {post.excerpt && (
+                    <p className="mt-1 line-clamp-2 text-sm text-neutral-600">{post.excerpt}</p>
+                  )}
+                  <p className="mt-2 text-xs text-neutral-500">{post.author.name}</p>
                 </Link>
               ))}
             </div>
           </section>
         )}
 
-        <section className="flex flex-col gap-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <section className="app-card flex flex-col gap-6 p-6">
           <div>
             <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
             <p className="mt-1 text-sm text-neutral-500">
@@ -529,15 +569,15 @@ export default function WorkPage() {
                 <button
                   type="button"
                   onClick={() => setCreatingBlock(true)}
-                  className="flex items-center justify-center rounded-lg border border-dashed border-neutral-300 p-4 text-lg text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"
+                  className="flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-neutral-300 p-4 text-neutral-500 transition-colors hover:border-neutral-400 hover:bg-neutral-50 hover:text-neutral-700"
                   aria-label="새 블록 추가"
                 >
-                  +
+                  <Plus aria-hidden className="size-5" strokeWidth={1.75} />
                 </button>
               )}
             </div>
           ) : (
-            <p className="text-sm text-neutral-400">
+            <p className="text-sm text-neutral-500">
               이 작품은 아직 실시간 기록 백엔드로 옮겨지지 않았습니다 — 목 데이터라 여기서는 안
               됩니다.
             </p>

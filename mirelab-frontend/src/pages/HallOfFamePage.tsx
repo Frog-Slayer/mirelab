@@ -7,6 +7,7 @@ import RecentWorks from '@/components/RecentWorks'
 import { useStudy } from '@/hooks/useStudy'
 import { getBlurbs, getLibrary, type LibraryEntry } from '@/lib/workApi'
 import { getStudyPosts } from '@/lib/postApi'
+import { publishedRatingsOf } from '@/lib/workRanking'
 import { WorkStatus } from '@/types'
 
 /** 최근 추가된 후보 작품은 4개까지만 보여준다 (그리드 한 줄과 맞춘 개수) */
@@ -55,10 +56,7 @@ export default function HallOfFamePage() {
     href: `/${study.slug}/books/${work.id}`,
     average: work.average,
     voterCount: work.voterCount,
-    // ratings 에는 내 비공개 점수도 섞여 있으므로, 공개된 사람의 것만 추린다.
-    publishedRatings: work.publishedRatingUserIds
-      .map((userId) => work.ratings[userId])
-      .filter((score): score is number => typeof score === 'number'),
+    publishedRatings: publishedRatingsOf(work),
     addedBy: work.addedBy,
     reason: work.reason,
     description: work.description,
@@ -84,8 +82,8 @@ export default function HallOfFamePage() {
     .map((work) => toItem(work))
 
   return (
-    <div className="flex flex-col gap-10">
-      {isPending && <p className="text-sm text-neutral-400">불러오는 중…</p>}
+    <div className="flex flex-col gap-12">
+      {isPending && <p className="text-sm text-neutral-500">불러오는 중…</p>}
 
       <CompletedArchive items={completedItems} users={members} studySlug={study.slug} />
 

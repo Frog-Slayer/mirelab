@@ -80,7 +80,7 @@ export default function RateDialog({
       onClick={(e) => {
         if (e.target === ref.current) cancel()
       }}
-      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl ring-1 ring-neutral-950/10 backdrop:bg-neutral-900/40 backdrop:backdrop-blur-sm"
     >
       <div className="flex flex-col gap-5 p-5">
         <div className="flex items-start justify-between gap-4">
@@ -118,7 +118,7 @@ export default function RateDialog({
                   aria-pressed={publishedLocal === value}
                   className={`cursor-pointer rounded-md px-2.5 py-1.5 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                     publishedLocal === value
-                      ? 'bg-white font-medium text-neutral-900 shadow-sm'
+                      ? 'bg-white font-medium text-neutral-900 ring-1 ring-neutral-950/[0.06]'
                       : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
@@ -141,7 +141,7 @@ export default function RateDialog({
               value={blurb}
               onChange={(e) => setBlurb(e.target.value)}
               placeholder="한 줄로"
-              className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-neutral-400 focus:border-emerald-600"
+              className="app-input w-full leading-relaxed"
             />
           </div>
         )}
