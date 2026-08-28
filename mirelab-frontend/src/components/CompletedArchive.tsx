@@ -12,6 +12,17 @@ function yearOf(item: BookcaseItem) {
   return item.finishedAt ? new Date(item.finishedAt).getFullYear() : null
 }
 
+/**
+ * 최고·최저를 하나씩 뺀 나머지의 평균. 점수가 둘 이하면 다 잘려나가 남는 게 없으므로
+ * 비교할 수 없다는 뜻으로 null 을 준다.
+ */
+function trimmedAverage(scores: number[] | undefined): number | null {
+  if (!scores || scores.length < 3) return null
+
+  const middle = [...scores].sort((a, b) => a - b).slice(1, -1)
+  return middle.reduce((sum, score) => sum + score, 0) / middle.length
+}
+
 export default function CompletedArchive({
   items,
   users,
@@ -34,11 +45,24 @@ export default function CompletedArchive({
    * 그 해의 공개 평점 1~3위. 순서는 완료순으로 두고 스티커만 얹으므로, 여기서는 등수만
    * 따로 계산해 둔다. 아무도 공개로 매기지 않은 작품(voterCount 0)은 평균이 0 이라
    * 등수에서 뺀다 — 안 그러면 "0점짜리 3위"가 생긴다.
+   *
+   * 평균이 같으면 최고·최저를 뺀 나머지의 평균으로 가른다 — 한 사람의 극단적인 점수에
+   * 덜 휘둘리는 쪽을 위로 본다. 점수가 둘 이하라 잘라낼 게 없거나 그마저 같으면 완료순
+   * 그대로 둔다(sort 가 안정 정렬이라 입력 순서인 완료순이 유지된다).
    */
   const rankById = new Map<string, 1 | 2 | 3>()
   shown
     .filter((item) => (item.voterCount ?? 0) > 0)
-    .sort((a, b) => (b.average ?? 0) - (a.average ?? 0))
+    .sort((a, b) => {
+      const byAverage = (b.average ?? 0) - (a.average ?? 0)
+      if (byAverage !== 0) return byAverage
+
+      const aTrimmed = trimmedAverage(a.publishedRatings)
+      const bTrimmed = trimmedAverage(b.publishedRatings)
+      if (aTrimmed !== null && bTrimmed !== null) return bTrimmed - aTrimmed
+
+      return 0
+    })
     .slice(0, 3)
     .forEach((item, index) => rankById.set(item.id, (index + 1) as 1 | 2 | 3))
 

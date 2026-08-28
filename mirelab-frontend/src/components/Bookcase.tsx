@@ -27,6 +27,8 @@ export interface BookcaseItem {
   /** 평점·고른 이유 — 있으면 호버 시 카드에 같이 보여준다 */
   average?: number
   voterCount?: number
+  /** 공개된 개별 점수들 — 평균이 같을 때 순위를 가르는 데 쓴다 */
+  publishedRatings?: number[]
   addedBy?: string
   reason?: string
   description?: string

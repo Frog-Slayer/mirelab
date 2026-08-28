@@ -55,6 +55,10 @@ export default function HallOfFamePage() {
     href: `/${study.slug}/books/${work.id}`,
     average: work.average,
     voterCount: work.voterCount,
+    // ratings 에는 내 비공개 점수도 섞여 있으므로, 공개된 사람의 것만 추린다.
+    publishedRatings: work.publishedRatingUserIds
+      .map((userId) => work.ratings[userId])
+      .filter((score): score is number => typeof score === 'number'),
     addedBy: work.addedBy,
     reason: work.reason,
     description: work.description,
