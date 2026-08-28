@@ -27,6 +27,7 @@ export default function RecentWorks({
 
       <WorkCardGrid
         items={items}
+        users={users}
         footer={(item) => (
           <PickNote addedBy={item.addedBy} reason={item.reason} users={users} stacked />
         )}

@@ -2,13 +2,30 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { BookcaseItem } from '@/components/Bookcase'
 import KindTag from '@/components/KindTag'
+import WorkTooltip from '@/components/WorkTooltip'
+import { useLongPressPreview } from '@/hooks/useLongPressPreview'
+import type { User } from '@/types'
 
 /** 표지 + 배지/제목/저자, 그 아래 footer(선정인·사유 또는 별점)로 채우는 작품 카드 */
-export default function WorkCard({ item, footer }: { item: BookcaseItem; footer: ReactNode }) {
+export default function WorkCard({
+  item,
+  footer,
+  users,
+}: {
+  item: BookcaseItem
+  footer: ReactNode
+  /** 주면 호버할 때 설명 카드를 띄운다 */
+  users?: User[]
+}) {
+  const longPress = useLongPressPreview()
+
   return (
+    // 카드 자체에는 overflow-hidden 을 걸지 않는다 — 호버 카드가 카드 위쪽 바깥에 그려지므로
+    // 잘려 버린다. 표지 모서리는 안쪽 div 가 알아서 자른다.
     <Link
       to={item.href}
-      className="group flex gap-1.5 overflow-hidden rounded-lg border border-neutral-200 bg-white p-1.5 transition hover:border-emerald-300"
+      {...(users ? longPress.handlers : {})}
+      className="group relative flex gap-1.5 rounded-lg border border-neutral-200 bg-white p-1.5 transition hover:z-20 hover:border-emerald-300"
     >
       <div className="aspect-[2/3] w-[34%] flex-none overflow-hidden rounded-md bg-white">
         {item.coverUrl ? (
@@ -31,6 +48,8 @@ export default function WorkCard({ item, footer }: { item: BookcaseItem; footer:
         </div>
         {footer}
       </div>
+
+      {users && <WorkTooltip item={item} users={users} open={longPress.open} />}
     </Link>
   )
 }

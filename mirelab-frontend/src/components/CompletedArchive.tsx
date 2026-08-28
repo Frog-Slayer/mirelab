@@ -1,8 +1,12 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
+import RankSticker from '@/components/RankSticker'
+import WorkTooltip from '@/components/WorkTooltip'
 import type { BookcaseItem } from '@/components/Bookcase'
+import { useLongPressPreview } from '@/hooks/useLongPressPreview'
 import { KIND_ORDER, kindIcon, kindLabel } from '@/lib/workKind'
+import type { User } from '@/types'
 
 function yearOf(item: BookcaseItem) {
   return item.finishedAt ? new Date(item.finishedAt).getFullYear() : null
@@ -10,9 +14,12 @@ function yearOf(item: BookcaseItem) {
 
 export default function CompletedArchive({
   items,
+  users,
   studySlug,
 }: {
   items: BookcaseItem[]
+  /** 호버 카드에서 "누가 골랐는지"를 보여주려면 필요하다 */
+  users: User[]
   studySlug: string
 }) {
   const years = [...new Set(items.map(yearOf).filter((y): y is number => y !== null))].sort(
@@ -22,6 +29,18 @@ export default function CompletedArchive({
   const activeYear = selectedYear !== null && years.includes(selectedYear) ? selectedYear : years[0]
 
   const shown = items.filter((item) => yearOf(item) === activeYear)
+
+  /**
+   * 그 해의 공개 평점 1~3위. 순서는 완료순으로 두고 스티커만 얹으므로, 여기서는 등수만
+   * 따로 계산해 둔다. 아무도 공개로 매기지 않은 작품(voterCount 0)은 평균이 0 이라
+   * 등수에서 뺀다 — 안 그러면 "0점짜리 3위"가 생긴다.
+   */
+  const rankById = new Map<string, 1 | 2 | 3>()
+  shown
+    .filter((item) => (item.voterCount ?? 0) > 0)
+    .sort((a, b) => (b.average ?? 0) - (a.average ?? 0))
+    .slice(0, 3)
+    .forEach((item, index) => rankById.set(item.id, (index + 1) as 1 | 2 | 3))
 
   const yearRange =
     years.length === 0 ? null : years.length === 1 ? `${years[0]}` : `${years[years.length - 1]} – ${years[0]}`
@@ -71,17 +90,13 @@ export default function CompletedArchive({
       */}
       <div className="grid grid-cols-5 gap-2 sm:gap-4">
         {shown.map((item, index) => (
-          <Link key={item.id} to={item.href} className="flex flex-col items-center gap-1.5">
-            {/*
-              폭은 반드시 이 바깥 div 로 잡는다 — Cover 는 size="lg" 일 때 스스로 w-full 을
-              붙이므로, className 으로 폭을 넘기면 같은 width 유틸리티끼리 부딪혀서
-              어느 쪽이 이길지 Tailwind 의 출력 순서에 달리게 된다(실제로 w-full 이 이겼다).
-            */}
-            <div className="w-full max-w-28">
-              <Cover work={item} size="lg" className="w-full" />
-            </div>
-            <span className="text-xs text-neutral-400">{index + 1}</span>
-          </Link>
+          <ArchiveCover
+            key={item.id}
+            item={item}
+            users={users}
+            order={index + 1}
+            rank={rankById.get(item.id)}
+          />
         ))}
       </div>
 
@@ -104,5 +119,42 @@ export default function CompletedArchive({
         })}
       </div>
     </section>
+  )
+}
+
+function ArchiveCover({
+  item,
+  users,
+  order,
+  rank,
+}: {
+  item: BookcaseItem
+  users: User[]
+  /** 그 해에서 몇 번째로 끝냈는지 — 표지 아래 번호 */
+  order: number
+  /** 공개 평점 1~3위면 표지에 스티커가 붙는다 */
+  rank?: 1 | 2 | 3
+}) {
+  const longPress = useLongPressPreview()
+
+  return (
+    <Link
+      to={item.href}
+      {...longPress.handlers}
+      className="group relative flex flex-col items-center gap-1.5 hover:z-20"
+    >
+      {/*
+        폭은 반드시 이 바깥 div 로 잡는다 — Cover 는 size="lg" 일 때 스스로 w-full 을
+        붙이므로, className 으로 폭을 넘기면 같은 width 유틸리티끼리 부딪혀서
+        어느 쪽이 이길지 Tailwind 의 출력 순서에 달리게 된다(실제로 w-full 이 이겼다).
+      */}
+      <div className="relative w-full max-w-28">
+        <Cover work={item} size="lg" className="w-full" />
+        {rank && <RankSticker rank={rank} size="sm" className="-top-1.5 -left-1.5 -rotate-6" />}
+      </div>
+      <span className="text-xs text-neutral-400">{order}</span>
+
+      <WorkTooltip item={item} users={users} open={longPress.open} />
+    </Link>
   )
 }
