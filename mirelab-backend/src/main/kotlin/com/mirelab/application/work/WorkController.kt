@@ -38,6 +38,15 @@ class WorkController(
         return workService.library(slug)
     }
 
+    @GetMapping("/api/studies/{slug}/blurbs")
+    fun blurbs(
+        @PathVariable slug: String,
+        @AuthenticationPrincipal principal: AuthPrincipal,
+    ): List<BlurbResponse> {
+        membershipGuard.requireStudy(slug, principal.userId)
+        return workService.blurbs(slug)
+    }
+
     @PostMapping("/api/studies/{slug}/works")
     fun create(
         @PathVariable slug: String,

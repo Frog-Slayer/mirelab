@@ -8,12 +8,6 @@ export const kindLabel: Record<WorkKind, string> = {
   [WorkKind.GAME]: '게임',
 }
 
-export const kindTextClass: Record<WorkKind, string> = {
-  [WorkKind.BOOK]: 'text-red-600',
-  [WorkKind.MOVIE]: 'text-blue-600',
-  [WorkKind.GAME]: 'text-emerald-600',
-}
-
 export const kindIcon: Record<WorkKind, typeof BookOpen> = {
   [WorkKind.BOOK]: BookOpen,
   [WorkKind.MOVIE]: Clapperboard,

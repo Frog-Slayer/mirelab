@@ -2,9 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import type { BookcaseItem } from '@/components/Bookcase'
 import CompletedArchive from '@/components/CompletedArchive'
 import PostList from '@/components/PostList'
+import BlurbTicker from '@/components/BlurbTicker'
 import RecentWorks from '@/components/RecentWorks'
 import { useStudy } from '@/hooks/useStudy'
-import { getLibrary, type LibraryEntry } from '@/lib/workApi'
+import { getBlurbs, getLibrary, type LibraryEntry } from '@/lib/workApi'
 import { getStudyPosts } from '@/lib/postApi'
 import { WorkStatus } from '@/types'
 
@@ -22,6 +23,11 @@ export default function HallOfFamePage() {
   const { data: posts = [] } = useQuery({
     queryKey: ['studyPosts', study?.slug],
     queryFn: () => getStudyPosts(study!.slug),
+    enabled: !!study,
+  })
+  const { data: blurbs = [] } = useQuery({
+    queryKey: ['studyBlurbs', study?.slug],
+    queryFn: () => getBlurbs(study!.slug),
     enabled: !!study,
   })
 
@@ -65,6 +71,8 @@ export default function HallOfFamePage() {
       {isPending && <p className="text-sm text-neutral-400">불러오는 중…</p>}
 
       <CompletedArchive items={completedItems} studySlug={study.slug} />
+
+      <BlurbTicker blurbs={blurbs} users={members} studySlug={study.slug} />
 
       {posts.length > 0 && <PostList posts={posts} />}
 

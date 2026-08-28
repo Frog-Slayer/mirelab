@@ -4,6 +4,7 @@ import com.mirelab.application.session.toResponse
 import com.mirelab.domain.slot.SlotType
 import com.mirelab.domain.slot.SlotValue
 import com.mirelab.domain.slot.SlotValueContext
+import com.mirelab.domain.slot.Visibility
 import com.mirelab.domain.user.Role
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkStatus
@@ -62,6 +63,66 @@ class WorkService(
             val sessionCount = sessionCountByWorkId[work.id] ?: 0
             rank(work, memberIds, valuesByWorkId[work.id] ?: emptyList()).toLibraryEntry(sessionCount)
         }
+    }
+
+    /**
+     * 스터디에 공개된 한줄평 전부 — 홈에서 그중 하나를 뽑아 보여준다.
+     *
+     * 어느 칸이 별점이고 어느 칸이 한줄평이냐는 규칙은
+     * [com.mirelab.application.slot.SlotService.ratingBundleIds] 와 같아야 한다. 한쪽만
+     * 바뀌면 작품 상세에서는 한 덩어리인 평가가 여기서는 다르게 잘린다.
+     *
+     * 별점과 한줄평은 같은 값 테이블에 사람·작품별로 따로 들어 있으므로, 작품 전체의 값을
+     * 한 번에 읽어(N+1 방지) 사람+작품 단위로 다시 짝지어 준다. 별점 없이 한줄평만 있는
+     * 경우는 화면이 별점을 함께 보여주므로 뺀다.
+     */
+    @Transactional(readOnly = true)
+    fun blurbs(slug: String): List<BlurbResponse> {
+        val study = studyRepository.findBySlug(slug) ?: return emptyList()
+        val studyId = requireNotNull(study.id)
+        val slots = slotDefRepository.findByStudyIdOrderBySortOrder(studyId).filter { !it.hidden }
+        val ratingSlotId = slots.firstOrNull { it.type == SlotType.RATING }?.id ?: return emptyList()
+        val blurbSlotId = slots
+            .firstOrNull { it.type == SlotType.TEXT_SHORT && it.visibility != Visibility.PRIVATE }
+            ?.id
+            ?: return emptyList()
+
+        val memberIds = effectiveMemberIds(studyId)
+        val works = workRepository.findByStudyId(studyId)
+        val workById = works.associateBy { requireNotNull(it.id) }
+        val workIds = works.mapNotNull { it.id }
+        if (workIds.isEmpty()) return emptyList()
+
+        // 공개된 값만 — 비공개 평가는 남에게 보이지 않는 게 평가 다이얼로그의 약속이다.
+        val published = slotValueRepository.findByWorkIdInAndContext(workIds, SlotValueContext.STUDY)
+            .filter { !it.draft && it.published && it.user.id?.let(memberIds::contains) == true }
+
+        val ratingByKey = published.filter { it.slotDef.id == ratingSlotId }
+            .associateBy { requireNotNull(it.work.id) to requireNotNull(it.user.id) }
+
+        return published
+            .filter { it.slotDef.id == blurbSlotId }
+            .mapNotNull { value ->
+                val text = (value.value["text"] as? String)?.trim()
+                if (text.isNullOrEmpty()) return@mapNotNull null
+
+                val workId = requireNotNull(value.work.id)
+                val userId = requireNotNull(value.user.id)
+                val work = workById[workId] ?: return@mapNotNull null
+                val rating = ratingByKey[workId to userId]
+                    ?.let { (it.value["n"] as? Number)?.toDouble() }
+                    ?: return@mapNotNull null
+
+                BlurbResponse(
+                    workId = workId,
+                    userId = userId,
+                    kind = work.kind,
+                    title = work.title,
+                    coverUrl = work.coverUrl,
+                    rating = rating,
+                    text = text,
+                )
+            }
     }
 
     @Transactional(readOnly = true)

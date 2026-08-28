@@ -166,3 +166,19 @@ data class WorkDetailResponse(
     val work: RankedWorkResponse,
     val sessions: List<SessionResponse>,
 )
+
+/**
+ * 공개된 한줄평 하나 — 누가, 어느 작품에, 몇 점과 함께 남겼는지.
+ *
+ * 작성자 정보는 id 만 준다. 화면이 이미 스터디 멤버 목록을 들고 있어서 거기서 이름·아바타를
+ * 찾으면 되고, 여기서 유저를 통째로 실으면 목록 하나에 같은 사람이 여러 번 복사된다.
+ */
+data class BlurbResponse(
+    val workId: UUID,
+    val userId: UUID,
+    val kind: WorkKind,
+    val title: String,
+    val coverUrl: String?,
+    val rating: Double,
+    val text: String,
+)
