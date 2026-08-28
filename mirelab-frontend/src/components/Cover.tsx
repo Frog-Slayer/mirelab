@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import type { Work } from '@/types'
 import { WorkKind } from '@/types'
 
+const kindLabel: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: '책',
+  [WorkKind.MOVIE]: '영화',
+  [WorkKind.GAME]: '게임',
+}
+
 interface Props {
   work: Pick<Work, 'title' | 'kind' | 'coverUrl'>
   size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
@@ -52,7 +58,7 @@ export default function Cover({ work, size = 'md', className = '' }: Props) {
           <span
             className={`${size === 'xs' ? 'text-[9px]' : 'text-xs'} font-medium text-neutral-400`}
           >
-            {work.kind === WorkKind.MOVIE ? '영화' : '책'}
+            {kindLabel[work.kind]}
           </span>
         )}
         {size !== 'xxs' && size !== 'xs' && size !== 'sm' && (

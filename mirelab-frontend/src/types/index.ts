@@ -1,6 +1,6 @@
 // enum 대신 as const — tsconfig 의 erasableSyntaxOnly 때문에 enum 을 쓸 수 없다.
 
-export const WorkKind = { BOOK: 'BOOK', MOVIE: 'MOVIE' } as const
+export const WorkKind = { BOOK: 'BOOK', MOVIE: 'MOVIE', GAME: 'GAME' } as const
 export type WorkKind = (typeof WorkKind)[keyof typeof WorkKind]
 
 /** 후보 = 읽고 싶은 것, 읽는 중 = 회차가 돌아가는 중, 완료 = 별점이 확정된 것 */

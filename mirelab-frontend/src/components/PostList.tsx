@@ -9,11 +9,13 @@ const POST_LIST_LIMIT = 5
 const workTagLabel: Record<WorkKind, string> = {
   [WorkKind.BOOK]: '독후감',
   [WorkKind.MOVIE]: '영화 감상',
+  [WorkKind.GAME]: '게임 기록',
 }
 
 const workTagClass: Record<WorkKind, string> = {
   [WorkKind.BOOK]: 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20',
   [WorkKind.MOVIE]: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
+  [WorkKind.GAME]: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
 }
 
 export default function PostList({ posts }: { posts: PostSummary[] }) {

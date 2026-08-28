@@ -41,6 +41,8 @@ export interface BookcaseItem {
   actors?: string[]
   /** 1~3 이면 표지 모서리에 금·은·동 순위 스티커를 붙인다 */
   rank?: number
+  /** 완료 연도별로 묶어 보여줄 때 쓴다 */
+  finishedAt?: string | null
 }
 
 const statusLabel: Record<WorkStatus, string> = {
