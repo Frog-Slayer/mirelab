@@ -19,9 +19,9 @@ export default function RecentWorks({
         <h2 className="text-xl font-semibold tracking-[-0.03em]">최근 추가된 작품</h2>
         <Link
           to={`/${studySlug}/books`}
-          className="shrink-0 text-sm font-medium text-neutral-500 hover:text-neutral-900"
+          className="shrink-0 rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-900"
         >
-          더보기
+          더보기 +
         </Link>
       </div>
 

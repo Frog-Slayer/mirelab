@@ -26,9 +26,9 @@ export default function PostList({ posts }: { posts: PostSummary[] }) {
         <button
           type="button"
           onClick={() => window.alert('피드 모아둔 페이지로 갈 거임 ㅇㅇ')}
-          className="shrink-0 cursor-pointer text-sm font-medium text-neutral-500 hover:text-neutral-900"
+          className="shrink-0 cursor-pointer rounded-full border border-neutral-200 px-4 py-1.5 text-sm font-medium text-neutral-600 transition hover:border-neutral-400 hover:text-neutral-900"
         >
-          더보기
+          더보기 +
         </button>
       </div>
 
