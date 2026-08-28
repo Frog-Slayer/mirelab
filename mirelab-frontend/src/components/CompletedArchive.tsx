@@ -1,11 +1,8 @@
 import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router'
-import Cover from '@/components/Cover'
-import RankSticker from '@/components/RankSticker'
-import WorkTooltip from '@/components/WorkTooltip'
+import { WorkTile, WorkTileGrid } from '@/components/WorkTile'
 import type { BookcaseItem } from '@/components/Bookcase'
-import { useLongPressPreview } from '@/hooks/useLongPressPreview'
 import { KIND_ORDER, kindIcon, kindLabel } from '@/lib/workKind'
 import { completedYearOf, topRanksByYear } from '@/lib/workRanking'
 import type { User } from '@/types'
@@ -50,7 +47,7 @@ export default function CompletedArchive({
         : `${years[years.length - 1]} – ${years[0]}`
 
   return (
-    <section className="app-card flex flex-col gap-6 p-5 sm:p-7">
+    <section className="flex flex-col gap-8">
       {/* 제목과 연도 탭 사이는 선이 아니라 여백으로 끊는다 — 판의 경계는 app-card 한 겹뿐이다 */}
       <div className="flex flex-col gap-5">
         <div className="flex items-start justify-between gap-4">
@@ -91,21 +88,22 @@ export default function CompletedArchive({
       </div>
 
       {/*
-        칸 수는 고정(넓으면 5개, 좁으면 3개)이고 간격은 최소만 준다. 표지에 상한 폭을
-        걸어두면 화면이 넓어질수록 칸에서 남는 만큼이 그대로 여백이 되므로, 간격을
-        px 로 크게 박아두지 않아도 넓은 화면에서 알아서 넉넉해진다.
+        내 서재와 같은 표지 칸([WorkTile])을 쓴다 — 같은 책이 화면마다 다르게 보이지 않게.
+        다만 여기 있는 건 모두 다 읽은 작품이라 상태 배지는 끄고, 그 자리 대신 그 해에 몇
+        번째로 끝냈는지를 번호로 붙인다.
       */}
-      <div className="grid grid-cols-5 gap-3 sm:gap-4">
+      <WorkTileGrid label={`${activeYear}년에 함께 읽은 작품`}>
         {shown.map((item, index) => (
-          <ArchiveCover
+          <WorkTile
             key={item.id}
             item={item}
             users={users}
             order={index + 1}
             rank={rankById.get(item.id)}
+            showStatus={false}
           />
         ))}
-      </div>
+      </WorkTileGrid>
 
       {/* 배경 판 없이 숫자와 아이콘만 남기고, 얇은 구분선으로 세 종류를 나눈다. */}
       <div className="grid grid-cols-3 border-t border-neutral-100 pt-5">
@@ -119,7 +117,7 @@ export default function CompletedArchive({
             >
               <Icon className="size-6 text-neutral-400" aria-hidden strokeWidth={1.75} />
               <div className="flex flex-col">
-                <span className="font-serif text-2xl font-semibold text-neutral-900 tabular-nums">
+                <span className="text-2xl font-semibold text-neutral-900 tabular-nums">
                   {items.filter((item) => item.kind === kind).length}
                 </span>
                 <span className="text-xs text-neutral-500">{kindLabel[kind]}</span>
@@ -129,42 +127,5 @@ export default function CompletedArchive({
         })}
       </div>
     </section>
-  )
-}
-
-function ArchiveCover({
-  item,
-  users,
-  order,
-  rank,
-}: {
-  item: BookcaseItem
-  users: User[]
-  /** 그 해에서 몇 번째로 끝냈는지 — 표지 아래 번호 */
-  order: number
-  /** 공개 평점 1~3위면 표지에 스티커가 붙는다 */
-  rank?: 1 | 2 | 3
-}) {
-  const longPress = useLongPressPreview()
-
-  return (
-    <Link to={item.href} {...longPress.handlers} className="group flex flex-col items-center gap-2">
-      {/*
-        폭은 반드시 이 바깥 div 로 잡는다 — Cover 는 size="lg" 일 때 스스로 w-full 을
-        붙이므로, className 으로 폭을 넘기면 같은 width 유틸리티끼리 부딪혀서
-        어느 쪽이 이길지 Tailwind 의 출력 순서에 달리게 된다(실제로 w-full 이 이겼다).
-      */}
-      <div className="relative w-full max-w-28">
-        <Cover
-          work={item}
-          size="lg"
-          className="w-full transition-transform group-hover:-translate-y-0.5"
-        />
-        {rank && <RankSticker rank={rank} size="sm" className="-top-1.5 -left-1.5 -rotate-6" />}
-      </div>
-      <span className="text-xs text-neutral-500 tabular-nums">{order}</span>
-
-      <WorkTooltip item={item} users={users} anchor={longPress.anchor} open={longPress.open} />
-    </Link>
   )
 }

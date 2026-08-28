@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type FocusEvent as ReactFocusEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
@@ -93,6 +94,13 @@ export function useLongPressPreview(onActivate?: () => void) {
         setHovered(true)
       },
       onMouseLeave: () => setHovered(false),
+      // 키보드로 표지를 훑을 때도 마우스와 같은 미리보기가 뜬다 — 예전에는 CSS
+      // group-focus-within 이 하던 일이라, 카드를 JS 로 띄우게 바꾸면서 여기로 옮겼다.
+      onFocus: (event: ReactFocusEvent<HTMLAnchorElement>) => {
+        setAnchor(event.currentTarget)
+        setHovered(true)
+      },
+      onBlur: () => setHovered(false),
     },
   }
 }

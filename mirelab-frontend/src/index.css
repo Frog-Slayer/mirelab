@@ -220,7 +220,7 @@ body {
    * 같은 무게로 보여서 시선을 나눠 먹으므로, 눌리는 자리는 바닥색으로만 알린다.
    */
   .app-pill {
-    @apply inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-[#eef1f3] px-3.5 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-[#e5e9ec] hover:text-neutral-900;
+    @apply inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-600 ring-1 ring-neutral-200 transition-colors hover:bg-neutral-50 hover:text-neutral-900 hover:ring-neutral-300;
   }
 
   .app-input {
