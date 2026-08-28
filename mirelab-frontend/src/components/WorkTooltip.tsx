@@ -12,6 +12,16 @@ const MARGIN = 8
 const WIDTH = 288
 
 /**
+ * 위/아래 어느 쪽에 붙일지 정할 때 쓰는 기준 높이.
+ *
+ * 실제 높이로 정하면 줄거리가 긴 작품만 아래로 뒤집혀서, 같은 줄에 나란히 있는 표지인데
+ * 하나만 반대로 뜬다. 안쪽 줄 수를 모두 고정해 뒀으므로(제목 1줄·줄거리 2줄·선정 사유
+ * 1줄) 가장 키가 클 때가 이 값을 넘지 않는다 — 그 최대치로 한 번에 정해 모두 같은 쪽에
+ * 붙게 한다. 자리를 잡을 때는 각자의 실제 높이를 써서 표지 바로 위에 붙인다.
+ */
+const MAX_HEIGHT = 180
+
+/**
  * 표지에 마우스를 올렸을 때(터치에서는 길게 눌렀을 때) 뜨는 설명 카드.
  *
  * 화면 좌표(fixed)로 body 에 직접 그린다 — 카드 안에 두면 그리드 칸 밖으로 나가는 순간
@@ -53,8 +63,8 @@ export default function WorkTooltip({
 
       // 기본은 표지 위. 헤더(스크롤해도 붙어 있다)에 닿을 만큼 위가 좁으면 아래로 뒤집는다.
       const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom ?? 0
-      const above = from.top - size.height - MARGIN
-      const top = above < headerBottom + MARGIN ? from.bottom + MARGIN : above
+      const fitsAbove = from.top - MAX_HEIGHT - MARGIN >= headerBottom + MARGIN
+      const top = fitsAbove ? from.top - size.height - MARGIN : from.bottom + MARGIN
 
       setStyle({ top, left })
     }
@@ -83,8 +93,9 @@ export default function WorkTooltip({
           <Cover work={item} size="sm" />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
-          <span className="text-sm font-semibold text-neutral-900">{item.title}</span>
-          <span className="text-xs text-neutral-500">
+          {/* 줄 수를 고정해 둔다 — 툴팁 키가 들쭉날쭉하면 뜨는 방향까지 달라진다 */}
+          <span className="line-clamp-1 text-sm font-semibold text-neutral-900">{item.title}</span>
+          <span className="truncate text-xs text-neutral-500">
             {item.author} · {item.year}
           </span>
           {!!item.voterCount && (
@@ -98,7 +109,7 @@ export default function WorkTooltip({
           {item.description && (
             <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>
           )}
-          <PickNote addedBy={item.addedBy} reason={item.reason} users={users} truncate={false} />
+          <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />
         </div>
       </div>
     </div>,
