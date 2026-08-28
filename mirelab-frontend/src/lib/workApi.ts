@@ -22,8 +22,12 @@ export interface Blurb {
   userId: string
   kind: WorkKind
   title: string
+  author: string
   coverUrl?: string
+  /** 이 사람이 매긴 점수 */
   rating: number
+  /** 그 작품의 공개 평점 평균 */
+  average: number
   text: string
 }
 

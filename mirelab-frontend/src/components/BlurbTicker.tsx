@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import Avatar from '@/components/Avatar'
 import KindTag from '@/components/KindTag'
-import Stars from '@/components/Stars'
 import { formatRating } from '@/lib/format'
 import type { Blurb } from '@/lib/workApi'
 import type { User } from '@/types'
@@ -18,7 +17,7 @@ const SLIDE_MS = 600
  * px 로 두는 이유: transform 의 translateY 퍼센트는 "움직이는 그 요소 자신의 높이" 기준이라,
  * 줄 전체를 담은 컨테이너에 -100% 를 주면 한 줄이 아니라 스택 전체가 통째로 올라가 버린다.
  */
-const ROW_HEIGHT = 80
+const ROW_HEIGHT = 96
 
 const ROW_CLASS = 'flex items-center gap-7 px-4'
 
@@ -127,7 +126,7 @@ function Row({
   users: User[]
   studySlug: string
 }) {
-  const author = users.find((user) => user.id === blurb.userId)
+  const writer = users.find((user) => user.id === blurb.userId)
 
   return (
     <Link
@@ -135,10 +134,10 @@ function Row({
       style={{ height: ROW_HEIGHT }}
       className={`${ROW_CLASS} group`}
     >
-      {author && (
+      {writer && (
         <div className="flex flex-none items-center gap-2">
-          <Avatar user={author} size="sm" />
-          <span className="text-sm font-medium text-neutral-700">{author.name}</span>
+          <Avatar user={writer} size="sm" />
+          <span className="text-sm font-medium text-neutral-700">{writer.name}</span>
         </div>
       )}
 
@@ -150,19 +149,53 @@ function Row({
         )}
       </div>
 
-      <KindTag kind={blurb.kind} className="flex-none" />
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+        <div className="flex min-w-0 items-baseline gap-1.5">
+          <KindTag kind={blurb.kind} className="flex-none" />
+          <Dot />
+          <span className="truncate text-sm font-semibold text-neutral-900 group-hover:underline">
+            {blurb.title}
+          </span>
+          {blurb.author && (
+            <>
+              <Dot />
+              <span className="flex-none truncate text-xs text-neutral-500">{blurb.author}</span>
+            </>
+          )}
+        </div>
 
-      <span className="flex flex-none items-center gap-1.5">
-        <Stars value={blurb.rating} size="sm" />
-        <span className="text-sm font-semibold tabular-nums text-neutral-900">
-          {formatRating(blurb.rating)}
-        </span>
-      </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            className={`inline-flex flex-none items-center rounded-full border border-neutral-200 bg-white px-2 py-0.5 text-xs font-semibold tabular-nums ${ratingToneClass(blurb.rating)}`}
+          >
+            ★{formatRating(blurb.rating)}
+          </span>
+          <p className="min-w-0 truncate text-sm text-neutral-700">{blurb.text}</p>
+        </div>
 
-      <p className="min-w-0 flex-1 truncate text-sm text-neutral-700 group-hover:underline">
-        {blurb.text}
-      </p>
+        <div className="text-xs text-neutral-400">
+          평균 <span className="tabular-nums">★{formatRating(blurb.average)}</span>
+        </div>
+      </div>
     </Link>
+  )
+}
+
+/**
+ * 점수가 높을수록 뜨거운 색으로. 2.5 미만은 검정, 3.5 미만은 노랑, 그 위는 빨강.
+ * 경계값(2.5·3.5)은 위쪽 색에 속한다.
+ */
+function ratingToneClass(rating: number): string {
+  if (rating >= 3.5) return 'text-red-600'
+  if (rating >= 2.5) return 'text-amber-500'
+  return 'text-neutral-900'
+}
+
+function Dot() {
+  return (
+    <span aria-hidden className="flex-none text-neutral-300">
+      ·
+    </span>
   )
 }
 

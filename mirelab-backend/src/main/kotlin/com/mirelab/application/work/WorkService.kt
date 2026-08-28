@@ -97,8 +97,18 @@ class WorkService(
         val published = slotValueRepository.findByWorkIdInAndContext(workIds, SlotValueContext.STUDY)
             .filter { !it.draft && it.published && it.user.id?.let(memberIds::contains) == true }
 
-        val ratingByKey = published.filter { it.slotDef.id == ratingSlotId }
+        val ratingValues = published.filter { it.slotDef.id == ratingSlotId }
+        val ratingByKey = ratingValues
             .associateBy { requireNotNull(it.work.id) to requireNotNull(it.user.id) }
+
+        // 그 작품의 공개 평균까지 여기서 함께 낸다 — 화면이 작품 목록을 따로 들고 있다가
+        // 붙이게 하면, 그 목록을 안 쓰는 화면으로 바뀌는 순간 조용히 빈칸이 된다.
+        val averageByWorkId = ratingValues
+            .groupBy { requireNotNull(it.work.id) }
+            .mapValues { (_, values) ->
+                val scores = values.mapNotNull { (it.value["n"] as? Number)?.toDouble() }
+                if (scores.isEmpty()) 0.0 else scores.average()
+            }
 
         return published
             .filter { it.slotDef.id == blurbSlotId }
@@ -118,8 +128,10 @@ class WorkService(
                     userId = userId,
                     kind = work.kind,
                     title = work.title,
+                    author = work.author,
                     coverUrl = work.coverUrl,
                     rating = rating,
+                    average = averageByWorkId[workId] ?: 0.0,
                     text = text,
                 )
             }

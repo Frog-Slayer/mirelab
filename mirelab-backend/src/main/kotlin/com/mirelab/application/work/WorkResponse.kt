@@ -178,7 +178,11 @@ data class BlurbResponse(
     val userId: UUID,
     val kind: WorkKind,
     val title: String,
+    val author: String,
     val coverUrl: String?,
+    /** 이 사람이 매긴 점수 */
     val rating: Double,
+    /** 그 작품의 공개 평점 평균 — 한줄평 옆에 함께 보여준다 */
+    val average: Double,
     val text: String,
 )
