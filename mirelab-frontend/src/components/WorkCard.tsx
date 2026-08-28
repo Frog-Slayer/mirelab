@@ -1,19 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { BookcaseItem } from '@/components/Bookcase'
-import { WorkKind } from '@/types'
-
-const kindLabel: Record<WorkKind, string> = {
-  [WorkKind.BOOK]: '책',
-  [WorkKind.MOVIE]: '영화',
-  [WorkKind.GAME]: '게임',
-}
-
-const kindBadgeClass: Record<WorkKind, string> = {
-  [WorkKind.BOOK]: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20',
-  [WorkKind.MOVIE]: 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/20',
-  [WorkKind.GAME]: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20',
-}
+import { kindBadgeClass, kindLabel } from '@/lib/workKind'
 
 const BADGE_CLASS = 'inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-medium'
 

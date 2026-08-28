@@ -1,15 +1,8 @@
-import { BookOpen, Film, Gamepad2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import Cover from '@/components/Cover'
 import type { BookcaseItem } from '@/components/Bookcase'
-import { WorkKind } from '@/types'
-
-const KIND_STATS: { kind: WorkKind; label: string; Icon: typeof BookOpen }[] = [
-  { kind: WorkKind.BOOK, label: '책', Icon: BookOpen },
-  { kind: WorkKind.MOVIE, label: '영화', Icon: Film },
-  { kind: WorkKind.GAME, label: '게임', Icon: Gamepad2 },
-]
+import { KIND_ORDER, kindIcon, kindLabel } from '@/lib/workKind'
 
 function yearOf(item: BookcaseItem) {
   return item.finishedAt ? new Date(item.finishedAt).getFullYear() : null
@@ -90,17 +83,21 @@ export default function CompletedArchive({
 
       {/* 세 종류가 아래 공간을 정확히 3등분하고, 칸 사이는 세로선으로 나눈다 */}
       <div className="grid grid-cols-3 divide-x divide-neutral-100 border-t border-neutral-100 pt-5">
-        {KIND_STATS.map(({ kind, label, Icon }) => (
-          <div key={kind} className="flex items-center justify-center gap-3 text-neutral-600">
-            <Icon className="size-6 text-neutral-400" aria-hidden />
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-neutral-900">
-                {items.filter((item) => item.kind === kind).length}
-              </span>
-              <span className="text-xs tracking-wide text-neutral-400">{label}</span>
+        {KIND_ORDER.map((kind) => {
+          const Icon = kindIcon[kind]
+
+          return (
+            <div key={kind} className="flex items-center justify-center gap-3 text-neutral-600">
+              <Icon className="size-6 text-neutral-400" aria-hidden />
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-neutral-900">
+                  {items.filter((item) => item.kind === kind).length}
+                </span>
+                <span className="text-xs tracking-wide text-neutral-400">{kindLabel[kind]}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </section>
   )

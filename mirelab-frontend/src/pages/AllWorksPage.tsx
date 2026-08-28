@@ -1,8 +1,8 @@
+import { Search } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import BookLookupField from '@/components/BookLookupField'
-import Cover from '@/components/Cover'
 import Stars from '@/components/Stars'
 import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
@@ -10,76 +10,51 @@ import { useStudy } from '@/hooks/useStudy'
 import { parseYearFromPubDate } from '@/lib/bookApi'
 import { formatRating } from '@/lib/format'
 import { addWork, getLibrary, type LibraryEntry } from '@/lib/workApi'
+import { KIND_ORDER, kindBadgeClass, kindIcon, kindLabel } from '@/lib/workKind'
 import { WorkKind, WorkStatus } from '@/types'
 
 type Filter = 'ALL' | WorkKind
-
-const filters: Array<{ key: Filter; label: string }> = [
-  { key: 'ALL', label: '전체' },
-  { key: WorkKind.BOOK, label: '책' },
-  { key: WorkKind.MOVIE, label: '영화' },
-]
-
-const statusPriority = {
-  [WorkStatus.DONE]: 0,
-  [WorkStatus.READING]: 1,
-  [WorkStatus.CANDIDATE]: 2,
-} satisfies Record<LibraryEntry['status'], number>
 
 /**
  * 상태마다 줄 세우는 기준 날짜가 다르다 — 후보는 담긴 날, 진행 중은 시작한 날,
  * 완료는 끝난 날. "이 상태가 된 지 얼마나 됐나"가 각 묶음에서 궁금한 것이라서다.
  */
-function sortKey(work: LibraryEntry): string | null | undefined {
+function recordedAt(work: LibraryEntry): string | null | undefined {
   if (work.status === WorkStatus.DONE) return work.finishedAt
   if (work.status === WorkStatus.READING) return work.startedAt
   return work.addedAt
 }
 
 /**
- * 오래된 것이 위로 — 스터디가 지나온 순서대로 읽힌다.
- *
- * 날짜가 없는 작품(이 필드들이 생기기 전에 만들어진 것)은 언제인지 알 수 없으니 있는
- * 것들 뒤로 몰고, 그들끼리는 제목순으로 떨어지게 둔다 — 0 을 돌려 다음 기준으로 넘긴다.
- * 오름차순이라고 해서 "모르는 것"을 맨 앞에 두면 아무 근거 없이 제일 오래된 척이 된다.
+ * 최근 것이 위로. 날짜가 없는 작품(이 필드들이 생기기 전에 만들어진 것)은 언제인지 알 수
+ * 없으니 있는 것들 뒤로 몰고, 그들끼리는 제목순으로 떨어지게 둔다 — 0 을 돌려 다음 기준으로
+ * 넘긴다. 내림차순이라고 해서 "모르는 것"을 맨 앞에 두면 아무 근거 없이 제일 최근인 척이 된다.
  */
-function byOldest(a: string | null | undefined, b: string | null | undefined): number {
+function byNewest(a: string | null | undefined, b: string | null | undefined): number {
   if (!a && !b) return 0
   if (!a) return 1
   if (!b) return -1
-  return a.localeCompare(b)
+  return b.localeCompare(a)
 }
 
-type RatingSort = 'asc' | 'desc' | null
-/** 상태는 끌 수 없다 — 완료 → 진행 중 → 후보(default) 아니면 그 반대(reversed) 둘 중 하나 */
-type StatusSort = 'default' | 'reversed'
+type SortKey = 'recent' | 'rating'
+
+const sortOptions: { key: SortKey; label: string }[] = [
+  { key: 'recent', label: '최신순' },
+  { key: 'rating', label: '평점순' },
+]
 
 /**
- * 평점 정렬 버튼을 안 눌렀으면(ratingSort === null) 상태 → 날짜 → 제목 → id 순 기본
- * 정렬을 쓴다. 상태는 완료 → 진행 중 → 후보가 기본이고, 정렬 버튼으로 그 반대 방향만
- * 토글한다 — "정렬 해제"는 없다(둘 중 하나는 항상 켜져 있다).
- *
- * 평점 정렬을 눌러서 동점이 나와도 이 기본 정렬로 떨어뜨린다. 완료·진행 중은 그 상태가
- * 된 시점, 후보는 책장에 담긴 시점 순이고, 그마저 같으면(테스트 데이터처럼 날짜가 비어
- * 있는 경우) 제목 → id 순으로 가른다.
+ * 평점순이어도 동점은 최신순으로 떨어뜨리고, 날짜마저 같으면(테스트 데이터처럼 날짜가 비어
+ * 있는 경우) 제목 → id 순으로 가른다. 같은 목록을 두 번 그릴 때 순서가 흔들리지 않게.
  */
-function compareWorks(
-  a: LibraryEntry,
-  b: LibraryEntry,
-  ratingSort: RatingSort,
-  statusSort: StatusSort,
-): number {
-  if (ratingSort) {
-    const base = a.average - b.average
-    const directed = ratingSort === 'asc' ? base : -base
-    if (directed !== 0) return directed
+function compareWorks(a: LibraryEntry, b: LibraryEntry, sort: SortKey): number {
+  if (sort === 'rating') {
+    const byRating = b.average - a.average
+    if (byRating !== 0) return byRating
   }
 
-  const statusBase = statusPriority[a.status] - statusPriority[b.status]
-  const statusDifference = statusSort === 'reversed' ? -statusBase : statusBase
-  if (statusDifference !== 0) return statusDifference
-
-  const byDate = byOldest(sortKey(a), sortKey(b))
+  const byDate = byNewest(recordedAt(a), recordedAt(b))
   if (byDate !== 0) return byDate
 
   const byTitle = a.title.localeCompare(b.title, 'ko')
@@ -100,16 +75,17 @@ const statusBadgeClass = {
   [WorkStatus.CANDIDATE]: 'bg-amber-50 text-amber-700 ring-amber-600/20',
 } satisfies Record<LibraryEntry['status'], string>
 
-const statusRowClass = {
-  [WorkStatus.DONE]: 'bg-emerald-50/40 hover:bg-emerald-50/80',
-  [WorkStatus.READING]: 'bg-blue-50/40 hover:bg-blue-50/80',
-  [WorkStatus.CANDIDATE]: 'bg-amber-50/40 hover:bg-amber-50/80',
-} satisfies Record<LibraryEntry['status'], string>
+function formatRecordedAt(value: string) {
+  const date = new Date(value)
+  return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`
+}
 
 export default function AllWorksPage() {
   const { study } = useStudy()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<Filter>('ALL')
+  const [sort, setSort] = useState<SortKey>('recent')
+  const [query, setQuery] = useState('')
   const [adding, setAdding] = useState(false)
   const { data: works = [], isPending } = useQuery({
     queryKey: ['library', study?.slug],
@@ -123,11 +99,20 @@ export default function AllWorksPage() {
 
   if (!study) return null
 
-  const shown = works.filter((work) => filter === 'ALL' || work.kind === filter)
+  const keyword = query.trim().toLowerCase()
+  const shown = works
+    .filter((work) => filter === 'ALL' || work.kind === filter)
+    .filter(
+      (work) =>
+        !keyword ||
+        work.title.toLowerCase().includes(keyword) ||
+        work.author.toLowerCase().includes(keyword),
+    )
+    .sort((a, b) => compareWorks(a, b, sort))
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-5 border-b border-neutral-200 pb-6">
+      <div className="flex flex-wrap items-end justify-between gap-5">
         <div className="flex flex-col gap-1.5">
           <h1 className="text-3xl font-semibold tracking-[-0.03em]">작품 목록</h1>
           <p className="text-sm text-neutral-500">
@@ -135,22 +120,20 @@ export default function AllWorksPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex rounded-lg bg-neutral-100 p-1">
-            {filters.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => setFilter(item.key)}
-                className={`cursor-pointer rounded-md px-3 py-1.5 text-xs transition-colors ${
-                  filter === item.key
-                    ? 'bg-white font-medium text-neutral-900 shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-900'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
+          <label className="relative">
+            <span className="sr-only">작품 검색</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="작품 제목, 저자, 감독 검색"
+              className="w-64 rounded-full border border-neutral-200 py-2 pr-10 pl-4 text-sm outline-none focus:border-neutral-400"
+            />
+            <Search
+              className="pointer-events-none absolute top-1/2 right-3.5 size-4 -translate-y-1/2 text-neutral-400"
+              aria-hidden
+            />
+          </label>
           <button
             type="button"
             onClick={() => setAdding(true)}
@@ -158,6 +141,46 @@ export default function AllWorksPage() {
           >
             작품 추가
           </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <KindFilterChip
+            active={filter === 'ALL'}
+            label="전체"
+            onClick={() => setFilter('ALL')}
+          />
+          {KIND_ORDER.map((kind) => {
+            const Icon = kindIcon[kind]
+
+            return (
+              <KindFilterChip
+                key={kind}
+                active={filter === kind}
+                label={kindLabel[kind]}
+                icon={<Icon className="size-4" aria-hidden />}
+                onClick={() => setFilter(kind)}
+              />
+            )
+          })}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {sortOptions.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setSort(option.key)}
+              className={`cursor-pointer text-sm transition-colors ${
+                sort === option.key
+                  ? 'font-semibold text-neutral-900'
+                  : 'text-neutral-400 hover:text-neutral-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -175,171 +198,123 @@ export default function AllWorksPage() {
       {isPending ? (
         <p className="text-sm text-neutral-400">불러오는 중…</p>
       ) : (
-        <AllWorksTable works={shown} slug={study.slug} />
+        <WorkCardList works={shown} slug={study.slug} />
       )}
     </div>
   )
 }
 
-function RatingSortHeader({
-  sort,
-  onToggle,
+function KindFilterChip({
+  active,
+  label,
+  icon,
+  onClick,
 }: {
-  sort: RatingSort
-  onToggle: () => void
+  active: boolean
+  label: string
+  icon?: React.ReactNode
+  onClick: () => void
 }) {
   return (
-    <th scope="col" className="w-28 border-l border-neutral-200 p-0 font-medium">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full cursor-pointer items-center justify-center gap-1 px-4 py-2 hover:text-neutral-900"
-      >
-        평점
-        <span aria-hidden className={sort ? 'text-neutral-700' : 'text-neutral-300'}>
-          {sort === 'desc' ? '▼' : '▲'}
-        </span>
-      </button>
-    </th>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
+        active
+          ? 'border-neutral-900 bg-neutral-900 text-white'
+          : 'border-neutral-200 text-neutral-600 hover:border-neutral-400 hover:text-neutral-900'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
   )
 }
 
-/** 상태는 항상 어느 한 방향으로든 정렬돼 있어서(끌 수 없음) 화살표를 늘 진하게 보여준다 */
-function StatusSortHeader({
-  sort,
-  onToggle,
-}: {
-  sort: StatusSort
-  onToggle: () => void
-}) {
-  return (
-    <th scope="col" className="w-20 border-l border-neutral-200 p-0 font-medium">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="flex w-full cursor-pointer items-center justify-center gap-1 px-2 py-2 hover:text-neutral-900"
-      >
-        상태
-        <span aria-hidden className="text-neutral-700">
-          {sort === 'default' ? '▼' : '▲'}
-        </span>
-      </button>
-    </th>
-  )
-}
-
-function AllWorksTable({ works, slug }: { works: LibraryEntry[]; slug: string }) {
-  const [ratingSort, setRatingSort] = useState<RatingSort>(null)
-  const [statusSort, setStatusSort] = useState<StatusSort>('default')
-
+function WorkCardList({ works, slug }: { works: LibraryEntry[]; slug: string }) {
   if (works.length === 0) {
     return <p className="py-10 text-center text-sm text-neutral-400">표시할 작품이 없습니다.</p>
   }
 
-  const sorted = [...works].sort((a, b) => compareWorks(a, b, ratingSort, statusSort))
-
-  // 안 눌렀을 땐 기본 정렬. 한 번 누르면 오름차순 ↔ 내림차순만 토글한다 — 기본 정렬로
-  // 돌아가는 "해제" 단계는 없다.
-  const toggleRatingSort = () => {
-    setRatingSort((current) => (current === 'asc' ? 'desc' : 'asc'))
-  }
-
-  // 상태는 끌 수 없다 — 기본(완료→진행 중→후보) ↔ 반대 방향만 토글한다.
-  const toggleStatusSort = () => {
-    setStatusSort((current) => (current === 'default' ? 'reversed' : 'default'))
-  }
-
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px] table-fixed border-collapse text-left text-sm">
-          <thead className="bg-neutral-50 text-xs text-neutral-500">
-            <tr>
-              <th scope="col" className="w-14 px-2 py-2 text-center font-medium">
-                구분
-              </th>
-              <th
-                scope="col"
-                className="w-40 border-l border-neutral-200 px-4 py-2 text-center font-medium"
-              >
-                작품
-              </th>
-              <th
-                scope="col"
-                className="w-32 border-l border-neutral-200 px-4 py-2 text-center font-medium"
-              >
-                저자/감독
-              </th>
-              <StatusSortHeader sort={statusSort} onToggle={toggleStatusSort} />
-              <RatingSortHeader sort={ratingSort} onToggle={toggleRatingSort} />
-              <th
-                scope="col"
-                className="w-60 border-l border-neutral-200 px-4 py-2 text-center font-medium"
-              >
-                선정 사유
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-neutral-100">
-            {sorted.map((work) => (
-              <tr key={work.id} className={`transition-colors ${statusRowClass[work.status]}`}>
-                <td className="px-2 py-2 text-center text-neutral-500">
-                  {work.kind === WorkKind.BOOK ? '책' : '영화'}
-                </td>
-                <td className="overflow-hidden border-l border-neutral-200 px-4 py-2 text-left">
-                  <Link
-                    to={`/${slug}/books/${work.id}`}
-                    className="group flex items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-                  >
-                    <div className="w-6 flex-none">
-                      <Cover work={work} size="xxs" />
-                    </div>
-                    <div className="min-w-0">
-                      <div
-                        className="truncate font-medium text-neutral-900 group-hover:text-emerald-700"
-                        title={work.title}
-                      >
-                        {work.title}
-                      </div>
-                    </div>
-                  </Link>
-                </td>
-                <td className="border-l border-neutral-200 px-4 py-2 text-neutral-500">
-                  <div className="max-w-32 truncate" title={work.author || undefined}>
-                    {work.author || '—'}
-                  </div>
-                </td>
-                <td className="border-l border-neutral-200 px-2 py-2 text-center">
-                  <span
-                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ring-1 ring-inset ${statusBadgeClass[work.status]}`}
-                  >
-                    {statusLabel[work.status]}
-                  </span>
-                </td>
-                <td className="border-l border-neutral-200 px-4 py-2 text-center">
-                  {work.voterCount > 0 ? (
-                    <span className="flex items-center justify-center gap-2 whitespace-nowrap">
-                      <Stars value={work.average} size="sm" />
-                      <span className="font-medium tabular-nums">{formatRating(work.average)}</span>
+    <div className="flex flex-col gap-3">
+      {works.map((work) => {
+        const recorded = recordedAt(work)
+
+        return (
+          <Link
+            key={work.id}
+            to={`/${slug}/books/${work.id}`}
+            className="group flex overflow-hidden rounded-xl border border-neutral-200 bg-white transition hover:border-emerald-300"
+          >
+            <div className="aspect-[4/3] w-40 flex-none overflow-hidden bg-neutral-100 sm:w-52">
+              {work.coverUrl ? (
+                // 표지는 원래 세로 비율이라 가로로 긴 칸에 넣으면 잘리는데, 그대로 둔다.
+                <img src={work.coverUrl} alt={work.title} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-medium text-neutral-400">
+                  {work.title}
+                </div>
+              )}
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${kindBadgeClass[work.kind]}`}
+                >
+                  {kindLabel[work.kind]}
+                </span>
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${statusBadgeClass[work.status]}`}
+                >
+                  {statusLabel[work.status]}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h2 className="text-lg leading-snug font-semibold group-hover:underline">
+                  『{work.title}』
+                </h2>
+                {work.author && <span className="text-sm text-neutral-500">{work.author}</span>}
+                {work.voterCount > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <Stars value={work.average} size="sm" />
+                    <span className="text-sm font-semibold tabular-nums text-neutral-900">
+                      {formatRating(work.average)}
                     </span>
-                  ) : (
-                    <span className="block text-neutral-400">—</span>
-                  )}
-                </td>
-                <td className="border-l border-neutral-200 px-4 py-2 text-left text-neutral-600">
-                  {work.reason ? (
-                    <div className="truncate" title={work.reason}>
-                      {work.reason}
-                    </div>
-                  ) : (
-                    <span className="text-neutral-400">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </span>
+                )}
+              </div>
+
+              {work.description && (
+                <p className="line-clamp-2 text-sm leading-relaxed text-neutral-500">
+                  {work.description}
+                </p>
+              )}
+
+              {/* 선정 사유와 기록 줄은 한 덩이로 카드 아래에 붙인다 — mt-auto 를 둘 다에
+                  걸면 남는 공간이 둘로 쪼개져서 사이가 벌어진다 */}
+              <div className="mt-auto flex flex-col gap-2 pt-1">
+                {work.reason && (
+                  <p className="line-clamp-1 text-sm font-semibold text-neutral-800">
+                    {work.reason}
+                  </p>
+                )}
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-neutral-400">
+                    {recorded ? `최근 기록 ${formatRecordedAt(recorded)}` : '기록 없음'}
+                  </span>
+                  <span className="rounded-full border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 transition group-hover:border-neutral-400 group-hover:text-neutral-900">
+                    상세 보기
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        )
+      })}
     </div>
   )
 }
@@ -422,8 +397,11 @@ function AddWorkDialog({
           onChange={(event) => setKind(event.target.value as WorkKind)}
           className="cursor-pointer self-start rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
         >
-          <option value={WorkKind.BOOK}>책</option>
-          <option value={WorkKind.MOVIE}>영화</option>
+          {KIND_ORDER.map((option) => (
+            <option key={option} value={option}>
+              {kindLabel[option]}
+            </option>
+          ))}
         </select>
         <WorkPreviewCard
           kind={kind}
