@@ -3,8 +3,9 @@ import BookLookupField from '@/components/BookLookupField'
 import WorkPreviewCard from '@/components/WorkPreviewCard'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { parseYearFromPubDate } from '@/lib/bookApi'
+import { STATUS_ORDER, statusLabel } from '@/lib/workStatus'
 import type { WorkStatus } from '@/types'
-import { WorkKind, WorkStatus as WorkStatusValues } from '@/types'
+import { WorkKind } from '@/types'
 
 export default function ManageDialog({
   kind,
@@ -133,9 +134,11 @@ export default function ManageDialog({
               onChange={(e) => setNext(e.target.value as WorkStatus)}
               className="app-input flex-1 cursor-pointer"
             >
-              <option value={WorkStatusValues.CANDIDATE}>후보</option>
-              <option value={WorkStatusValues.READING}>읽는 중</option>
-              <option value={WorkStatusValues.DONE}>완료</option>
+              {STATUS_ORDER.map((value) => (
+                <option key={value} value={value}>
+                  {statusLabel[value]}
+                </option>
+              ))}
             </select>
             <button
               type="button"

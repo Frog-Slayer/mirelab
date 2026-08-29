@@ -48,7 +48,16 @@ export default function WorkCard({
       </div>
 
       {users && (
-        <WorkTooltip item={item} users={users} anchor={longPress.anchor} open={longPress.open} />
+        <WorkTooltip
+          item={item}
+          users={users}
+          anchor={longPress.anchor}
+          open={longPress.open}
+          // 이 카드는 footer 에 선정인·사유를 이미 펼쳐 놓는다(유일한 쓰는 곳인
+          // [RecentWorks] 가 그렇게 넘긴다). 호버 카드는 카드에 없는 것 — 연도·평점·
+          // 줄거리 — 만 더 보여준다.
+          showPickNote={false}
+        />
       )}
     </Link>
   )

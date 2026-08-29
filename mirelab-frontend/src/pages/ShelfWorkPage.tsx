@@ -14,14 +14,9 @@ import {
   setShelfPublication,
   setShelfWorkStatus,
 } from '@/lib/shelfApi'
+import { statusLabel } from '@/lib/workStatus'
 import type { Post, SlotDef, SlotValueData } from '@/types'
 import { SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
-
-const statusLabel: Record<string, string> = {
-  [WorkStatus.CANDIDATE]: '후보',
-  [WorkStatus.READING]: '읽는 중',
-  [WorkStatus.DONE]: '완료',
-}
 
 const nextStatus: Partial<Record<WorkStatus, { status: WorkStatus; label: string }>> = {
   [WorkStatus.CANDIDATE]: { status: WorkStatus.READING, label: '읽기 시작' },

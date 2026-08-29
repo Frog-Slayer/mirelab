@@ -7,14 +7,9 @@ import WorkTooltip from '@/components/WorkTooltip'
 // 타입만 가져오므로 Bookcase 와 서로 참조해도 런타임 순환이 생기지 않는다(컴파일 때 지워진다).
 import type { BookcaseItem } from '@/components/Bookcase'
 import { useLongPressPreview } from '@/hooks/useLongPressPreview'
+import { statusLabel } from '@/lib/workStatus'
 import type { User } from '@/types'
 import { WorkKind, WorkStatus } from '@/types'
-
-const statusLabel: Record<WorkStatus, string> = {
-  [WorkStatus.CANDIDATE]: '후보',
-  [WorkStatus.READING]: '읽는 중',
-  [WorkStatus.DONE]: '완료',
-}
 
 /** 표지가 없을 때 대신 깔리는 색·글자. 종류마다 다른 지질(紙質)처럼 보이게 한다 */
 const placeholderKindLabel: Record<WorkKind, string> = {

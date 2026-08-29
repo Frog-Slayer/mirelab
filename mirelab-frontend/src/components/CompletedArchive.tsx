@@ -6,6 +6,7 @@ import type { BookcaseItem } from '@/components/Bookcase'
 import { KIND_ORDER, kindIcon, kindLabel } from '@/lib/workKind'
 import { completedYearOf, topRanksByYear } from '@/lib/workRanking'
 import type { User } from '@/types'
+import { WorkStatus } from '@/types'
 
 const yearOf = completedYearOf
 
@@ -57,7 +58,8 @@ export default function CompletedArchive({
               {items.length}작품{yearRange && ` · ${yearRange}`}
             </p>
           </div>
-          <Link to={`/${studySlug}/books`} className="app-pill">
+          {/* 여기 있는 건 모두 다 읽은 작품이라, 전체보기도 완료만 걸린 목록으로 이어진다 */}
+          <Link to={`/${studySlug}/books?status=${WorkStatus.DONE}`} className="app-pill">
             전체보기
             <ArrowRight aria-hidden className="size-4" strokeWidth={2} />
           </Link>

@@ -19,6 +19,7 @@ import { useStudy } from '@/hooks/useStudy'
 import { ApiError } from '@/lib/api'
 import { formatRating } from '@/lib/format'
 import { completedYearOf, publishedRatingsOf, topRanksByYear } from '@/lib/workRanking'
+import { statusLabel } from '@/lib/workStatus'
 import { getWorkPosts } from '@/lib/postApi'
 import { addSession } from '@/lib/sessionApi'
 import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
@@ -39,12 +40,6 @@ import {
   updateWorkReason,
 } from '@/lib/workApi'
 import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
-
-const statusLabel: Record<string, string> = {
-  [WorkStatus.CANDIDATE]: '후보',
-  [WorkStatus.READING]: '읽는 중',
-  [WorkStatus.DONE]: '완료',
-}
 
 /**
  * 별점 공개의 묘미는 다 같이 "하나, 둘, 셋" 하고 여는 그 순간이라, 그때만큼은 밀리면 안 된다.

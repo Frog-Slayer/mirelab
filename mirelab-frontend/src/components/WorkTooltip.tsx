@@ -33,12 +33,15 @@ export default function WorkTooltip({
   users,
   anchor,
   open,
+  showPickNote = true,
 }: {
   item: BookcaseItem
   users: User[]
   /** 이 요소를 기준으로 위치를 잡는다 — [useLongPressPreview] 가 잡아준다 */
   anchor: HTMLElement | null
   open: boolean
+  /** 카드 본문에 이미 선정인·사유가 적혀 있으면 끈다 — 같은 말을 두 번 하지 않는다 */
+  showPickNote?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   // 재기 전에는 화면 밖에 둔다 — 가운데 어딘가에 한 번 떴다가 제자리로 튀는 걸 막는다.
@@ -106,7 +109,7 @@ export default function WorkTooltip({
           {item.description && (
             <p className="line-clamp-2 text-xs text-neutral-600">{item.description}</p>
           )}
-          <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />
+          {showPickNote && <PickNote addedBy={item.addedBy} reason={item.reason} users={users} />}
         </div>
       </div>
     </div>,

@@ -84,7 +84,12 @@ export default function BlurbTicker({
 
   return (
     <div
-      className="app-card relative overflow-hidden"
+      /*
+        isolate: 카드 안에서 쓰는 z-index(배경 인용부호와 줄 스택)를 카드 안에 가둔다.
+        없으면 안쪽 z-10 이 헤더(sticky z-10)와 같은 층에서 겨루는데, DOM 상 뒤에 있는
+        쪽이 이겨서 스크롤할 때 한줄평이 헤더 위로 올라타 보인다.
+      */
+      className="app-card relative isolate overflow-hidden"
       style={{ height: ROW_HEIGHT }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}

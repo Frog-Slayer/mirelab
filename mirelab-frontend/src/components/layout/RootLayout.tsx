@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router'
+import { Link, NavLink, Outlet, ScrollRestoration, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { FloatingStack } from '@/components/layout/FloatingStack'
@@ -132,6 +132,15 @@ export default function RootLayout() {
           }`}
         />
         <main className={`${CONTENT_COLUMN} flex-1 py-8 sm:py-10`}>
+          {/*
+            화면을 옮기면 맨 위에서 시작하고, 뒤로 가기로 돌아오면 보던 자리로 되돌린다.
+            없으면 브라우저가 스크롤을 그대로 물려줘서, 홈에서 한참 내려간 채 '전체보기'를
+            누르면 작품 목록의 중간부터 보인다.
+
+            화면 안에서 조건만 바뀌는 이동(작품 목록의 필터)은 새 화면이 아니므로 각자
+            `preventScrollReset` 으로 빠져나간다.
+          */}
+          <ScrollRestoration />
           <Outlet context={recordDrawer} />
         </main>
       </div>
