@@ -32,7 +32,7 @@ export default function RootLayout() {
   }
 
   // 헤더 높이가 늘었다 줄었다 하므로(스터디 탭 유무 등) 재서 변수로 내려준다 —
-  // "내 기록" 드로어가 헤더 바로 아래부터 정확히 시작하게 하려고.
+  // "내 메모" 드로어가 헤더 바로 아래부터 정확히 시작하게 하려고.
   const headerRef = useRef<HTMLElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
   useEffect(() => {
@@ -122,7 +122,7 @@ export default function RootLayout() {
 
       <div className="flex flex-1">
         {/*
-          "내 기록" 드로어(WorkPage)는 항상 뷰포트 왼쪽 끝에 고정으로 붙는다.
+          "내 메모" 드로어(WorkPage)는 항상 뷰포트 왼쪽 끝에 고정으로 붙는다.
           여기서는 실제로 아무것도 그리지 않고, 화면이 넓을 때(xl 이상) 그
           너비만큼 자리를 미리 비워둬서 <main> 이 오른쪽으로 밀리게 한다.
         */}

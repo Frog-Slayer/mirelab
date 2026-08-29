@@ -13,7 +13,7 @@ import type { SlotDef } from '@/types'
 import { SlotType, WorkKind, WorkStatus } from '@/types'
 
 /**
- * 스터디에서 온 책은 그 스터디의 작품 상세로 보낸다 — 그 책의 기록은 거기 "내 기록"
+ * 스터디에서 온 책은 그 스터디의 작품 상세로 보낸다 — 그 책의 기록은 거기 "내 메모"
  * 드로어 한 곳에서만 쓰기 때문이다. 개인 페이지는 혼자 담은 책에만 있다.
  *
  * 어느 스터디로 보낼지는 그 책이 속한 스터디(`entry.study`)를 따른다. 서재에는 내가 속한

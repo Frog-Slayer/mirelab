@@ -25,7 +25,7 @@ const nextStatus: Partial<Record<WorkStatus, { status: WorkStatus; label: string
 
 /**
  * 혼자 담은 책의 상세. 스터디에서 온 책은 여기 없다 — 그 책은 스터디 작품 상세의
- * "내 기록" 드로어에서 쓰고, 서재에서 눌러도 그쪽으로 간다([ShelfPage] 의 entryHref).
+ * "내 메모" 드로어에서 쓰고, 서재에서 눌러도 그쪽으로 간다([ShelfPage] 의 entryHref).
  * 그래서 옛 링크로 들어오면 서버가 404 를 주고 아래 문구가 뜬다.
  */
 export default function ShelfWorkPage() {

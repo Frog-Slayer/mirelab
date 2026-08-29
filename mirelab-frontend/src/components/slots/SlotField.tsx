@@ -7,7 +7,8 @@ interface Props {
   slot: SlotDef
   value?: SlotValueData
   readOnly?: boolean
-  onSave: (value: SlotValueData) => void
+  /** 약속(Promise)을 돌려주면 저장들이 순서대로 나간다 — [useDebouncedSave] */
+  onSave: (value: SlotValueData) => void | Promise<unknown>
 }
 
 // 칸 타입 → 렌더러. 새 타입을 늘리려면 여기 한 줄과 컴포넌트 하나만 추가하면 된다.

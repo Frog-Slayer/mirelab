@@ -10,7 +10,7 @@ import StartDialog from '@/components/work/StartDialog'
 import ManageDialog from '@/components/work/ManageDialog'
 import BlockForm from '@/components/work/BlockForm'
 import WorkBlockCard from '@/components/work/WorkBlockCard'
-import MyRecordDrawer from '@/components/work/MyRecordDrawer'
+import MyRecordDrawer, { type SaveState } from '@/components/work/MyRecordDrawer'
 import NotFoundPage from '@/pages/NotFoundPage'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { useRecordDrawer } from '@/hooks/useRecordDrawer'
@@ -75,6 +75,7 @@ export default function WorkPage() {
   const [creatingBlock, setCreatingBlock] = useState(false)
   /** 서버가 신호를 밀어주는 접속이 살아 있는지 — 끊긴 동안만 폴링이 촘촘해진다 */
   const [live, setLive] = useState(false)
+  const [recordSaveState, setRecordSaveState] = useState<SaveState>('idle')
 
   // 드로어 열림 상태는 RootLayout 에 있어서 페이지를 떠나도 안 꺼진다 —
   // 다른 화면에서 main 이 계속 밀려 있는 것처럼 보이니 나갈 때 접어둔다.
@@ -150,7 +151,20 @@ export default function WorkPage() {
       setStartOpen(false)
     },
   })
-  const save = useMutation({ mutationFn: saveValue, onSuccess: refresh })
+  /**
+   * "내 메모" 서랍의 자동저장. onSuccess 에 refresh(전체 쿼리 무효화)를 걸면 안 된다 —
+   * 글자를 치다 잠깐 멈출 때마다 작품·칸·블록·연결된 글·명예의 전당을 통째로 다시 받아온다.
+   * 개인 칸 값은 나만 보는 것이라 다시 받아올 이유도 없다(남이 바꾸면 서버가 밀어준다).
+   *
+   * 대신 지금 무슨 일이 벌어지는지는 서랍 머리글에 적어 보여준다. 자동저장은 조용해도
+   * 되지만, 실패까지 조용하면 쓴 글이 어디로 갔는지 알 수 없다.
+   */
+  const save = useMutation({
+    mutationFn: saveValue,
+    onMutate: () => setRecordSaveState('saving'),
+    onSuccess: () => setRecordSaveState('saved'),
+    onError: () => setRecordSaveState('error'),
+  })
   const drop = useMutation({
     mutationFn: () => removeWork(workId),
     onSuccess: () => {
@@ -195,7 +209,7 @@ export default function WorkPage() {
   const rank = (yearRanks.get(work.id) ?? null) as Rank | null
   const rankYear = completedYearOf(work)
 
-  // 평점·한줄평은 "내 기록" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
+  // 평점·한줄평은 "내 메모" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
   const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
   const blurbSlot = slots.find(
     (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
@@ -257,18 +271,21 @@ export default function WorkPage() {
   return (
     <>
       <MyRecordDrawer
-        // BlockNote 에디터(내 요약)는 마운트 시점의 초기값만 읽으므로, 작품이 바뀌거나
-        // (UserSwitcher로) 사용자가 바뀌면 통째로 다시 마운트시켜 그 사람의 내용으로
-        // 초기화되게 한다 — 안 그러면 이전 사용자의 내용을 그대로 보여주다 새 사용자
-        // 레코드에 덮어쓰게 된다.
+        // 안의 입력칸들은 "한 번 손댄 뒤에는 바깥 값을 따라가지 않는다"(useDebouncedSave).
+        // 그 표시는 컴포넌트가 살아 있는 동안 남으므로, 작품이 바뀌거나 (UserSwitcher로)
+        // 사용자가 바뀌면 통째로 다시 마운트시켜 그 사람의 내용으로 초기화되게 한다 —
+        // 안 그러면 이전 사용자의 내용을 그대로 보여주다 새 사용자 레코드에 덮어쓰게 된다.
         key={`${workId}-${user.id}`}
         open={drawerOpen}
         summarySlot={summarySlot}
         otherSlots={otherPersonalSlots}
         myValueOf={myValueOf}
         onSaveSlot={(slotDefId, value) =>
-          save.mutate({ targetId: work.id, slotDefId, value, draft: false })
+          // mutate 가 아니라 mutateAsync — 돌려받은 약속으로 저장들이 순서대로 나간다
+          save.mutateAsync({ targetId: work.id, slotDefId, value, draft: false })
         }
+        draftKeyPrefix={`${workId}:${user.id}`}
+        saveState={recordSaveState}
         onToggle={() => setDrawerOpen((v) => !v)}
       />
 
