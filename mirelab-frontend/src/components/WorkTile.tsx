@@ -58,7 +58,7 @@ export function WorkTile({
   item: BookcaseItem
   /** 호버 카드에서 "누가 왜 골랐는지"를 보여주려면 필요하다 */
   users?: User[]
-  /** 주면 제목 아래 줄 맨 앞에 두 자리 번호로 붙는다 */
+  /** 주면 제목 줄 맨 앞에 두 자리 번호로 붙는다 */
   order?: number
   /** 표지에 붙는 등수 스티커. 안 주면 item.rank(1~3위)를 따른다 */
   rank?: Rank
@@ -137,16 +137,21 @@ export function WorkTile({
         </div>
 
         <div className="mt-3 min-w-0">
-          <h3 className="truncate text-sm font-medium text-neutral-900">{item.title}</h3>
-          {/* 부제 줄은 저자까지만 — 연도는 호버 카드에서 본다 */}
-          <p className="mt-0.5 truncate text-xs text-neutral-500">
-            {/* 번호만 tabular-nums 로 — 이름까지 걸면 한글 옆 라틴 글자 폭이 어긋난다 */}
+          {/*
+            번호는 제목 줄 맨 앞에 붙는다. flex 로 두는 이유는 제목만 잘리게 하기 위해서다 —
+            한 줄에 인라인으로 두면 truncate 가 번호까지 함께 갉아먹는다.
+            tabular-nums 는 번호에만 — 제목까지 걸면 한글 옆 라틴 글자 폭이 어긋난다.
+          */}
+          <h3 className="flex min-w-0 items-baseline gap-1.5 text-sm font-medium text-neutral-900">
             {order !== undefined && (
-              <span className="tabular-nums">{String(order).padStart(2, '0')}</span>
+              <span className="flex-none tabular-nums text-neutral-400">
+                {String(order).padStart(2, '0')}
+              </span>
             )}
-            {order !== undefined && item.author && ' · '}
-            {item.author}
-          </p>
+            <span className="truncate">{item.title}</span>
+          </h3>
+          {/* 부제 줄은 저자까지만 — 연도는 호버 카드에서 본다 */}
+          {item.author && <p className="mt-0.5 truncate text-xs text-neutral-500">{item.author}</p>}
         </div>
       </Link>
 
