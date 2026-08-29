@@ -3,6 +3,7 @@ import { ArrowRight, X } from 'lucide-react'
 import { Link } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
+import { useSwipeDismiss } from '@/hooks/useSwipeDismiss'
 import { getCurrentSession } from '@/lib/scheduleApi'
 import { formatDday, formatMeetAt } from '@/lib/format'
 import type { Study } from '@/types'
@@ -11,6 +12,9 @@ import type { Study } from '@/types'
  * 지금 진행 중인 모임으로 들어가는 입구. 닫으면 그 모임에 대해서는 다시 뜨지 않고,
  * 다른 모임이 다음 차례가 되면 새로 뜬다. 일정 탭에서 언제든 다시 볼 수 있으므로
  * 접어두는 알약은 두지 않는다 — 오른쪽 아래 자리를 계속 차지하기 때문.
+ *
+ * 손가락으로는 오른쪽으로 밀어서도 닫는다([useSwipeDismiss]) — 화면 구석의 작은 X 는
+ * 엄지로 겨냥하기 나쁘다. 닫기 버튼을 없애는 게 아니라 길을 하나 더 두는 것이다.
  *
  * 화면에서의 위치는 여기서 정하지 않는다. 오른쪽 아래에 뜨는 것들끼리 겹치지 않게
  * [FloatingStack] 이 자리를 잡아준다.
@@ -24,13 +28,26 @@ export default function ThisSessionBanner({ study }: { study: Study | null }) {
     enabled: !!study,
   })
 
+  // 훅이라 이른 return 보다 위에 있어야 한다 — 세션이 없는 동안에도 순서가 같아야 하므로
+  // 닫을 대상은 콜백 안에서 그때의 세션으로 읽는다.
+  const swipe = useSwipeDismiss(() => setClosedId(current?.session.id ?? null))
+
   if (!study || !current) return null
 
   const { session, work } = current
   if (closedId === session.id) return null
 
   return (
-    <div className="pointer-events-auto relative w-[min(22rem,calc(100vw-2rem))]">
+    <div
+      {...swipe.handlers}
+      style={swipe.style}
+      // 끌리는 동안에는 손가락을 그대로 따라와야 한다 — transition 이 걸려 있으면 늦게 따라온다
+      className={`pointer-events-auto relative w-[min(22rem,calc(100vw-2rem))] ${
+        swipe.dragging
+          ? 'transition-none'
+          : 'transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none'
+      }`}
+    >
       <button
         type="button"
         onClick={() => setClosedId(session.id)}

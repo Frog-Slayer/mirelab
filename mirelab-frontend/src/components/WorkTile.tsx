@@ -25,7 +25,13 @@ const placeholderTone: Record<WorkKind, string> = {
 }
 
 /**
- * 표지 칸들이 늘어서는 그리드. 칸 폭은 고정하고 열 수는 화면에 맡긴다.
+ * 표지 칸들이 늘어서는 그리드. 넓은 화면에서는 칸 폭(7.25rem)을 유지한 채 열이 늘어나고,
+ * 좁아지면 열을 줄이는 대신 칸이 함께 작아진다 — 한 줄에 최소 다섯 칸은 남는다.
+ *
+ * 칸 최소폭을 `min(고정폭, 다섯 칸으로 나눈 폭)` 으로 두는 게 그 "최소 다섯 칸"의 전부다.
+ * 화면이 좁아 다섯 칸을 7.25rem 으로 못 채우면 뒤쪽 값이 이겨서 칸이 줄어든다.
+ * 나누는 식에서 간격(--tile-gap)을 네 번 빼는 이유: 다섯 칸 사이에는 틈이 네 개 있고,
+ * 그 몫까지 칸 폭으로 세면 다섯 번째 칸이 넘쳐서 네 칸으로 접힌다.
  *
  * `ol` 인 이유: 내 서재는 내 평점순, 아카이브는 완료순이라 두 곳 모두 순서가 뜻을 가진다.
  */
@@ -33,7 +39,7 @@ export function WorkTileGrid({ label, children }: { label?: string; children: Re
   return (
     <ol
       aria-label={label}
-      className="grid grid-cols-[repeat(auto-fill,minmax(7.25rem,1fr))] gap-x-4 gap-y-8 sm:gap-x-5"
+      className="grid grid-cols-[repeat(auto-fill,minmax(min(7.25rem,calc((100%_-_4_*_var(--tile-gap))_/_5)),1fr))] gap-x-[var(--tile-gap)] gap-y-8 [--tile-gap:0.75rem] sm:[--tile-gap:1.25rem]"
     >
       {children}
     </ol>
@@ -136,22 +142,34 @@ export function WorkTile({
           )}
         </div>
 
-        <div className="mt-3 min-w-0">
+        {/*
+          좁은 화면(sm 미만)에서는 칸이 글자를 담기엔 너무 좁아지므로 제목·저자를 숨기고
+          표지만 남긴다 — 세 글자에서 잘린 제목은 없느니만 못하다. 번호는 두 자리라 그
+          폭에도 들어가니 남긴다. 읽어주는 쪽에는 Link 의 aria-label 로 그대로 남는다.
+
+          번호마저 없는 곳(내 서재)에서는 좁은 화면에 남길 글자가 아예 없으므로 판 자체를
+          숨긴다 — 안쪽만 숨기면 빈 칸의 위 여백(mt-3)이 표지 아래에 그대로 남는다.
+        */}
+        <div className={`mt-3 min-w-0 ${order === undefined ? 'max-sm:hidden' : ''}`}>
           {/*
             번호는 제목 줄 맨 앞에 붙는다. flex 로 두는 이유는 제목만 잘리게 하기 위해서다 —
             한 줄에 인라인으로 두면 truncate 가 번호까지 함께 갉아먹는다.
             tabular-nums 는 번호에만 — 제목까지 걸면 한글 옆 라틴 글자 폭이 어긋난다.
+
+            제목이 사라지는 좁은 화면에서는 번호가 홀로 왼쪽에 치우쳐 서지 않게 가운데로 모은다.
           */}
-          <h3 className="flex min-w-0 items-baseline gap-1.5 text-sm font-medium text-neutral-900">
+          <h3 className="flex min-w-0 items-baseline gap-1.5 text-sm font-medium text-neutral-900 max-sm:justify-center">
             {order !== undefined && (
               <span className="flex-none tabular-nums text-neutral-400">
                 {String(order).padStart(2, '0')}
               </span>
             )}
-            <span className="truncate">{item.title}</span>
+            <span className="truncate max-sm:hidden">{item.title}</span>
           </h3>
           {/* 부제 줄은 저자까지만 — 연도는 호버 카드에서 본다 */}
-          {item.author && <p className="mt-0.5 truncate text-xs text-neutral-500">{item.author}</p>}
+          {item.author && (
+            <p className="mt-0.5 truncate text-xs text-neutral-500 max-sm:hidden">{item.author}</p>
+          )}
         </div>
       </Link>
 

@@ -20,7 +20,12 @@ const SLIDE_MS = 600
  */
 const ROW_HEIGHT = 96
 
-const ROW_CLASS = 'flex items-center gap-7 px-4'
+/*
+ * 줄 하나가 스스로 배경(인용부호)을 갖도록 relative·isolate·overflow-hidden 을 함께 건다.
+ * relative 는 인용부호의 기준점, overflow-hidden 은 줄 아래로 삐져나온 꼬리가 다음 줄
+ * 위에 겹쳐 보이지 않게 자르는 것, isolate 는 아래의 -z-10 을 이 줄 안에 가두는 것이다.
+ */
+const ROW_CLASS = 'relative isolate flex items-center gap-7 overflow-hidden px-4'
 
 export default function BlurbTicker({
   blurbs,
@@ -85,25 +90,17 @@ export default function BlurbTicker({
   return (
     <div
       /*
-        isolate: 카드 안에서 쓰는 z-index(배경 인용부호와 줄 스택)를 카드 안에 가둔다.
-        없으면 안쪽 z-10 이 헤더(sticky z-10)와 같은 층에서 겨루는데, DOM 상 뒤에 있는
-        쪽이 이겨서 스크롤할 때 한줄평이 헤더 위로 올라타 보인다.
+        isolate: 줄 안에서 쓰는 z-index(배경 인용부호)를 카드 안에 가둔다. 없으면 카드 안의
+        층이 헤더(sticky z-10)와 같은 판에서 겨루게 되고, DOM 상 뒤에 있는 쪽이 이겨서
+        스크롤할 때 한줄평이 헤더 위로 올라타 보인다.
       */
       className="app-card relative isolate overflow-hidden"
       style={{ height: ROW_HEIGHT }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* 배경의 인용부호 — 글자 위로 겹쳐도 방해되지 않게 옅게 깔고 클릭도 통과시킨다 */}
-      <span
-        aria-hidden
-        className="pointer-events-none absolute right-5 -bottom-8 z-0 font-serif text-8xl leading-none text-neutral-200 select-none"
-      >
-        ”
-      </span>
-
       <div
-        className={`relative z-10 ${sliding ? 'transition-transform ease-in-out motion-reduce:transition-none' : ''}`}
+        className={sliding ? 'transition-transform ease-in-out motion-reduce:transition-none' : ''}
         style={{
           transform: `translateY(-${index * ROW_HEIGHT}px)`,
           transitionDuration: sliding ? `${SLIDE_MS}ms` : undefined,
@@ -132,6 +129,23 @@ function Row({ blurb, users, studySlug }: { blurb: Blurb; users: User[]; studySl
       style={{ height: ROW_HEIGHT }}
       className={`${ROW_CLASS} group`}
     >
+      {/*
+        배경의 인용부호. 줄마다 하나씩 들고 있어야 줄과 함께 밀려 올라간다 — 카드에 한 번만
+        깔면 줄이 지나가도 저 혼자 제자리에 남는다.
+
+        -z-10 인 이유: 자리를 잡은(absolute) 요소는 순서와 무관하게 흐름 속 글자 위에 그려지므로,
+        음수 층으로 내려야 아바타·표지·글자 밑에 깔린다. 클릭도 통과시켜 줄 전체가 링크로 남는다.
+
+        좁은 화면(sm 미만)에서는 아예 뺀다 — 글자가 오른쪽 끝까지 차는 폭에서는 장식이 아니라
+        글자 뒤에 낀 얼룩으로 읽힌다.
+      */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute right-5 -bottom-8 -z-10 font-serif text-8xl leading-none text-neutral-200 select-none max-sm:hidden"
+      >
+        ”
+      </span>
+
       {writer && (
         <div className="flex flex-none items-center gap-2">
           <Avatar user={writer} size="sm" />
@@ -148,16 +162,27 @@ function Row({ blurb, users, studySlug }: { blurb: Blurb; users: User[]; studySl
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+        {/*
+          폭이 모자랄 때 줄어드는 건 저자 쪽이어야 한다 — 어떤 작품인지는 제목으로 알아보지,
+          저자로 알아보지 않는다.
+
+          flex-shrink 는 "밑변 × 계수" 에 비례해 나눠 줄어들므로, 저자에 큰 계수를 주면
+          줄어드는 몫을 저자가 사실상 다 가져간다. 저자가 0 까지 눌린 뒤에야 남은 몫이
+          제목으로 넘어오므로, 제목도 끝내 넘칠 만큼 길면 그때는 제목이 줄어든다.
+          두 쪽 다 min-w-0 이 필요하다 — 없으면 글자 한 덩이(min-content)에서 멈춰 선다.
+        */}
         <div className="flex min-w-0 items-baseline gap-1.5">
           <KindTag kind={blurb.kind} className="flex-none" />
           <Dot />
-          <span className="truncate text-sm font-semibold text-neutral-900 group-hover:underline">
+          <span className="min-w-0 shrink truncate text-sm font-semibold text-neutral-900 group-hover:underline">
             {blurb.title}
           </span>
           {blurb.author && (
             <>
               <Dot />
-              <span className="flex-none truncate text-xs text-neutral-500">{blurb.author}</span>
+              <span className="min-w-0 shrink-[9999] truncate text-xs text-neutral-500">
+                {blurb.author}
+              </span>
             </>
           )}
         </div>
