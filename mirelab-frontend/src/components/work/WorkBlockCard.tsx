@@ -6,6 +6,9 @@ import type { User, WorkBlock } from '@/types'
 /**
  * 함께 쓰는 블록 하나. 제목은 쓴 사람만 고치거나 지울 수 있고, 본문은 다같이
  * 실시간으로 이어 쓰는 Yjs 공유 문서라 따로 "수정" 모드가 없다 — 늘 열려 있다.
+ *
+ * 테두리(app-tile)를 두르지 않는다. 작품 페이지가 문서 한 장으로 읽히도록 바뀌면서,
+ * 이 블록은 그 문서 위에 얹힌 카드가 아니라 문서의 한 장(章)이 됐다.
  */
 export default function WorkBlockCard({
   block,
@@ -27,7 +30,7 @@ export default function WorkBlockCard({
   const [title, setTitle] = useState(block.title)
 
   return (
-    <article className="app-tile flex flex-col px-5 py-5">
+    <article className="flex flex-col">
       <div className="flex items-start justify-between gap-4 px-4 sm:px-[54px]">
         {editingTitle ? (
           <form

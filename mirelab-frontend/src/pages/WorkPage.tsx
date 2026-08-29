@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarPlus, MoreHorizontal, Plus, Star } from 'lucide-react'
-import Cover from '@/components/Cover'
-import Stars from '@/components/Stars'
-import RankSticker, { type Rank } from '@/components/RankSticker'
-import PickBlock from '@/components/work/PickBlock'
+import { Plus } from 'lucide-react'
+import { type Rank } from '@/components/RankSticker'
+import WorkOverview from '@/components/work/WorkOverview'
+import MemberRatings from '@/components/work/MemberRatings'
 import RateDialog from '@/components/work/RateDialog'
 import StartDialog from '@/components/work/StartDialog'
 import ManageDialog from '@/components/work/ManageDialog'
@@ -17,9 +16,7 @@ import { useCurrentUser } from '@/hooks/currentUser'
 import { useRecordDrawer } from '@/hooks/useRecordDrawer'
 import { useStudy } from '@/hooks/useStudy'
 import { ApiError } from '@/lib/api'
-import { formatRating } from '@/lib/format'
 import { completedYearOf, publishedRatingsOf, topRanksByYear } from '@/lib/workRanking'
-import { statusLabel } from '@/lib/workStatus'
 import { getWorkPosts } from '@/lib/postApi'
 import { addSession } from '@/lib/sessionApi'
 import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
@@ -39,7 +36,7 @@ import {
   updateWorkInfo,
   updateWorkReason,
 } from '@/lib/workApi'
-import { SlotScope, SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
+import { SlotScope, SlotType, Visibility, WorkStatus } from '@/types'
 
 /**
  * 별점 공개의 묘미는 다 같이 "하나, 둘, 셋" 하고 여는 그 순간이라, 그때만큼은 밀리면 안 된다.
@@ -197,7 +194,6 @@ export default function WorkPage() {
   )
   const rank = (yearRanks.get(work.id) ?? null) as Rank | null
   const rankYear = completedYearOf(work)
-  const showRankYear = rankYear !== null && rankYear !== new Date().getFullYear()
 
   // 평점·한줄평은 "내 기록" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
   const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
@@ -276,241 +272,45 @@ export default function WorkPage() {
         onToggle={() => setDrawerOpen((v) => !v)}
       />
 
-      <div className="flex flex-col gap-12">
-        <header className="app-card relative flex flex-col gap-6 p-6 sm:p-8">
-          {rank && (
-            <>
-              <RankSticker rank={rank} className="-top-2 -left-2 -rotate-6" />
-              {showRankYear && (
-                <span className="absolute -top-1 left-11 rounded-full bg-white px-2 py-0.5 text-xs font-medium text-neutral-600 ring-1 ring-neutral-950/[0.08]">
-                  {rankYear}년 {rank}위
-                </span>
-              )}
-            </>
-          )}
+      {/*
+        판 여러 장이 아니라 문서 한 장. 섹션 사이는 테두리가 아니라 가로선 하나와 여백으로
+        갈리고(divide-y), 각 섹션이 제 위아래 여백을 들고 있다.
 
-          <div className="flex items-center justify-end gap-2">
-            {work.status === WorkStatus.READING && (
-              <button
-                type="button"
-                onClick={() => setStartOpen(true)}
-                className="app-button app-button-secondary"
-              >
-                <CalendarPlus aria-hidden className="size-4" strokeWidth={1.75} />
-                일정 추가
-              </button>
-            )}
-            {step && (
-              <button
-                type="button"
-                onClick={() =>
-                  work.status === WorkStatus.CANDIDATE
-                    ? setStartOpen(true)
-                    : changeStatus.mutate(step.to)
-                }
-                disabled={changeStatus.isPending}
-                className="app-button app-button-primary"
-              >
-                {step.label}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setManageOpen(true)}
-              className="app-button app-button-secondary app-icon-button"
-              aria-label="정보 수정 · 상태 바꾸기 · 삭제"
-            >
-              <MoreHorizontal aria-hidden className="size-4" strokeWidth={2} />
-            </button>
-          </div>
+        폭은 바깥 기둥(RootLayout 의 max-w-6xl)을 그대로 쓴다. 긴 글이 담기는 자리만
+        각자 제 폭을 좁힌다 — 줄거리의 max-w-prose 처럼.
+      */}
+      <div className="flex flex-col divide-y divide-neutral-100">
+        <WorkOverview
+          work={work}
+          members={members}
+          currentUserId={user.id}
+          rank={rank}
+          rankYear={rankYear}
+          step={step}
+          advancing={changeStatus.isPending}
+          onAdvance={() => {
+            // 후보를 "시작" 하는 건 날짜를 정하는 일이라 곧장 상태만 바꾸지 않는다
+            if (work.status === WorkStatus.CANDIDATE) setStartOpen(true)
+            else if (step) changeStatus.mutate(step.to)
+          }}
+          onAddSession={() => setStartOpen(true)}
+          onManage={() => setManageOpen(true)}
+          onSaveReason={(next) => editReason.mutate(next)}
+        />
 
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="flex gap-6">
-              <div className="w-40 flex-none sm:w-48">
-                <Cover work={work} size="lg" />
-              </div>
-              <div className="flex flex-col gap-2.5 pt-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-neutral-500">
-                    {work.kind === WorkKind.MOVIE ? 'Movie' : 'Book'}
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      work.status === WorkStatus.READING
-                        ? 'bg-emerald-50 text-emerald-700'
-                        : 'bg-neutral-100 text-neutral-600'
-                    }`}
-                  >
-                    {statusLabel[work.status]}
-                  </span>
-                </div>
-                <h1 className="text-3xl leading-tight font-semibold tracking-tight sm:text-4xl">
-                  {work.title}
-                </h1>
-                <p className="text-base text-neutral-500">
-                  {work.author} · {work.year}
-                </p>
-                {work.actors && work.actors.length > 0 && (
-                  <p className="text-xs text-neutral-500">출연 {work.actors.join(' · ')}</p>
-                )}
-                {work.description && (
-                  <p className="min-h-[3.75rem] max-w-xl text-sm leading-relaxed text-neutral-600">
-                    {work.description}
-                  </p>
-                )}
-                <div className="mt-auto pt-2">
-                  <PickBlock
-                    addedBy={work.addedBy}
-                    reason={work.reason}
-                    users={members}
-                    canEdit={work.addedBy === user.id}
-                    onSave={(next) => editReason.mutate(next)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex min-h-14 flex-col items-end justify-center gap-1">
-              {work.voterCount > 0 ? (
-                <>
-                  <div className="flex items-center gap-3">
-                    <span className="font-serif text-4xl font-semibold tabular-nums">
-                      {formatRating(work.average)}
-                    </span>
-                    <Stars value={work.average} />
-                  </div>
-                  <span className="text-sm text-neutral-500">{work.voterCount}명 평가</span>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 text-sm text-neutral-500">
-                  <span>평가 없음</span>
-                  <Stars value={0} />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {work.status !== WorkStatus.CANDIDATE && (
-            <div className="app-panel p-4 sm:p-5">
-              {/*
-                예전에는 mono·대문자·넓은 자간의 잔글씨였다. 한글에는 mono 도 대문자도 없어서
-                "멤버별 평점" 이 그냥 흐린 잔글씨로만 보였다 — 크기와 굵기로 소제목임을 밝힌다.
-              */}
-              <span className="text-xs font-semibold text-neutral-500">멤버별 평점</span>
-              <div className="mt-3 grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {members.map((m) => {
-                  // 남의 점수는 공개한 것만 내려오므로, 점수가 없다고 안 매긴 건 아니다 —
-                  // ratedUserIds 로 "비공개로 매김"과 "아직 안 매김"을 갈라 보여준다.
-                  const score = work.ratings[m.id]
-                  const mine = m.id === user.id
-                  const rated = work.ratedUserIds.includes(m.id)
-                  const published = work.publishedRatingUserIds.includes(m.id)
-                  const content = (
-                    <>
-                      <span className="absolute top-2.5 right-3 flex items-center gap-1 text-xs text-neutral-500">
-                        {score === undefined ? (
-                          <span className="text-neutral-400">{rated ? '비공개' : '아직'}</span>
-                        ) : (
-                          <>
-                            <Star aria-hidden className="size-3 fill-amber-400 text-amber-400" />
-                            <span className="tabular-nums">{score.toFixed(1)}</span>
-                          </>
-                        )}
-                      </span>
-                      <div className="flex items-center gap-1.5 pr-10">
-                        {mine ? (
-                          <span className="truncate text-sm font-medium text-neutral-800">
-                            {m.name}
-                          </span>
-                        ) : (
-                          <Link
-                            to={`/@${m.username}`}
-                            className="truncate text-sm font-medium text-neutral-800 hover:underline"
-                          >
-                            {m.name}
-                          </Link>
-                        )}
-                        {/* 남의 카드는 점수 자리에 이미 공개 여부가 드러나니, 뱃지는 내 것만 */}
-                        {mine && rated && (
-                          <span
-                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                              published
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-neutral-100 text-neutral-500'
-                            }`}
-                          >
-                            {published ? '공개' : '비공개'}
-                          </span>
-                        )}
-                      </div>
-                      {/* 한줄평 공개 여부는 그 칸의 visibility 가 이미 정한다 — 평점을
-                          비공개로 뒀다고 같이 가릴 일이 아니다 */}
-                      {blurbOf(m.id) && <p className="text-xs text-neutral-600">{blurbOf(m.id)}</p>}
-                    </>
-                  )
-                  return mine ? (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setRatingOpen(true)}
-                      className="app-tile relative flex h-full cursor-pointer flex-col gap-1.5 p-3 text-left ring-emerald-400/70 hover:ring-emerald-500"
-                    >
-                      {content}
-                    </button>
-                  ) : (
-                    <div key={m.id} className="app-tile relative flex h-full flex-col gap-1.5 p-3">
-                      {content}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {ratingOpen && ratingSlot && (
-            <RateDialog
-              ratingSlot={ratingSlot}
-              blurbSlot={blurbSlot}
-              ratingValue={myValueOf(ratingSlot.id)?.value}
-              blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
-              published={work.publishedRatingUserIds.includes(user.id)}
-              publishError={publishError}
-              onSave={saveRating}
-              onClose={() => {
-                setPublishError(null)
-                setRatingOpen(false)
-              }}
-            />
-          )}
-
-          {startOpen && (
-            <StartDialog
-              title={work.status === WorkStatus.CANDIDATE ? '언제 시작하나요?' : '일정 추가'}
-              submitLabel={work.status === WorkStatus.CANDIDATE ? '시작하기' : '추가하기'}
-              onStart={(meetAt) => startReading.mutate({ workId: work.id, meetAt })}
-              onClose={() => setStartOpen(false)}
-            />
-          )}
-        </header>
-
-        {manageOpen && (
-          <ManageDialog
-            kind={work.kind}
-            title={work.title}
-            author={work.author}
-            description={work.description ?? ''}
-            coverUrl={work.coverUrl ?? ''}
-            year={work.year}
-            status={work.status}
-            onSaveInfo={(info) => editInfo.mutate({ workId: work.id, ...info })}
-            onChangeStatus={(next) => changeStatus.mutate(next)}
-            onDelete={() => drop.mutate()}
-            onClose={() => setManageOpen(false)}
+        {/* 후보 단계에는 매길 것이 없다 — 아무도 아직 읽지 않았다 */}
+        {work.status !== WorkStatus.CANDIDATE && (
+          <MemberRatings
+            work={work}
+            members={members}
+            currentUserId={user.id}
+            blurbOf={blurbOf}
+            onEditMine={() => setRatingOpen(true)}
           />
         )}
 
         {linkedPosts.length > 0 && (
-          <section className="app-card p-6">
+          <section className="py-10 first:pt-0">
             <h2 className="text-xl font-semibold">이 책에 연결된 글</h2>
             <div className="mt-4 divide-y divide-neutral-100">
               {linkedPosts.map((post) => (
@@ -533,7 +333,7 @@ export default function WorkPage() {
           </section>
         )}
 
-        <section className="app-card flex flex-col gap-6 p-6">
+        <section className="flex flex-col gap-6 py-10 first:pt-0">
           <div>
             <h2 className="text-xl font-semibold">함께 쓰는 기록</h2>
             <p className="mt-1 text-sm text-neutral-500">
@@ -542,7 +342,7 @@ export default function WorkPage() {
           </div>
 
           {blockApiReady ? (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-8">
               {blocks.map((block) => (
                 <WorkBlockCard
                   key={block.id}
@@ -579,6 +379,51 @@ export default function WorkPage() {
           )}
         </section>
       </div>
+
+      {/*
+        창들은 문서 바깥에 둔다. divide-y 가 걸린 칼럼 안에 있으면 열릴 때마다 없던
+        가로선이 하나 생긴다 — 화면 어딘가에 그려지는 것도 그 칼럼의 한 칸이기 때문.
+      */}
+      {ratingOpen && ratingSlot && (
+        <RateDialog
+          ratingSlot={ratingSlot}
+          blurbSlot={blurbSlot}
+          ratingValue={myValueOf(ratingSlot.id)?.value}
+          blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
+          published={work.publishedRatingUserIds.includes(user.id)}
+          publishError={publishError}
+          onSave={saveRating}
+          onClose={() => {
+            setPublishError(null)
+            setRatingOpen(false)
+          }}
+        />
+      )}
+
+      {startOpen && (
+        <StartDialog
+          title={work.status === WorkStatus.CANDIDATE ? '언제 시작하나요?' : '일정 추가'}
+          submitLabel={work.status === WorkStatus.CANDIDATE ? '시작하기' : '추가하기'}
+          onStart={(meetAt) => startReading.mutate({ workId: work.id, meetAt })}
+          onClose={() => setStartOpen(false)}
+        />
+      )}
+
+      {manageOpen && (
+        <ManageDialog
+          kind={work.kind}
+          title={work.title}
+          author={work.author}
+          description={work.description ?? ''}
+          coverUrl={work.coverUrl ?? ''}
+          year={work.year}
+          status={work.status}
+          onSaveInfo={(info) => editInfo.mutate({ workId: work.id, ...info })}
+          onChangeStatus={(next) => changeStatus.mutate(next)}
+          onDelete={() => drop.mutate()}
+          onClose={() => setManageOpen(false)}
+        />
+      )}
     </>
   )
 }
