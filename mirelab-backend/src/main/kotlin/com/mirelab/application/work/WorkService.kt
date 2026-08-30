@@ -8,6 +8,7 @@ import com.mirelab.domain.slot.Visibility
 import com.mirelab.domain.user.Role
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkStatus
+import com.mirelab.infra.note.WorkNoteRepository
 import com.mirelab.infra.session.SessionRepository
 import com.mirelab.infra.slot.SlotDefRepository
 import com.mirelab.infra.slot.SlotValueRepository
@@ -33,6 +34,7 @@ class WorkService(
     private val slotDefRepository: SlotDefRepository,
     private val slotValueRepository: SlotValueRepository,
     private val workBlockRepository: WorkBlockRepository,
+    private val workNoteRepository: WorkNoteRepository,
 ) {
     /** 완료작만 별점순 — 스터디의 첫 화면 */
     @Transactional(readOnly = true)
@@ -187,13 +189,14 @@ class WorkService(
 
     /**
      * 삭제는 항상 허용한다 — 확인은 프론트에서 삭제 문구 입력으로 이미 걸러진다.
-     * WorkBlock/SlotValue 는 cascade 없는 NOT NULL FK 라 먼저 안 지우면 참조 무결성
+     * WorkBlock/WorkNote/SlotValue 는 cascade 없는 NOT NULL FK 라 먼저 안 지우면 참조 무결성
      * 위반으로 실패하므로, 자식부터 순서대로 지운 뒤 Work 를 지운다.
      */
     @Transactional
     fun remove(workId: UUID): Boolean {
         val work = workRepository.findById(workId).orElse(null) ?: return false
         workBlockRepository.deleteAll(workBlockRepository.findByWorkIdOrderByCreatedAt(workId))
+        workNoteRepository.deleteByWorkId(workId)
         slotValueRepository.deleteByWorkId(workId)
         val sessions = sessionRepository.findByWorkId(workId)
         val sessionIds = sessions.mapNotNull { it.id }

@@ -71,15 +71,14 @@ class DevDataSeeder(
 
     private companion object {
         val READING_STUDY_ID: UUID = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+        /**
+         * 평점·한줄평만 남긴다. 나머지 개인 칸(내 요약·질문·인상깊은 구절 등)은 이제
+         * 칸이 아니라 [com.mirelab.domain.note.WorkNote] 로 각자 쌓는 메모라, 스터디가
+         * 미리 정해 줄 것이 없다.
+         */
         val SLOT_DEFS = listOf(
             SlotDefSeed(UUID.fromString("c45bf0b4-6906-4b76-bf45-3ac62b165180"), "평점", "RATING", 1),
             SlotDefSeed(UUID.fromString("c9090e36-abd3-4c44-808c-cab9258e45b2"), "한줄평", "TEXT_SHORT", 2),
-            SlotDefSeed(UUID.fromString("99f9c4da-411d-42b2-b78e-f9422d077451"), "인상깊은 장면", "LIST", 3),
-            SlotDefSeed(UUID.fromString("2e48060c-21fc-4a87-8ad4-12ea6f6a4412"), "발제문", "TEXT_LONG", 7, true),
-            SlotDefSeed(UUID.fromString("a2c88e5e-35f5-4a63-acdd-89f4a52d711e"), "내 요약", "TEXT_LONG", 1),
-            SlotDefSeed(UUID.fromString("d94fc75f-2507-4a88-832f-0f5838076a6b"), "질문 · 토론거리", "LIST", 2),
-            SlotDefSeed(UUID.fromString("9dde3961-5177-4e90-b5de-05ca05907d5c"), "인상깊은 구절", "LIST", 5),
-            SlotDefSeed(UUID.fromString("4ceb7968-a937-4a6a-9d96-abf561f3943f"), "아쉬웠던 점", "LIST", 4),
         )
     }
 }

@@ -19,11 +19,12 @@ import { ApiError } from '@/lib/api'
 import { completedYearOf, publishedRatingsOf, topRanksByYear } from '@/lib/workRanking'
 import { getWorkPosts } from '@/lib/postApi'
 import { addSession } from '@/lib/sessionApi'
+import { addWorkNote, getWorkNotes, removeWorkNote, updateWorkNote } from '@/lib/noteApi'
 import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
 import {
   addWorkBlock,
   getWorkBlocks,
-  isWorkBlockApiReady,
+  isRealWorkId,
   removeWorkBlock,
   updateWorkBlockTitle,
 } from '@/lib/workBlockApi'
@@ -36,7 +37,7 @@ import {
   updateWorkInfo,
   updateWorkReason,
 } from '@/lib/workApi'
-import { SlotScope, SlotType, Visibility, WorkStatus } from '@/types'
+import { SlotType, Visibility, WorkStatus } from '@/types'
 
 /**
  * 별점 공개의 묘미는 다 같이 "하나, 둘, 셋" 하고 여는 그 순간이라, 그때만큼은 밀리면 안 된다.
@@ -113,11 +114,17 @@ export default function WorkPage() {
     // 그 밑 한줄평은 옛것 그대로인 어긋난 카드가 안 나온다.
     refetchInterval: ratingPollMs(data?.work, live),
   })
-  const blockApiReady = isWorkBlockApiReady(workId)
+  const realWorkId = isRealWorkId(workId)
+  // 나만 보는 메모라 남이 바꿀 일이 없다 — 주기적으로 다시 받아오지 않는다.
+  const { data: notes = [] } = useQuery({
+    queryKey: ['workNotes', workId, user?.id],
+    queryFn: () => getWorkNotes(workId),
+    enabled: !!user && realWorkId,
+  })
   const { data: blocks = [] } = useQuery({
     queryKey: ['workBlocks', workId],
     queryFn: () => getWorkBlocks(workId),
-    enabled: blockApiReady,
+    enabled: realWorkId,
   })
   const { data: linkedPosts = [] } = useQuery({
     queryKey: ['workPosts', workId, user?.id],
@@ -151,19 +158,44 @@ export default function WorkPage() {
       setStartOpen(false)
     },
   })
+  const refreshNotes = () => qc.invalidateQueries({ queryKey: ['workNotes', workId] })
   /**
    * "내 메모" 서랍의 자동저장. onSuccess 에 refresh(전체 쿼리 무효화)를 걸면 안 된다 —
    * 글자를 치다 잠깐 멈출 때마다 작품·칸·블록·연결된 글·명예의 전당을 통째로 다시 받아온다.
-   * 개인 칸 값은 나만 보는 것이라 다시 받아올 이유도 없다(남이 바꾸면 서버가 밀어준다).
+   * 메모 목록조차 다시 받아올 이유가 없다: 방금 보낸 글이 그대로 돌아올 뿐인데, 그게 화면에
+   * 꽂히면 치고 있던 글자를 옛 값으로 덮는다.
    *
    * 대신 지금 무슨 일이 벌어지는지는 서랍 머리글에 적어 보여준다. 자동저장은 조용해도
    * 되지만, 실패까지 조용하면 쓴 글이 어디로 갔는지 알 수 없다.
    */
-  const save = useMutation({
-    mutationFn: saveValue,
+  const saveNoteBody = useMutation({
+    mutationFn: updateWorkNote,
     onMutate: () => setRecordSaveState('saving'),
     onSuccess: () => setRecordSaveState('saved'),
-    onError: () => setRecordSaveState('error'),
+    // 빈 메모는 자리를 뜰 때 거둬지므로(MyRecordDrawer), 미처 못 나간 자동저장이 이미 없는
+    // 메모에 닿는 일이 있다. 그건 잃은 글이 아니라 지운 글이라 실패로 알릴 것이 아니다.
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 404) return
+      setRecordSaveState('error')
+    },
+  })
+  // 추가·종류 바꾸기·지우기는 목록의 모양이 달라지는 일이라 메모 목록만 다시 받아온다.
+  // 실패는 자동저장과 같은 자리(서랍 머리글)에 적는다 — 알림창을 띄울 만큼의 일은 아니다.
+  const noteFailed = () => setRecordSaveState('error')
+  const addNote = useMutation({
+    mutationFn: addWorkNote,
+    onSuccess: refreshNotes,
+    onError: noteFailed,
+  })
+  const changeNoteKind = useMutation({
+    mutationFn: updateWorkNote,
+    onSuccess: refreshNotes,
+    onError: noteFailed,
+  })
+  const deleteNote = useMutation({
+    mutationFn: removeWorkNote,
+    onSuccess: refreshNotes,
+    onError: noteFailed,
   })
   const drop = useMutation({
     mutationFn: () => removeWork(workId),
@@ -209,19 +241,12 @@ export default function WorkPage() {
   const rank = (yearRanks.get(work.id) ?? null) as Rank | null
   const rankYear = completedYearOf(work)
 
-  // 평점·한줄평은 "내 메모" 목록이 아니라 멤버별 평점의 내 카드를 눌러 입력한다.
+  // 평점·한줄평은 스터디에 남는 기록이라 "내 메모" 서랍이 아니라 멤버별 평점의 내 카드를
+  // 눌러 입력한다. 서랍에 오는 건 나만 보는 메모뿐이다.
   const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
   const blurbSlot = slots.find(
     (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
   )
-  const consolidatedIds = new Set(
-    [ratingSlot?.id, blurbSlot?.id].filter((id): id is string => !!id),
-  )
-  const personalSlots = slots.filter(
-    (slot) => slot.scope === SlotScope.PERSONAL && !consolidatedIds.has(slot.id),
-  )
-  const summarySlot = personalSlots.find((slot) => slot.name === '내 요약')
-  const otherPersonalSlots = personalSlots.filter((slot) => slot.id !== summarySlot?.id)
   const blurbOf = (userId: string) => {
     const v = values.find((x) => x.slotDefId === blurbSlot?.id && x.userId === userId)
     return v && 'text' in v.value ? v.value.text : ''
@@ -277,13 +302,21 @@ export default function WorkPage() {
         // 안 그러면 이전 사용자의 내용을 그대로 보여주다 새 사용자 레코드에 덮어쓰게 된다.
         key={`${workId}-${user.id}`}
         open={drawerOpen}
-        summarySlot={summarySlot}
-        otherSlots={otherPersonalSlots}
-        myValueOf={myValueOf}
-        onSaveSlot={(slotDefId, value) =>
-          // mutate 가 아니라 mutateAsync — 돌려받은 약속으로 저장들이 순서대로 나간다
-          save.mutateAsync({ targetId: work.id, slotDefId, value, draft: false })
+        notes={notes}
+        // 만들어진 메모의 id 를 서랍에 돌려준다 — 그래야 그 칸에 곧바로 초점이 간다.
+        // 실패를 되던지지 않는 이유: 받을 사람이 없다. 소식은 위 onError 가 이미 적었다.
+        onAddNote={(kind) =>
+          addNote
+            .mutateAsync({ workId, kind })
+            .then((note) => note.id)
+            .catch(() => undefined)
         }
+        onSaveNoteBody={(noteId, body) =>
+          // mutate 가 아니라 mutateAsync — 돌려받은 약속으로 저장들이 순서대로 나간다
+          saveNoteBody.mutateAsync({ id: noteId, body })
+        }
+        onChangeNoteKind={(noteId, kind) => changeNoteKind.mutate({ id: noteId, kind })}
+        onRemoveNote={(noteId) => deleteNote.mutate(noteId)}
         draftKeyPrefix={`${workId}:${user.id}`}
         saveState={recordSaveState}
         onToggle={() => setDrawerOpen((v) => !v)}
@@ -360,7 +393,7 @@ export default function WorkPage() {
             </p>
           </div>
 
-          {blockApiReady ? (
+          {realWorkId ? (
             <div className="flex flex-col gap-8">
               {blocks.map((block) => (
                 <WorkBlockCard

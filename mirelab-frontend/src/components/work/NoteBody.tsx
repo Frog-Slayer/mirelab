@@ -1,43 +1,45 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { TriangleAlert } from 'lucide-react'
 import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 import { clearDraft, readDraft, writeDraft } from '@/lib/draftStore'
-import type { SlotValueData } from '@/types'
 
 /**
- * 개인 칸용 글 상자. 예전에는 여기도 BlockNote 였는데, 448px 짜리 서랍 안에서 슬래시
+ * 메모 한 장의 본문. 예전에는 여기도 BlockNote 였는데, 448px 짜리 서랍 안에서 슬래시
  * 메뉴·드래그 핸들·서식 도구까지 딸려 오는 건 과했다. 남기는 게 몇 줄짜리 메모라면 글
  * 상자 하나면 된다 — 진짜 문서를 쓰는 자리(내 서재의 개인 노트, 블로그 글)는 그대로 둔다.
- *
- * 예전에 BlockNote 로 저장해 둔 값({ blocks })도 읽어서 보여준다. 다만 굵기·목록 같은
- * 서식은 글 상자가 담을 수 없어 글자만 남는다 — 그 손실은 실제로 고쳐 저장할 때 일어나고,
- * 열어만 보고 나가면 서버의 값은 그대로다.
  *
  * `draftKey` 를 주면 치는 대로 브라우저에도 사본을 남긴다([draftStore]). 서버에 들어간 게
  * 확인되면 지우고, 못 들어간 채로 탭이 닫혔으면 다음에 열 때 되살릴지 묻는다.
  */
-export default function PersonalNoteField({
+export default function NoteBody({
   value,
-  placeholder = '읽으면서 남기고 싶은 것을 자유롭게 적어두세요',
+  placeholder,
   draftKey,
+  autoFocus = false,
   onSave,
+  onTextChange,
 }: {
-  value?: SlotValueData
+  value: string
   placeholder?: string
-  /** 이 칸을 가리키는 이름(작품·사람·칸). 안 주면 사본을 남기지 않는다 */
+  /** 이 메모를 가리키는 이름(작품·사람·메모). 안 주면 사본을 남기지 않는다 */
   draftKey?: string
-  onSave: (value: SlotValueData) => void | Promise<unknown>
+  /** 방금 만들어진 메모는 곧바로 쓸 수 있어야 한다 */
+  autoFocus?: boolean
+  onSave: (body: string) => void | Promise<unknown>
+  /**
+   * 저장과 무관하게, 지금 화면에 있는 글을 곧바로 알린다 — 빈 메모를 거두는 쪽
+   * ([WorkNoteCard])은 디바운스가 끝나기 전에도 지금 글이 비었는지 알아야 한다.
+   */
+  onTextChange?: (body: string) => void
 }) {
-  const initial = value && 'text' in value ? value.text : flatten(value)
-
   /**
    * 화면에 지금 있는 글. 저장이 끝났을 때 "그새 더 쳤는지" 를 가리는 데 쓴다 —
    * 방금 보낸 것보다 새 글자가 있으면 사본을 지우면 안 된다.
    */
-  const latest = useRef(initial)
+  const latest = useRef(value)
 
-  const [text, setText] = useDebouncedSave(initial, (next) => {
-    const result = onSave({ text: next })
+  const [text, setText] = useDebouncedSave(value, (next) => {
+    const result = onSave(next)
     return Promise.resolve(result).then(() => {
       if (draftKey && latest.current === next) clearDraft(draftKey)
     })
@@ -51,11 +53,12 @@ export default function PersonalNoteField({
   const [recoverable, setRecoverable] = useState(() => {
     if (!draftKey) return null
     const saved = readDraft(draftKey)
-    return saved !== null && saved !== initial ? saved : null
+    return saved !== null && saved !== value ? saved : null
   })
 
   const change = (next: string) => {
     setText(next)
+    onTextChange?.(next)
     // 저장 요청을 기다리지 않고 바로 적는다 — 사본이 막아야 하는 건 저장이 나가기 전에
     // 탭이 닫히는 경우다. 디바운스를 같이 태우면 그 구간이 그대로 구멍이 된다.
     if (draftKey) writeDraft(draftKey, next)
@@ -78,6 +81,15 @@ export default function PersonalNoteField({
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
   }, [text])
+
+  /**
+   * 방금 만들어진 메모로 초점을 옮긴다. `autoFocus` 속성을 쓰지 않는 이유: 그건 그려지는
+   * 순간에만 듣는데, 새 메모는 서버가 id 를 준 **뒤에** 목록에 나타나므로 이 카드가 이미
+   * 그려진 다음에 "네가 방금 만들어진 것" 이라는 소식이 오는 경우가 있다.
+   */
+  useEffect(() => {
+    if (autoFocus) ref.current?.focus()
+  }, [autoFocus])
 
   return (
     <div className="flex flex-col gap-2">
@@ -117,49 +129,14 @@ export default function PersonalNoteField({
         value={text}
         onChange={(event) => change(event.target.value)}
         placeholder={placeholder}
-        // 손잡이로 끄는 크기 조절은 끈다 — 높이는 글이 정한다. 비어 있어도 쓸 자리로 보이게 바닥은 깔아둔다
-        className="app-input min-h-36 w-full resize-none overflow-hidden text-sm leading-relaxed"
+        rows={1}
+        /*
+          테두리도 배경도 없다 — 카드 자체가 이미 경계라, 상자를 한 겹 더 그리면 서랍이
+          입력 양식처럼 보인다. 종류를 알아보는 건 왼쪽 표시가 맡는다([WorkNoteCard]).
+          크기 조절 손잡이는 끈다: 높이는 글이 정한다.
+        */
+        className="w-full resize-none overflow-hidden border-0 bg-transparent p-0 text-sm leading-relaxed outline-none placeholder:text-neutral-400"
       />
     </div>
   )
-}
-
-/**
- * BlockNote 블록 JSON 에서 글자만 훑어 낸다. 블록 하나가 한 줄이 되고, 안에 든 블록
- * (목록 안의 목록 등)도 제 줄을 갖는다.
- *
- * 타입을 any 로 받지 않으려고 좁혀 가며 읽는다 — 저장된 JSON 은 우리가 만든 모양이 아니라
- * BlockNote 의 것이고, 판(version)이 바뀌면 모양도 바뀔 수 있어서 없는 필드를 만나도
- * 터지지 않아야 한다.
- */
-function flatten(value?: SlotValueData): string {
-  if (!value || !('blocks' in value) || !Array.isArray(value.blocks)) return ''
-
-  const lines: string[] = []
-
-  const walk = (nodes: unknown[]) => {
-    for (const node of nodes) {
-      if (typeof node !== 'object' || node === null) continue
-      const block = node as { content?: unknown; children?: unknown }
-
-      if (typeof block.content === 'string') lines.push(block.content)
-      else if (Array.isArray(block.content)) {
-        const line = block.content
-          .map((inline) =>
-            typeof inline === 'object' && inline !== null && 'text' in inline
-              ? String((inline as { text: unknown }).text)
-              : '',
-          )
-          .join('')
-        lines.push(line)
-      }
-
-      if (Array.isArray(block.children)) walk(block.children)
-    }
-  }
-  walk(value.blocks)
-
-  // 끝에 붙은 빈 문단들은 버린다 — BlockNote 는 늘 빈 문단 하나로 끝난다
-  while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop()
-  return lines.join('\n')
 }

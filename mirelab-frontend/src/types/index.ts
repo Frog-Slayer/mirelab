@@ -185,6 +185,26 @@ export interface WorkBlock {
   createdAt: string
 }
 
+/**
+ * 메모의 종류. 저장되는 모양은 셋 다 글 한 덩이로 같고, 다른 건 나중에 이 글을 무엇으로
+ * 대하느냐다 — 그래서 종류를 스터디가 미리 정하지 않고 메모마다 들고 다닌다.
+ */
+export const NoteKind = { MEMO: 'MEMO', QUESTION: 'QUESTION', QUOTE: 'QUOTE' } as const
+export type NoteKind = (typeof NoteKind)[keyof typeof NoteKind]
+
+/**
+ * 작품을 읽으면서 혼자 남기는 메모 한 장 — "내 메모" 서랍에 쌓인다. 쓴 사람만 보므로
+ * 작성자 id 가 없다: 서버가 부른 사람 것만 내려준다.
+ */
+export interface WorkNote {
+  id: string
+  workId: string
+  kind: NoteKind
+  body: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type SlotValueData =
   | { n: number }
   | { text: string }
