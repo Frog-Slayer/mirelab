@@ -11,7 +11,14 @@ import { createPortal } from 'react-dom'
  */
 const SlotContext = createContext<HTMLDivElement | null>(null)
 
-export function FloatingStack({ children }: { children: ReactNode }) {
+export function FloatingStack({
+  children,
+  shifted = false,
+}: {
+  children: ReactNode
+  /** 오른쪽에서 "내 메모" 서랍이 나와 있는 동안 — 그 앞을 가리지 않게 비켜선다 */
+  shifted?: boolean
+}) {
   // ref 대신 state 로 받는다 — 포털은 붙일 DOM 노드가 생긴 뒤 한 번 더 그려져야 한다.
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
 
@@ -21,7 +28,15 @@ export function FloatingStack({ children }: { children: ReactNode }) {
         컨테이너 자체는 클릭을 먹지 않는다 — 비어 있을 때 화면 구석을 가로막지 않도록.
         실제로 눌리는 건 안에 들어오는 것들이며, 각자 pointer-events 를 되살린다.
       */}
-      <div className="pointer-events-none fixed right-4 bottom-4 z-40 flex flex-col items-end gap-3">
+      {/*
+        서랍이 열려 있을 때: 넓은 화면(xl 이상)에서는 서랍 폭(28rem)만큼 왼쪽으로 비켜서고,
+        좁은 화면에서는 아예 숨는다 — 거기서는 서랍이 화면을 덮으므로 비켜설 자리가 없다.
+      */}
+      <div
+        className={`pointer-events-none fixed bottom-4 z-40 flex flex-col items-end gap-3 transition-[right] duration-150 ease-out motion-reduce:transition-none ${
+          shifted ? 'right-4 max-xl:hidden xl:right-[29rem]' : 'right-4'
+        }`}
+      >
         {/* 페이지가 끼워 넣는 자리 — 모임 카드보다 위에 쌓인다 */}
         <div ref={setSlot} className="pointer-events-auto contents" />
         {children}

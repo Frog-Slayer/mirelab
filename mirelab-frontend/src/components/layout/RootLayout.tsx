@@ -121,16 +121,6 @@ export default function RootLayout() {
       </header>
 
       <div className="flex flex-1">
-        {/*
-          "내 메모" 드로어(WorkPage)는 항상 뷰포트 왼쪽 끝에 고정으로 붙는다.
-          여기서는 실제로 아무것도 그리지 않고, 화면이 넓을 때(xl 이상) 그
-          너비만큼 자리를 미리 비워둬서 <main> 이 오른쪽으로 밀리게 한다.
-        */}
-        <div
-          className={`w-0 flex-none transition-[width] duration-150 ease-out motion-reduce:transition-none ${
-            recordDrawerOpen ? 'xl:w-[28rem]' : ''
-          }`}
-        />
         <main className={`${CONTENT_COLUMN} flex-1 py-8 sm:py-10`}>
           {/*
             화면을 옮기면 맨 위에서 시작하고, 뒤로 가기로 돌아오면 보던 자리로 되돌린다.
@@ -143,6 +133,17 @@ export default function RootLayout() {
           <ScrollRestoration />
           <Outlet context={recordDrawer} />
         </main>
+
+        {/*
+          "내 메모" 드로어(WorkPage)는 항상 뷰포트 오른쪽 끝에 고정으로 붙는다.
+          여기서는 실제로 아무것도 그리지 않고, 화면이 넓을 때(xl 이상) 그
+          너비만큼 자리를 미리 비워둬서 <main> 이 왼쪽으로 밀리게 한다.
+        */}
+        <div
+          className={`w-0 flex-none transition-[width] duration-150 ease-out motion-reduce:transition-none ${
+            recordDrawerOpen ? 'xl:w-[28rem]' : ''
+          }`}
+        />
       </div>
 
       <footer className="py-7">
@@ -152,8 +153,11 @@ export default function RootLayout() {
       {/*
         오른쪽 아래에 뜨는 것들을 한 스택에 모은다 — 페이지가 얹는 플로팅 버튼이
         위, 다음 모임 카드가 아래. 각자 fixed 로 자리를 잡으면 서로 겹친다.
+
+        "내 메모" 서랍도 이제 오른쪽에서 나오므로, 열려 있는 동안은 이 스택이 그 앞을
+        가리지 않게 비켜서야 한다 — 그래서 열림 상태를 넘겨준다.
       */}
-      <FloatingStack>
+      <FloatingStack shifted={recordDrawerOpen}>
         <ThisSessionBanner study={current} />
       </FloatingStack>
     </div>

@@ -1,5 +1,13 @@
 import { useEffect, type ReactNode } from 'react'
-import { Check, ChevronLeft, Lock, LoaderCircle, NotebookPen, TriangleAlert, X } from 'lucide-react'
+import {
+  Check,
+  ChevronRight,
+  Lock,
+  LoaderCircle,
+  NotebookPen,
+  TriangleAlert,
+  X,
+} from 'lucide-react'
 import PersonalNoteField from '@/components/slots/PersonalNoteField'
 import SlotField from '@/components/slots/SlotField'
 import type { SlotDef, SlotValue } from '@/types'
@@ -10,7 +18,7 @@ import { Visibility } from '@/types'
  * 고정돼야 하는 내용)가 같은 값을 써야 해서 한 곳에만 적어 둔다 — 하나만 어긋나면 여닫는
  * 동안 글이 접혔다 펴진다.
  *
- * RootLayout 이 <main> 옆에 비워 두는 자리(xl:w-[28rem])와도 같은 값이어야 한다. 거기는
+ * RootLayout 이 <main> 오른쪽에 비워 두는 자리(xl:w-[28rem])와도 같은 값이어야 한다. 거기는
  * Tailwind 가 클래스를 미리 뽑아내야 해서 변수로 못 넘긴다 — 고칠 때 같이 고칠 것.
  */
 const WIDTH = 'w-[min(28rem,100vw)]'
@@ -76,21 +84,21 @@ export default function MyRecordDrawer({
       )}
 
       <div
-        className={`fixed top-[var(--header-h)] bottom-0 left-0 z-40 flex-none overflow-visible ${SLIDE} ${width}`}
+        className={`fixed top-[var(--header-h)] right-0 bottom-0 z-40 flex-none overflow-visible ${SLIDE} ${width}`}
       >
         {/*
-          손잡이. 예전에는 서랍 오른쪽 모서리를 위아래로 가로지르는 24px 짜리 띠였는데,
-          닫혀 있을 때는 화면 왼쪽 끝에 붙은 긴 막대로만 보여서 무엇에 딸린 것인지 알 수
-          없었다. 세로 가운데의 작은 탭으로 줄이고, 닫혀 있을 때만 이름을 세로로 적는다.
+          손잡이. 예전에는 서랍 모서리를 위아래로 가로지르는 24px 짜리 띠였는데, 닫혀 있을
+          때는 화면 끝에 붙은 긴 막대로만 보여서 무엇에 딸린 것인지 알 수 없었다.
+          세로 가운데의 작은 탭으로 줄이고, 닫혀 있을 때만 이름을 세로로 적는다.
         */}
         <button
           type="button"
           onClick={onToggle}
           aria-label={open ? '내 메모 닫기' : '내 메모 열기'}
-          className="absolute top-1/2 -right-8 z-10 flex w-8 -translate-y-1/2 cursor-pointer flex-col items-center gap-2 rounded-r-xl bg-white py-4 text-neutral-500 shadow-[3px_0_10px_rgb(15_23_42/0.07)] ring-1 ring-neutral-950/[0.07] transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+          className="absolute top-1/2 -left-8 z-10 flex w-8 -translate-y-1/2 cursor-pointer flex-col items-center gap-2 rounded-l-xl bg-white py-4 text-neutral-500 shadow-[-3px_0_10px_rgb(15_23_42/0.07)] ring-1 ring-neutral-950/[0.07] transition-colors hover:bg-emerald-50 hover:text-emerald-700"
         >
           {open ? (
-            <ChevronLeft aria-hidden className="size-4" strokeWidth={2} />
+            <ChevronRight aria-hidden className="size-4" strokeWidth={2} />
           ) : (
             <>
               <NotebookPen aria-hidden className="size-4" strokeWidth={1.75} />
@@ -106,7 +114,7 @@ export default function MyRecordDrawer({
         </button>
 
         <aside
-          className={`h-full overflow-hidden rounded-r-2xl bg-white shadow-[4px_0_24px_rgb(15_23_42/0.08)] ring-1 ring-neutral-950/[0.07] ${SLIDE} ${width}`}
+          className={`h-full overflow-hidden rounded-l-2xl bg-white shadow-[-4px_0_24px_rgb(15_23_42/0.08)] ring-1 ring-neutral-950/[0.07] ${SLIDE} ${width}`}
         >
           {/* 여닫히는 동안 안쪽 폭은 고정 — 안 그러면 글이 접혔다 펴지는 게 보인다 */}
           <div className={`flex h-full flex-col ${WIDTH}`}>

@@ -313,18 +313,20 @@ export default function WorkPage() {
           onAddSession={() => setStartOpen(true)}
           onManage={() => setManageOpen(true)}
           onSaveReason={(next) => editReason.mutate(next)}
+          // 후보 단계에는 매길 것이 없다(아무도 아직 읽지 않았다) — 그때는 오른쪽 반쪽을
+          // 아예 안 열어서 작품 정보가 통째로 넓게 선다.
+          aside={
+            work.status !== WorkStatus.CANDIDATE ? (
+              <MemberRatings
+                work={work}
+                members={members}
+                currentUserId={user.id}
+                blurbOf={blurbOf}
+                onEditMine={() => setRatingOpen(true)}
+              />
+            ) : null
+          }
         />
-
-        {/* 후보 단계에는 매길 것이 없다 — 아무도 아직 읽지 않았다 */}
-        {work.status !== WorkStatus.CANDIDATE && (
-          <MemberRatings
-            work={work}
-            members={members}
-            currentUserId={user.id}
-            blurbOf={blurbOf}
-            onEditMine={() => setRatingOpen(true)}
-          />
-        )}
 
         {linkedPosts.length > 0 && (
           <section className="py-10 first:pt-0">
