@@ -386,13 +386,12 @@ function WideComposer({
             navigate(`/${studySlug}/books/${work.id}`)
           }}
           aria-label={`${work.title} 작품으로 이동`}
-          className="group flex flex-none cursor-pointer items-center gap-5 rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/25"
+          className="group flex w-28 flex-none cursor-pointer flex-col gap-3 rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/25"
         >
-          <div className="w-28">
+          <div className="w-full">
             <Cover work={work} size="lg" />
           </div>
-          {/* 제목 칸은 폭이 남을 때만. 없으면 표지가 그 자리를 대신한다 */}
-          <div className="hidden w-32 flex-col md:flex">
+          <div className="flex min-w-0 flex-col">
             <h2 className="truncate text-xl font-semibold tracking-tight">{work.title}</h2>
             <p className="mt-0.5 truncate text-sm text-neutral-500">{work.author}</p>
           </div>
