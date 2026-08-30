@@ -75,7 +75,7 @@ class AdminBootstrap(
     /**
      * 이름이 같고 아직 로그인 계정이 안 붙은 사람이 있으면 그 행에 이메일을 붙인다.
      * 인증 붙기 전에 시딩된 DB 를 위한 것이다 — 새로 만들어버리면 같은 이름이 둘이 되고,
-     * 그 사람이 그때까지 쌓은 기록(SlotValue·Work.addedBy)이 주인 없이 남는다.
+     * 그 사람이 그때까지 쌓은 기록(WorkRating·WorkNote·Work.addedBy)이 주인 없이 남는다.
      */
     private fun adoptOrCreate(adminUsername: String): User {
         val adopted = userRepository.findAll()

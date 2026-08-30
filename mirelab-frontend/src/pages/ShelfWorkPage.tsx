@@ -3,20 +3,20 @@ import { Link, useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Cover from '@/components/Cover'
 import RatingControl from '@/components/RatingControl'
-import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
-import SlotField from '@/components/slots/SlotField'
+import PersonalBlockNoteField from '@/components/PersonalBlockNoteField'
 import { useCurrentUser } from '@/hooks/currentUser'
+import { useDebouncedSave } from '@/hooks/useDebouncedSave'
 import { useStudy } from '@/hooks/useStudy'
 import {
   getShelfEntry,
   saveShelfDocument,
-  saveShelfValue,
+  saveShelfRating,
   setShelfPublication,
   setShelfWorkStatus,
 } from '@/lib/shelfApi'
 import { statusLabel } from '@/lib/workStatus'
-import type { Post, SlotDef, SlotValueData } from '@/types'
-import { SlotType, Visibility, WorkKind, WorkStatus } from '@/types'
+import type { BlockDocument, Post } from '@/types'
+import { WorkKind, WorkStatus } from '@/types'
 
 const nextStatus: Partial<Record<WorkStatus, { status: WorkStatus; label: string }>> = {
   [WorkStatus.CANDIDATE]: { status: WorkStatus.READING, label: '읽기 시작' },
@@ -25,7 +25,7 @@ const nextStatus: Partial<Record<WorkStatus, { status: WorkStatus; label: string
 
 /**
  * 혼자 담은 책의 상세. 스터디에서 온 책은 여기 없다 — 그 책은 스터디 작품 상세의
- * "내 기록" 드로어에서 쓰고, 서재에서 눌러도 그쪽으로 간다([ShelfPage] 의 entryHref).
+ * "내 메모" 드로어에서 쓰고, 서재에서 눌러도 그쪽으로 간다([ShelfPage] 의 entryHref).
  * 그래서 옛 링크로 들어오면 서버가 404 를 주고 아래 문구가 뜬다.
  */
 export default function ShelfWorkPage() {
@@ -41,7 +41,7 @@ export default function ShelfWorkPage() {
   })
 
   const save = useMutation({
-    mutationFn: saveShelfValue,
+    mutationFn: saveShelfRating,
     onSuccess: () => qc.invalidateQueries(),
   })
   const saveDocument = useMutation({
@@ -60,17 +60,9 @@ export default function ShelfWorkPage() {
   if (!data || !user || !currentStudy)
     return <p className="text-sm text-neutral-500">내 서재에 없는 책입니다.</p>
 
-  const { work, study, slots, values } = data
-  const targetId = work.id
-
-  const valueOf = (slot: SlotDef) => values.find((v) => v.slotDefId === slot.id)
-
-  const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
-  const blurbSlot = slots.find(
-    (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
-  )
-  const ratingValue = ratingSlot && valueOf(ratingSlot)?.value
-  const rating = ratingValue && 'n' in ratingValue ? ratingValue.n : 0
+  const { work, study } = data
+  const rating = data.rating?.score ?? 0
+  const blurb = data.rating?.blurb ?? ''
   const documentBlocks = parseBlocks(data.personalBodyJson)
   const step = nextStatus[work.status]
 
@@ -125,37 +117,17 @@ export default function ShelfWorkPage() {
             </button>
           )}
 
-          {(ratingSlot || blurbSlot) && (
-            <div className="mt-auto flex flex-col gap-2 pt-2">
-              {ratingSlot && (
-                <RatingControl
-                  value={rating}
-                  onSave={(next) =>
-                    save.mutate({
-                      targetId,
-                      slotDefId: ratingSlot.id,
-                      value: { n: next },
-                      draft: false,
-                    })
-                  }
-                />
-              )}
-              {blurbSlot && (
-                <SlotField
-                  slot={blurbSlot}
-                  value={valueOf(blurbSlot)?.value}
-                  onSave={(value) =>
-                    save.mutate({
-                      targetId,
-                      slotDefId: blurbSlot.id,
-                      value,
-                      draft: false,
-                    })
-                  }
-                />
-              )}
-            </div>
-          )}
+          <div className="mt-auto flex flex-col gap-2 pt-2">
+            <RatingControl
+              value={rating}
+              onSave={(next) => save.mutate({ workId: work.id, score: next })}
+            />
+            <BlurbField
+              key={work.id}
+              value={blurb}
+              onSave={(next) => save.mutate({ workId: work.id, blurb: next })}
+            />
+          </div>
         </div>
       </header>
 
@@ -169,9 +141,7 @@ export default function ShelfWorkPage() {
         <PersonalBlockNoteField
           key={`${workId}-${user.id}`}
           value={{ blocks: documentBlocks }}
-          onSave={(value: SlotValueData) => {
-            if ('blocks' in value) saveDocument.mutate(JSON.stringify(value.blocks))
-          }}
+          onSave={(value: BlockDocument) => saveDocument.mutate(JSON.stringify(value.blocks))}
         />
       </section>
     </div>
@@ -253,6 +223,24 @@ function PublicationControls({
         )}
       </div>
     </section>
+  )
+}
+
+/**
+ * 한줄평. 별점([RatingControl])은 훑는 동안 매 순간이 저장되면 요청이 쌓여 저장을 눌러
+ * 반영하지만, 글은 치는 대로 잠깐 뒤에 저장한다 — 여기서 저장 버튼을 하나 더 두면
+ * 한 화면에 저장 버튼이 둘이 된다.
+ */
+function BlurbField({ value, onSave }: { value: string; onSave: (next: string) => void }) {
+  const [text, setText] = useDebouncedSave(value, onSave)
+
+  return (
+    <input
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      placeholder="한 줄로"
+      className="app-input w-full leading-relaxed"
+    />
   )
 }
 

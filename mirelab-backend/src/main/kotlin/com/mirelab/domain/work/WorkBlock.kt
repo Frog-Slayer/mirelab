@@ -39,7 +39,7 @@ class WorkBlock(
     var title: String,
 
     // @Lob 을 쓰면 PostgreSQL에서 large object/OID 로 매핑돼버린다 — VARBINARY 로 지정해
-    // PostgreSQL은 bytea, 테스트에서 쓰는 H2는 평범한 바이너리 컬럼을 쓴다(SlotValue.value 와 같은 이유).
+    // PostgreSQL은 bytea, 테스트에서 쓰는 H2는 평범한 바이너리 컬럼을 쓴다(WorkNote.body 와 같은 이유).
     @JdbcTypeCode(SqlTypes.VARBINARY)
     var bodySnapshot: ByteArray? = null,
 
