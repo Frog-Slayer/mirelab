@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import type { Work } from '@/types'
 import { WorkKind } from '@/types'
 
+const kindLabel: Record<WorkKind, string> = {
+  [WorkKind.BOOK]: '책',
+  [WorkKind.MOVIE]: '영화',
+  [WorkKind.GAME]: '게임',
+}
+
 interface Props {
   work: Pick<Work, 'title' | 'kind' | 'coverUrl'>
   size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg'
@@ -36,23 +42,23 @@ export default function Cover({ work, size = 'md', className = '' }: Props) {
           if (work.coverUrl && src !== work.coverUrl) setSrc(work.coverUrl)
           else setSrc(undefined)
         }}
-        className={`${widths[size]} aspect-2/3 flex-none rounded-md border border-neutral-200 object-cover ${className}`}
+        className={`app-cover ${widths[size]} aspect-2/3 flex-none rounded-md object-cover ${className}`}
       />
     )
   }
 
   return (
     <div
-      className={`${widths[size]} aspect-2/3 flex-none overflow-hidden rounded-md border border-neutral-200 bg-neutral-100 ${className}`}
+      className={`app-cover ${widths[size]} aspect-2/3 flex-none overflow-hidden rounded-md bg-neutral-100 ${className}`}
     >
       <div
         className={`flex h-full flex-col justify-between ${size === 'xxs' ? '' : size === 'xs' ? 'p-1' : 'p-2'}`}
       >
         {size !== 'xxs' && (
           <span
-            className={`${size === 'xs' ? 'text-[9px]' : 'text-xs'} font-medium text-neutral-400`}
+            className={`${size === 'xs' ? 'text-[9px]' : 'text-xs'} font-medium text-neutral-500`}
           >
-            {work.kind === WorkKind.MOVIE ? '영화' : '책'}
+            {kindLabel[work.kind]}
           </span>
         )}
         {size !== 'xxs' && size !== 'xs' && size !== 'sm' && (

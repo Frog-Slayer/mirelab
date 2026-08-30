@@ -60,7 +60,7 @@ export default function AdminMembersPage() {
         </p>
 
         {requests.length === 0 ? (
-          <p className="mt-6 text-sm text-neutral-400">가입 신청 이력이 없습니다.</p>
+          <p className="mt-6 text-sm text-neutral-500">가입 신청 이력이 없습니다.</p>
         ) : (
           <ul className="mt-6 flex flex-col gap-3">
             {requests.map((request) => (
@@ -82,9 +82,7 @@ export default function AdminMembersPage() {
         )}
 
         {changeStatus.isError && (
-          <p className="mt-3 text-sm text-rose-700">
-            {statusChangeError(changeStatus.error)}
-          </p>
+          <p className="mt-3 text-sm text-rose-700">{statusChangeError(changeStatus.error)}</p>
         )}
       </section>
 
@@ -138,9 +136,7 @@ function MemberRow({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className={`size-2 flex-none rounded-full ${member.color}`} aria-hidden />
         <span className="text-neutral-800">{member.name}</span>
-        <span className="truncate text-neutral-400">
-          {member.email ?? '로그인 계정 없음'}
-        </span>
+        <span className="truncate text-neutral-500">{member.email ?? '로그인 계정 없음'}</span>
         {member.role === 'ADMIN' && <span className="text-xs text-neutral-500">관리자</span>}
       </div>
 
@@ -159,7 +155,9 @@ function MemberRow({
             {study.name}
           </label>
         ))}
-        {studies.length === 0 && <span className="text-xs text-neutral-400">등록된 스터디 없음</span>}
+        {studies.length === 0 && (
+          <span className="text-xs text-neutral-500">등록된 스터디 없음</span>
+        )}
       </div>
     </li>
   )
@@ -177,7 +175,7 @@ function RequestRow({
   onChange: (status: Status) => void
 }) {
   return (
-    <li className="flex flex-wrap items-center gap-3 rounded-md border border-neutral-200 p-3">
+    <li className="app-tile flex flex-wrap items-center gap-3 p-3">
       <div className="min-w-40 flex-1">
         <p className="text-sm text-neutral-800">{request.googleName}</p>
         <p className="text-xs text-neutral-500">{request.email}</p>
@@ -188,7 +186,7 @@ function RequestRow({
         disabled={busy}
         onChange={(event) => onChange(event.target.value as Status)}
         aria-label={`${request.email} 가입 상태`}
-        className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
+        className="cursor-pointer rounded-lg border border-neutral-200 px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-400"
       >
         <option value={AccessRequestStatus.PENDING}>승인 대기</option>
         <option value={AccessRequestStatus.PROFILE_REQUIRED}>정보 입력 대기</option>

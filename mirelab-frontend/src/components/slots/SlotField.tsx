@@ -43,8 +43,7 @@ function TextField({
 
   if (readOnly) return text ? <p className="text-sm whitespace-pre-wrap">{text}</p> : <Empty />
 
-  const shared =
-    'w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm leading-relaxed outline-none transition-colors placeholder:text-neutral-400 focus:border-emerald-600'
+  const shared = 'app-input w-full leading-relaxed'
 
   return multiline ? (
     <textarea
@@ -111,5 +110,5 @@ function ListField({ value, readOnly, onSave }: Omit<Props, 'slot'>) {
 }
 
 function Empty() {
-  return <span className="text-sm text-neutral-400">비어 있음</span>
+  return <span className="text-sm text-neutral-500">비어 있음</span>
 }

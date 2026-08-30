@@ -2,10 +2,9 @@ import { createBrowserRouter } from 'react-router'
 import RootLayout from '@/components/layout/RootLayout'
 import RequireAuth, { RequireAdmin } from '@/components/RequireAuth'
 import SchedulePage from '@/pages/SchedulePage'
-import HallOfFamePage from '@/pages/HallOfFamePage'
-import AllWorksPage from '@/pages/AllWorksPage'
 import WorkPage from '@/pages/WorkPage'
-import ShelfPage from '@/pages/ShelfPage'
+import PostPage from '@/pages/PostPage'
+import PostEditorPage from '@/pages/PostEditorPage'
 import ShelfWorkPage from '@/pages/ShelfWorkPage'
 import AdminMembersPage from '@/pages/AdminMembersPage'
 import SettingsPage from '@/pages/SettingsPage'
@@ -14,7 +13,8 @@ import AuthCallbackPage from '@/pages/AuthCallbackPage'
 import SignupPage from '@/pages/SignupPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 import LandingPage from '@/pages/LandingPage'
-import RequireStudyMember, { StudyHomeRedirect } from '@/components/RequireStudyMember'
+import { StudyHomeRedirect } from '@/components/RequireStudyMember'
+import { IdentityBooks, IdentityGuard, IdentityHome, MyBlogRedirect } from '@/routes/IdentityRoutes'
 
 /** 스터디 slug 로 쓸 수 없는 이름 — 전역 경로와 부딪힌다 */
 export const RESERVED_SLUGS = ['app', 'diary', 'settings', 'login', 'signup', 'api', 'admin', 'new']
@@ -42,18 +42,19 @@ export const router = createBrowserRouter([
             children: [{ index: true, element: <AdminMembersPage /> }],
           },
           {
-            // 스터디 slug 가 최상위를 차지한다. React Router 는 정적 세그먼트를
-            // 동적보다 먼저 매칭하므로 전역 경로를 나중에 추가해도 안전하지만,
-            // slug 를 사용자가 정하게 되면 RESERVED_SLUGS 로 막아야 한다.
+            // 첫 세그먼트 전체를 받는다. @로 시작하면 블로그 username, 아니면 스터디 slug다.
+            // React Router는 `@:username` 같은 부분 동적 세그먼트를 지원하지 않아 여기서 가른다.
             path: ':studySlug',
-            element: <RequireStudyMember />,
+            element: <IdentityGuard />,
             children: [
-              { index: true, element: <HallOfFamePage /> },
-              { path: 'books', element: <AllWorksPage /> },
+              { index: true, element: <IdentityHome /> },
+              { path: 'books', element: <IdentityBooks /> },
+              { path: 'posts/:postId', element: <PostPage /> },
+              { path: 'posts/:postId/edit', element: <PostEditorPage /> },
               { path: 'sessions', element: <SchedulePage /> },
               { path: 'books/:workId', element: <WorkPage /> },
               // 내 서재 — 스터디 안에 있지만 개인화된 저장 공간이라 개인 기준으로 보여준다.
-              { path: 'shelf', element: <ShelfPage /> },
+              { path: 'shelf', element: <MyBlogRedirect /> },
               { path: 'shelf/:workId', element: <ShelfWorkPage /> },
             ],
           },

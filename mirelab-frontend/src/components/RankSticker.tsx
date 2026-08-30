@@ -64,7 +64,7 @@ export default function RankSticker({
     <span
       aria-hidden
       className={`absolute ${sizeCls} ${className}`}
-      style={{ filter: 'drop-shadow(0 2px 3px rgba(0,0,0,.4))' }}
+      style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,.18))' }}
     >
       {/* 바깥 링 */}
       <span className="absolute inset-0" style={{ background: ring, clipPath: stickerClipPath }} />

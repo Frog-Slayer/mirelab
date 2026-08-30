@@ -1,6 +1,6 @@
 // enum 대신 as const — tsconfig 의 erasableSyntaxOnly 때문에 enum 을 쓸 수 없다.
 
-export const WorkKind = { BOOK: 'BOOK', MOVIE: 'MOVIE' } as const
+export const WorkKind = { BOOK: 'BOOK', MOVIE: 'MOVIE', GAME: 'GAME' } as const
 export type WorkKind = (typeof WorkKind)[keyof typeof WorkKind]
 
 /** 후보 = 읽고 싶은 것, 읽는 중 = 회차가 돌아가는 중, 완료 = 별점이 확정된 것 */
@@ -44,11 +44,32 @@ export type Availability = (typeof Availability)[keyof typeof Availability]
  */
 export interface User {
   id: string
+  /** /@username 블로그 주소에 쓰는 바뀌지 않는 식별자 */
+  username: string
   name: string
   color: string
   role: Role
   /** 프로필 사진 경로. 안 올렸으면 null 이고, 그때는 이름·색으로 기본 아바타를 그린다 */
   pictureUrl: string | null
+}
+
+export interface PostSummary {
+  id: string
+  author: User
+  title: string
+  excerpt: string
+  work: Work | null
+  sharedStudyIds: string[]
+  published: boolean
+  /** 처음 공개한 시각. 현재 공개 여부는 published를 본다 */
+  publishedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Post extends PostSummary {
+  /** BlockNote 블록 배열 JSON */
+  bodyJson: string | null
 }
 
 /** admin 은 가입 신청을 승인하는 사람. 화면에서는 "멤버 관리" 진입 여부만 갈린다 */
@@ -110,6 +131,15 @@ export interface Work {
   coverUrl?: string
   /** 영화에서만 — 등장 배우. TMDB 연동 전까지는 비어 있다 */
   actors?: string[]
+  /**
+   * 지금 상태로 들어온 시각(ISO). 작품 목록이 상태마다 다른 날짜로 줄을 세운다 —
+   * 후보는 담긴 날, 진행 중은 시작한 날, 완료는 끝난 날.
+   *
+   * 이 필드들이 생기기 전에 만들어진 작품은 값이 없다(null). 목록에서는 뒤로 민다.
+   */
+  addedAt?: string | null
+  startedAt?: string | null
+  finishedAt?: string | null
 }
 
 export interface SlotDef {

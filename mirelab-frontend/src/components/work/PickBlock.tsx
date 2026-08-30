@@ -34,7 +34,7 @@ export default function PickBlock({
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="왜 고르셨나요"
-          className="min-w-60 flex-1 rounded-sm border border-neutral-200 px-3 py-1.5 text-sm outline-none focus:border-neutral-400"
+          className="app-input min-w-60 flex-1 py-1.5"
         />
         <button type="submit" className="app-button app-button-primary">
           저장
@@ -60,7 +60,7 @@ export default function PickBlock({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="whitespace-nowrap text-sm font-medium text-neutral-400 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-neutral-600 hover:decoration-neutral-500"
+          className="whitespace-nowrap text-sm font-medium text-neutral-500 underline decoration-neutral-300 underline-offset-2 transition-colors hover:text-neutral-600 hover:decoration-neutral-500"
         >
           {reason ? '수정' : '이유 적기'}
         </button>

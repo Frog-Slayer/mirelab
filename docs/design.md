@@ -258,7 +258,7 @@ from slot_value where slot_def_id = ?
 | P0   | 모임 상세               | `/:studySlug/w/:id`          | 언제 만나는지 · 누가 작성했는지만 확인. 쓰기는 작품 상세로 |
 | P0   | 비공개 초안 · 멤버 전환 | —                            | 없으면 다들 노션으로 돌아간다                       |
 | P1   | 모임 기록               | `/:studySlug/sessions`       | 작품 아래에 모임 일정을 모아 표시                   |
-| P1   | 내 서재                 | `/:studySlug/shelf`          | 혼자 읽은 것과 스터디 작품을 합친 개인 관점 — 스터디에서 온 책도 여기 기록은 스터디 쪽과 별개 |
+| P1   | 내 서재                 | `/:studySlug/shelf`          | 혼자 읽은 것과 스터디 작품을 합친 개인 관점 — 스터디에서 온 책도 여기 기록은 스터디 쪽과 별개. 블로그로 다듬는 계획은 `shelf-blog.md` |
 | P1   | 책 검색 · 모임 만들기   | `/:studySlug/sessions/new`   | 제목만 치면 표지·저자·쪽수 자동                     |
 | P2   | 칸 관리                 | `/:studySlug/settings/slots` | 설정 안에서 추가·정렬·숨김                          |
 | P1   | 리마인더                | —                            | 마감 전 자동 알림                                   |
@@ -388,3 +388,5 @@ Kotlin 2.3 · Spring Boot 4.1 · JPA · Postgres (dev/prod 공통, Docker Compos
 6. 영화 정보 가져오기 — TMDB 로 시도 예정. 줄거리 한국어 번역이 인기작 위주라 비주류작은 비거나 영어로 나올 수 있음(감수하기로 함)
 7. ~~구글 로그인~~ — admin 승인제와 멤버 관리 화면의 스터디 배정까지 붙음
 8. 모바일 대응
+9. 내 서재를 블로그로 — 자유 포스트(`Post`)와 스터디 멤버 공개. 계획은 `shelf-blog.md`.
+   URL 축은 `/@username` 으로 정했고, `User.username` 추가가 첫 단계다

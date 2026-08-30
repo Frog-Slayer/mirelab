@@ -20,7 +20,7 @@ export default function BlockForm({
         if (!title.trim()) return
         onSave(title.trim())
       }}
-      className="flex flex-col gap-4 rounded-xl border border-neutral-200 bg-white px-5 py-5"
+      className="app-tile flex flex-col gap-4 px-5 py-5"
     >
       <input
         autoFocus

@@ -1,10 +1,20 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+/*
+   ---break---
+   */
+@custom-variant dark (&:is(.dark *));
 
 @theme {
   --font-sans:
-    'Pretendard', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-serif:
-    'Pretendard', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    'Pretendard Variable', Pretendard, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /*
+   * 본문과 뚜렷하게 갈리는 서체여야 `font-serif` 를 붙인 자리(큰 평점 숫자·인용부호·달 제목)가
+   * 의도한 대비를 낸다. 여기에 산세리프를 넣어두면 그 자리들이 조용히 본문과 똑같아진다.
+   */
+  --font-serif: 'Noto Serif KR', ui-serif, Georgia, 'Times New Roman', serif;
 }
 
 html,
@@ -13,32 +23,38 @@ body,
   height: 100%;
 }
 
+/*
+ * 17px 은 Noto Sans KR 의 작은 글자가 흐릿해서 올려둔 값이었다. Pretendard 는 같은 크기에서
+ * 더 또렷하고 조밀하므로 브라우저 기본값으로 되돌린다 — rem 로 짜인 화면 전체가 함께 줄어든다.
+ */
 html {
-  font-size: 17px;
+  font-size: 16px;
 }
 
 body {
-  @apply bg-[#f7f7f5] text-neutral-900 antialiased;
+  @apply bg-white text-[#1c1f23] antialiased;
 }
 
+/* 선택 색도 액센트(emerald)와 같은 계열로 — green 계열을 따로 쓰면 액센트가 둘로 갈린다 */
 ::selection {
-  background: #bbf7d0;
-  color: #14532d;
+  background: #a7f3d0;
+  color: #064e3b;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+/*
+ * 폼 요소의 `font: inherit` 는 여기서 다시 쓰지 않는다 — Tailwind preflight 가 이미
+ * @layer base 에서 해준다. 레이어 밖에 같은 규칙을 두면 캐스케이드 레이어 규칙상
+ * 레이어 밖 선언이 모든 레이어를 이겨서, button/input/textarea/select 에 붙인
+ * text-sm·font-medium 같은 유틸리티가 통째로 무시된다(부모 크기를 물려받아 버린다).
+ */
 
 /*
  * @blocknote/shadcn의 메뉴 배경 유틸리티(bg-popover)는 패키지 내부에서만 쓰여
  * Tailwind가 클래스를 생성하지 못한다. 포털로 뜨는 UI에 BlockNote 자체 테마 색을
  * 직접 적용해 다크 에디터에서도 메뉴가 투명해지지 않도록 한다.
  */
-.bn-shadcn :is(
+.bn-shadcn
+  :is(
     .bn-formatting-toolbar,
     .bn-mobile-formatting-toolbar,
     .bn-link-toolbar,
@@ -62,11 +78,12 @@ select {
   backdrop-filter: none !important;
 }
 
-.bn-shadcn :is(
-    .bn-suggestion-menu-item,
-    .bn-grid-suggestion-menu-item,
-    .bn-menu-item
-  ):is(:hover, :focus, [aria-selected='true']) {
+.bn-shadcn
+  :is(.bn-suggestion-menu-item, .bn-grid-suggestion-menu-item, .bn-menu-item):is(
+    :hover,
+    :focus,
+    [aria-selected='true']
+  ) {
   background-color: var(--bn-colors-hovered-background, #333) !important;
 }
 
@@ -120,10 +137,7 @@ select {
 /* BlockNote의 level 1 heading과 제목 표시·입력의 타이포를 동일하게 유지한다. */
 .work-block-h1 {
   color: #3f3f3f;
-  font-family:
-    'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Open Sans', 'Segoe UI',
-    'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
   font-size: 3em;
   font-weight: bold;
   line-height: 1.5;
@@ -138,8 +152,7 @@ select {
 
 @layer components {
   .app-button {
-    @apply inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3.5 text-sm font-medium outline-none transition-all duration-150;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+    @apply inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-transparent px-4 text-sm font-medium outline-none transition-[background-color,color,box-shadow,transform] duration-150;
   }
 
   .app-button:focus-visible {
@@ -156,11 +169,11 @@ select {
   }
 
   .app-button-primary {
-    @apply border-emerald-700 bg-emerald-700 text-white hover:border-emerald-800 hover:bg-emerald-800;
+    @apply bg-[#245445] text-white hover:bg-[#1d473a];
   }
 
   .app-button-secondary {
-    @apply border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50;
+    @apply bg-white text-neutral-700 ring-1 ring-neutral-950/[0.08] hover:bg-neutral-50;
   }
 
   .app-button-ghost {
@@ -168,11 +181,65 @@ select {
   }
 
   .app-button-danger {
-    @apply border-rose-200 bg-white text-rose-700 hover:border-rose-300 hover:bg-rose-50;
+    @apply bg-white text-rose-700 ring-1 ring-rose-700/15 hover:bg-rose-50;
   }
 
   .app-icon-button {
     @apply size-8 min-h-0 rounded-lg p-0;
+  }
+
+  /*
+   * 페이지를 이루는 큰 판. 경계는 이 한 겹만 두고, 판 안쪽은 선이 아니라 여백과 바닥색으로
+   * 나눈다 — 안에 또 border-b/border-t/divide 를 겹치면 같은 굵기·같은 회색 선이 여러 겹
+   * 쌓여서 화면이 카드가 아니라 표(table)처럼 읽힌다.
+   *
+   * 테두리를 border 가 아니라 ring 으로 두는 이유: 판 안의 자리 계산(패딩·grid 폭)에
+   * 1px 이 끼어들지 않는다.
+   */
+  .app-card {
+    /*
+     * 그림자를 `box-shadow:` 로 직접 쓰면 안 된다 — Tailwind 의 ring 도 box-shadow 로
+     * 구현되므로, @apply 뒤에 box-shadow 를 또 쓰면 나중 선언이 이겨서 ring 이 통째로
+     * 사라진다(테두리 없는 카드가 된다). shadow-[…] 로 넘기면 둘 다 --tw-shadow /
+     * --tw-ring-shadow 로 들어가 한 줄에 함께 합성된다.
+     */
+    @apply rounded-[1.25rem] bg-white ring-1 ring-neutral-950/[0.07];
+  }
+
+  /*
+   * 목록 안에 여러 개가 늘어서는 작은 카드. app-card 와 같은 표면이지만 모서리는 한 단계
+   * 덜 둥글다 — 큰 판의 16px 을 작은 카드에 그대로 쓰면 카드가 알약처럼 보인다.
+   * 호버 색은 쓰는 쪽에서 `hover:ring-…` 로 얹는다(유틸리티가 이 레이어를 이긴다).
+   */
+  .app-tile {
+    /* 그림자를 유틸리티로 넘기는 이유는 app-card 와 같다 */
+    @apply rounded-2xl bg-white ring-1 ring-neutral-950/[0.07] transition-[box-shadow,transform] duration-200;
+  }
+
+  /* 카드 안에서 한 덩이로 묶이는 영역 — 테두리 대신 옅은 바닥색으로 구분한다 */
+  .app-panel {
+    @apply rounded-2xl bg-[#f1f3f5];
+  }
+
+  /*
+   * "전체보기 / 더보기" 처럼 본문 옆에 붙는 곁가지 링크. 테두리를 두르면 주 버튼(app-button)과
+   * 같은 무게로 보여서 시선을 나눠 먹으므로, 눌리는 자리는 바닥색으로만 알린다.
+   */
+  .app-pill {
+    @apply inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-sm font-medium text-neutral-600 ring-1 ring-neutral-200 transition-colors hover:bg-neutral-50 hover:text-neutral-900 hover:ring-neutral-300;
+  }
+
+  .app-input {
+    @apply rounded-xl border-0 bg-white px-3.5 py-2.5 text-sm text-neutral-900 ring-1 ring-neutral-950/10 outline-none transition-shadow placeholder:text-neutral-400 focus:ring-2 focus:ring-[#39725f]/35;
+  }
+
+  /*
+   * 표지는 인쇄물이라 1px 회색 테두리보다 얕은 그림자가 맞다 — 테두리는 표지의 흰 여백과
+   * 붙어서 잘라 붙인 그림처럼 보이고, 그림자는 종이의 두께로 읽힌다.
+   */
+  .app-cover {
+    outline: 1px solid rgb(15 23 42 / 0.08);
+    outline-offset: -1px;
   }
 }
 
@@ -185,3 +252,121 @@ select {
     transform: translateX(0);
   }
 }
+/*
+   ---break---
+   */
+/*
+ * shadcn 이 넣어준 토큰 매핑(--color-primary, --color-popover …). 원본에는 --font-sans 를
+ * Geist 로, --radius-* 를 제 값으로 바꾸는 줄이 함께 들어오는데 둘 다 지웠다 — 서체와 모서리
+ * 크기는 이 파일 맨 위 @theme 이 이미 정한 것이고, 여기서 다시 정의하면(뒤쪽이라 이쪽이
+ * 이긴다) 화면 전체의 글꼴과 모든 rounded-* 가 조용히 바뀐다.
+ */
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+}
+/*
+   ---break---
+   */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+/*
+   ---break---
+   */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+/*
+   ---break---
+   */

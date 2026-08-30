@@ -16,7 +16,7 @@ export default function RequireStudyMember() {
   })
 
   if (isPending) {
-    return <p className="py-10 text-center text-sm text-neutral-400">스터디 권한을 확인하는 중…</p>
+    return <p className="py-10 text-center text-sm text-neutral-500">스터디 권한을 확인하는 중…</p>
   }
   if (!studies.some((study) => study.slug === studySlug)) {
     return (

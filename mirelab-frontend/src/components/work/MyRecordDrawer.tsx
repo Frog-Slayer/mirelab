@@ -46,21 +46,19 @@ export default function MyRecordDrawer({
         type="button"
         onClick={onToggle}
         aria-label={open ? '내 기록 닫기' : '내 기록 열기'}
-        className="absolute inset-y-0 -right-6 z-10 flex w-6 cursor-pointer items-center justify-center rounded-r-2xl border border-l-0 border-neutral-200 bg-white text-neutral-400 shadow-lg transition-colors hover:bg-emerald-50 hover:text-emerald-700"
+        className="absolute inset-y-0 -right-6 z-10 flex w-6 cursor-pointer items-center justify-center rounded-r-2xl border border-l-0 border-neutral-200 bg-white text-neutral-400 transition-colors hover:bg-emerald-50 hover:text-emerald-700"
       >
         <span aria-hidden>{open ? '‹' : '›'}</span>
       </button>
 
       <aside
-        className={`h-full overflow-hidden border border-l-0 border-neutral-200 bg-white shadow-xl transition-[width] duration-150 ease-out motion-reduce:transition-none ${
+        className={`h-full overflow-hidden border border-l-0 border-neutral-200 bg-white shadow-lg transition-[width] duration-150 ease-out motion-reduce:transition-none ${
           open ? 'w-[min(28rem,100vw)]' : 'w-0'
         }`}
       >
         <div className="flex h-full w-[min(28rem,100vw)] flex-col">
           <div className="flex flex-none flex-col border-b border-neutral-200 bg-white px-5 py-3">
-            <span className="font-mono text-[10px] tracking-[0.13em] text-neutral-400 uppercase">
-              나만
-            </span>
+            <span className="text-xs font-semibold text-neutral-500">나만</span>
             <span className="text-sm font-medium">내 기록</span>
           </div>
 
@@ -94,7 +92,7 @@ export default function MyRecordDrawer({
               </div>
             ))}
             {!summarySlot && otherSlots.length === 0 && (
-              <p className="text-sm text-neutral-400">아직 작성할 수 있는 기록 항목이 없습니다.</p>
+              <p className="text-sm text-neutral-500">아직 작성할 수 있는 기록 항목이 없습니다.</p>
             )}
           </div>
         </div>

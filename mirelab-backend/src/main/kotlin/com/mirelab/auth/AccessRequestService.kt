@@ -4,6 +4,7 @@ import com.mirelab.domain.auth.AccessRequest
 import com.mirelab.domain.auth.AccessRequestStatus
 import com.mirelab.domain.user.Role
 import com.mirelab.domain.user.User
+import com.mirelab.domain.user.UsernamePolicy
 import com.mirelab.infra.auth.AccessRequestRepository
 import com.mirelab.infra.user.ProfilePictureImporter
 import com.mirelab.infra.user.UserRepository
@@ -97,21 +98,39 @@ class AccessRequestService(
 
     /** 승인받은 신청자가 이름·색을 정하면 이때 계정을 만들고 최종 승인 상태로 바꾼다. */
     @Transactional
-    fun completeProfile(requestId: UUID, email: String, name: String, color: String): User {
+    fun completeProfile(requestId: UUID, email: String, username: String, name: String, color: String): User {
         val request = profileRequired(requestId, email)
         val trimmedName = name.trim()
+        val normalizedUsername = UsernamePolicy.normalize(username)
 
         if (trimmedName.isBlank()) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이름을 입력해 주세요")
         }
+        if (!UsernamePolicy.isAllowed(normalizedUsername)) {
+            throw ResponseStatusException(
+                HttpStatus.BAD_REQUEST,
+                "사용자 이름은 영문 소문자·숫자로 시작하는 3~30자의 영문 소문자·숫자·_·-만 사용할 수 있습니다",
+            )
+        }
         if (color !in ALLOWED_COLORS) {
             throw ResponseStatusException(HttpStatus.BAD_REQUEST, "사용할 수 없는 색입니다")
         }
-        val user = userRepository.findByEmail(email)?.also {
+        val existing = userRepository.findByEmail(email)
+        if (userRepository.findByUsername(normalizedUsername)?.id != existing?.id) {
+            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 사용 중인 사용자 이름입니다")
+        }
+        val user = existing?.also {
+            if (it.username.isNullOrBlank()) it.username = normalizedUsername
             it.name = trimmedName
             it.color = color
         } ?: userRepository.save(
-            User(name = trimmedName, color = color, email = email, role = Role.MEMBER),
+            User(
+                username = normalizedUsername,
+                name = trimmedName,
+                color = color,
+                email = email,
+                role = Role.MEMBER,
+            ),
         )
 
         request.approve(user)

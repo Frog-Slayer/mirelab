@@ -45,7 +45,7 @@ export default function MonthCalendar({ items, slug }: Props) {
           <button
             type="button"
             onClick={() => move(-1)}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
+            className="cursor-pointer rounded-lg border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
             aria-label="이전 달"
           >
             ‹
@@ -53,14 +53,14 @@ export default function MonthCalendar({ items, slug }: Props) {
           <button
             type="button"
             onClick={() => setCursor(new Date(today.getFullYear(), today.getMonth(), 1))}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
+            className="cursor-pointer rounded-lg border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
           >
             오늘
           </button>
           <button
             type="button"
             onClick={() => move(1)}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
+            className="cursor-pointer rounded-lg border border-neutral-200 px-2 py-0.5 text-sm text-neutral-500 hover:border-neutral-400"
             aria-label="다음 달"
           >
             ›

@@ -4,6 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <!--
+      본문·UI 서체. Noto Sans KR 은 한글 본문(문서)용으로 획이 굵고 자간이 넓어 화면 UI 에서는
+      글자가 붇어 보인다. Pretendard 는 같은 크기에서 자간이 좁고 획 굵기가 고르다.
+      dynamic-subset 은 실제로 쓰인 글자만 내려받는다.
+    -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    />
+    <!--
+      `font-serif` 를 쓰는 자리(큰 평점 숫자, 한줄평 배경의 인용부호, 달 제목)를 위한 진짜
+      세리프. 예전에는 --font-serif 도 Noto Sans KR 이라 그 자리들이 본문과 똑같이 보였다.
+      한글까지 있는 세리프를 쓰는 이유: "2026년 8월" 처럼 숫자와 한글이 한 줄에 섞여 있어서
+      라틴 전용 세리프를 쓰면 한 문구 안에서 서체가 갈린다.
+    -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400..700&display=swap"
+      rel="stylesheet"
+    />
     <title>mirelab</title>
   </head>
   <body>

@@ -2,7 +2,7 @@ import { Navigate, Outlet } from 'react-router'
 import { useCurrentUser } from '@/hooks/currentUser'
 
 function Splash({ label }: { label: string }) {
-  return <p className="px-6 py-16 text-center text-sm text-neutral-400">{label}</p>
+  return <p className="px-6 py-16 text-center text-sm text-neutral-500">{label}</p>
 }
 
 /**

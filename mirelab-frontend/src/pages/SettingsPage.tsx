@@ -18,7 +18,7 @@ export default function SettingsPage() {
 function SettingsForm({ user, applyUser }: { user: User; applyUser: (user: User) => void }) {
   return (
     <div className="mx-auto max-w-lg">
-      <h1 className="text-2xl font-semibold tracking-[-0.03em]">설정</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">설정</h1>
 
       <PictureSection user={user} applyUser={applyUser} />
       <NameSection user={user} applyUser={applyUser} />
@@ -106,7 +106,7 @@ function PictureSection({ user, applyUser }: { user: User; applyUser: (user: Use
               onClick={() =>
                 void run(removeMyPicture, '사진을 지우지 못했습니다. 잠시 뒤 다시 시도해 주세요.')
               }
-              className="cursor-pointer text-sm text-neutral-400 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
+              className="cursor-pointer text-sm text-neutral-500 hover:text-neutral-900 disabled:cursor-not-allowed disabled:opacity-40"
             >
               사진 지우기
             </button>
@@ -114,7 +114,7 @@ function PictureSection({ user, applyUser }: { user: User; applyUser: (user: Use
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-neutral-400">
+      <p className="mt-3 text-xs text-neutral-500">
         가운데를 정사각형으로 잘라 올립니다. PNG·JPEG·WebP.
       </p>
       {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
@@ -160,7 +160,7 @@ function NameSection({ user, applyUser }: { user: User; applyUser: (user: User) 
           }}
           maxLength={40}
           aria-label="이름"
-          className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-neutral-400"
+          className="app-input w-full"
         />
         <button
           type="submit"

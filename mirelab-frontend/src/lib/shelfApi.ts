@@ -1,7 +1,7 @@
 import { ApiError, api } from '@/lib/api'
 import { toSlotDef, toSlotValue, type SlotDefResponse, type SlotValueResponse } from '@/lib/slotApi'
 import { toStudy, type StudyResponse } from '@/lib/studyApi'
-import type { SlotDef, SlotValue, Study, Work, WorkKind } from '@/types'
+import type { Post, SlotDef, SlotValue, Study, Work, WorkKind } from '@/types'
 
 export interface ShelfEntry {
   work: Work
@@ -20,6 +20,8 @@ export interface ShelfDetail {
   study: Study | null
   slots: SlotDef[]
   values: SlotValue[]
+  personalBodyJson: string | null
+  publication: Post | null
 }
 
 interface ShelfEntryResponse {
@@ -38,6 +40,8 @@ interface ShelfDetailResponse {
   study: StudyResponse | null
   slots: SlotDefResponse[]
   values: SlotValueResponse[]
+  personalBodyJson: string | null
+  publication: Post | null
 }
 
 function toShelfEntry(r: ShelfEntryResponse): ShelfEntry {
@@ -53,6 +57,11 @@ export async function getShelf(): Promise<Shelf> {
   return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
 }
 
+export async function getUserShelf(username: string): Promise<Shelf> {
+  const res = await api.get<ShelfResponse>(`/users/${encodeURIComponent(username)}/shelf`)
+  return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
+}
+
 export async function getShelfEntry(workId: string): Promise<ShelfDetail | null> {
   try {
     const res = await api.get<ShelfDetailResponse>(`/me/shelf/${workId}`)
@@ -61,11 +70,28 @@ export async function getShelfEntry(workId: string): Promise<ShelfDetail | null>
       study: res.study ? toStudy(res.study) : null,
       slots: res.slots.map(toSlotDef),
       values: res.values.map(toSlotValue),
+      personalBodyJson: res.personalBodyJson,
+      publication: res.publication,
     }
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) return null
     throw err
   }
+}
+
+export function saveShelfDocument(workId: string, bodyJson: string | null): Promise<void> {
+  return api.patch(`/me/shelf/${workId}/document`, { bodyJson })
+}
+
+export function setShelfWorkStatus(workId: string, status: Work['status']): Promise<void> {
+  return api.patch(`/me/shelf/${workId}/status`, { status })
+}
+
+export function setShelfPublication(
+  workId: string,
+  input: { title: string; published: boolean },
+): Promise<Post> {
+  return api.patch(`/me/shelf/${workId}/publication`, input)
 }
 
 /** 주인(ownerId)은 서버가 토큰에서 정한다 */

@@ -12,9 +12,17 @@ import { formatRating } from '@/lib/format'
 import type { SlotDef } from '@/types'
 import { SlotType, WorkKind, WorkStatus } from '@/types'
 
-/** 스터디에서 온 책도 내 서재 안에서는 똑같이 자기 페이지(별도 기록)를 갖는다 */
-function entryHref(entry: ShelfEntry, currentStudySlug: string) {
-  return `/${currentStudySlug}/shelf/${entry.work.id}`
+/**
+ * 스터디에서 온 책은 그 스터디의 작품 상세로 보낸다 — 그 책의 기록은 거기 "내 기록"
+ * 드로어 한 곳에서만 쓰기 때문이다. 개인 페이지는 혼자 담은 책에만 있다.
+ *
+ * 어느 스터디로 보낼지는 그 책이 속한 스터디(`entry.study`)를 따른다. 서재에는 내가 속한
+ * 스터디 전부의 책이 섞여 꽂히므로, 지금 보고 있는 스터디와 다를 수 있다.
+ */
+function entryHref(entry: ShelfEntry, currentStudySlug?: string) {
+  return entry.study
+    ? `/${entry.study.slug}/books/${entry.work.id}`
+    : `/${currentStudySlug ?? ''}/shelf/${entry.work.id}`
 }
 
 const statusPriority: Record<string, number> = {
@@ -42,23 +50,61 @@ export default function ShelfPage() {
     onSuccess: () => qc.invalidateQueries(),
   })
 
-  if (!user || !study || !shelf) return <p className="text-sm text-neutral-400">불러오는 중…</p>
+  if (!user || !study || !shelf) return <p className="text-sm text-neutral-500">불러오는 중…</p>
 
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-5 border-b border-neutral-200 pb-6">
+        <h1 className="text-3xl font-semibold tracking-tight">내 서재</h1>
+      </div>
+
+      {adding && (
+        <AddDialog
+          onClose={() => setAdding(false)}
+          onSubmit={(input) => {
+            create.mutate(input)
+            setAdding(false)
+          }}
+        />
+      )}
+
+      <ShelfContents shelf={shelf} currentStudySlug={study.slug} onAdd={() => setAdding(true)} />
+    </div>
+  )
+}
+
+export function ShelfContents({
+  shelf,
+  currentStudySlug,
+  onAdd,
+}: {
+  shelf: { slots: SlotDef[]; entries: ShelfEntry[] }
+  currentStudySlug?: string
+  onAdd?: () => void
+}) {
   const { slots, entries } = shelf
-  const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
+  const ratingSlotOf = (entry: ShelfEntry) =>
+    slots.find(
+      (slot) => slot.type === SlotType.RATING && (!entry.study || slot.studyId === entry.study.id),
+    ) ?? slots.find((slot) => slot.type === SlotType.RATING)
 
   const myRating = (entry: ShelfEntry) => {
-    const v = entry.values.find((x) => x.slotDefId === ratingSlot?.id)
+    const v = entry.values.find((x) => x.slotDefId === ratingSlotOf(entry)?.id)
     return v && 'n' in v.value ? v.value.n : null
   }
 
   // 내가 매긴 점수 순. 아직 안 매긴 책은 뒤로 민다
   const sorted = [...entries].sort((a, b) => (myRating(b) ?? -1) - (myRating(a) ?? -1))
-  const blurbSlot = slots.find((s) => s.type === SlotType.TEXT_SHORT)
   const displayEntries = sorted.map((entry) => ({
     entry,
     rating: myRating(entry),
-    blurb: textValue(entry, blurbSlot),
+    blurb: textValue(
+      entry,
+      slots.find(
+        (slot) =>
+          slot.type === SlotType.TEXT_SHORT && (!entry.study || slot.studyId === entry.study.id),
+      ),
+    ),
   }))
 
   const toItem = (item: DisplayEntry): BookcaseItem => ({
@@ -68,7 +114,7 @@ export default function ShelfPage() {
     year: item.entry.work.year,
     kind: item.entry.work.kind,
     status: item.entry.work.status,
-    href: entryHref(item.entry, study.slug),
+    href: entryHref(item.entry, currentStudySlug),
     source: item.entry.study?.name ?? null,
     average: item.rating ?? undefined,
     voterCount: item.rating !== null ? 1 : 0,
@@ -90,22 +136,8 @@ export default function ShelfPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-5 border-b border-neutral-200 pb-6">
-        <h1 className="text-3xl font-semibold tracking-[-0.03em]">내 서재</h1>
-        <RatingHistogram entries={entries} myRating={myRating} />
-      </div>
-
-      {adding && (
-        <AddDialog
-          onClose={() => setAdding(false)}
-          onSubmit={(input) => {
-            create.mutate(input)
-            setAdding(false)
-          }}
-        />
-      )}
-
-      <Bookcase completed={completedItems} others={otherItems} onAdd={() => setAdding(true)} />
+      <RatingHistogram entries={entries} myRating={myRating} />
+      <Bookcase completed={completedItems} others={otherItems} onAdd={onAdd} />
     </div>
   )
 }
@@ -137,48 +169,44 @@ function RatingHistogram({
   const average = rated ? sum / rated : 0
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <span className="text-xs text-neutral-500">
-        {entries.length}권 · 평가 {rated}권 · 평균 ★ {formatRating(average)}
-      </span>
-      {/* 데이터가 없어도 칸/축은 그대로 보여준다 — 0점짜리 막대들일 뿐이다 */}
-      <div className="flex h-24 items-end gap-1 border-b border-neutral-200">
-        {buckets.map((count, i) => {
-          const label = (i * RATING_STEP).toFixed(1)
-          // 빨강(0점) → 초록(5점), 파스텔 톤으로 채도·명도를 낮춰 쨍하지 않게 한다.
-          const hue = Math.round((i / (RATING_BUCKETS - 1)) * 120)
-          // 0개인 칸도 아예 안 보이지 않도록 1개 높이의 절반만큼은 채워서 "0"을 보여준다.
-          const unit = (1 / max) * 100
-          const heightPct = count === 0 ? unit / 2 : (count / max) * 100
-          return (
-            <div
-              key={i}
-              className="flex h-full flex-1 flex-col items-center justify-end gap-0.5"
-              title={`${label}~${(i * RATING_STEP + RATING_STEP).toFixed(1)}점 · ${count}권`}
-            >
-              <span className="font-mono text-[9px] text-neutral-500 tabular-nums">{count}</span>
-              <div
-                className="w-full rounded-t-lg"
-                style={{
-                  height: `${heightPct}%`,
-                  backgroundColor: `hsl(${hue}, 60%, 62%)`,
-                }}
-              />
-            </div>
-          )
-        })}
-      </div>
-      <div className="flex gap-1">
-        {buckets.map((_, i) => (
-          <span
-            key={i}
-            className="flex-1 text-center font-mono text-[9px] whitespace-nowrap text-neutral-400"
-          >
-            {i % 2 === 0 ? (i * RATING_STEP).toFixed(1) : ''}
+    <section className="grid items-end gap-6 rounded-2xl bg-[#eef1f3] px-5 py-4 sm:grid-cols-[auto_1fr] sm:px-6">
+      <div className="min-w-28">
+        <p className="text-xs font-medium text-neutral-500">나의 평점</p>
+        <div className="mt-1 flex items-baseline gap-1.5">
+          <span className="font-serif text-3xl font-semibold tabular-nums text-neutral-900">
+            {rated ? formatRating(average) : '—'}
           </span>
-        ))}
+          {rated > 0 && <span className="text-sm text-[#39725f]">★</span>}
+        </div>
+        <p className="mt-1 text-xs text-neutral-500">
+          {entries.length}작품 중 {rated}작품 평가
+        </p>
       </div>
-    </div>
+
+      <div>
+        <div className="flex h-16 items-end gap-1.5" aria-label="평점 분포">
+          {buckets.map((count, i) => {
+            const label = (i * RATING_STEP).toFixed(1)
+            const heightPct = count === 0 ? 5 : Math.max(12, (count / max) * 100)
+            return (
+              <div key={i} className="h-full flex-1" title={`${label}점 · ${count}작품`}>
+                <div className="flex h-full items-end">
+                  <span
+                    className={`block w-full rounded-full ${count ? 'bg-[#39725f]' : 'bg-neutral-300/70'}`}
+                    style={{ height: `${heightPct}%`, opacity: count ? 0.35 + (i / 10) * 0.65 : 1 }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-2 flex justify-between text-[10px] tabular-nums text-neutral-400">
+          <span>0</span>
+          <span>2.5</span>
+          <span>5</span>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -193,7 +221,7 @@ function textValue(entry: ShelfEntry, slot?: SlotDef) {
   return value && 'text' in value.value ? value.value.text : ''
 }
 
-function AddDialog({
+export function AddDialog({
   onSubmit,
   onClose,
 }: {
@@ -227,7 +255,7 @@ function AddDialog({
       onClick={(e) => {
         if (e.target === ref.current) ref.current?.close()
       }}
-      className="m-auto w-[min(38rem,calc(100vw-2rem))] rounded-sm border border-neutral-200 p-0 backdrop:bg-neutral-900/30"
+      className="m-auto w-[min(38rem,calc(100vw-2rem))] rounded-2xl p-0 shadow-xl ring-1 ring-neutral-950/10 backdrop:bg-neutral-900/40 backdrop:backdrop-blur-sm"
     >
       <form
         onKeyDown={(e) => {
@@ -265,7 +293,7 @@ function AddDialog({
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as WorkKind)}
-            className="cursor-pointer rounded-sm border border-neutral-200 px-2 py-2 text-sm text-neutral-700"
+            className="app-input cursor-pointer"
           >
             <option value={WorkKind.BOOK}>책</option>
             <option value={WorkKind.MOVIE}>영화</option>

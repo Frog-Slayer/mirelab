@@ -4,6 +4,7 @@ import com.mirelab.application.session.SessionResponse
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkKind
 import com.mirelab.domain.work.WorkStatus
+import java.time.Instant
 import java.util.UUID
 
 data class WorkResponse(
@@ -20,6 +21,10 @@ data class WorkResponse(
     val description: String?,
     val coverUrl: String?,
     val actors: List<String>,
+    /** 상태별 정렬 기준이 되는 시각들 — [com.mirelab.domain.work.Work.moveTo] 참고 */
+    val addedAt: Instant?,
+    val startedAt: Instant?,
+    val finishedAt: Instant?,
 )
 
 fun Work.toResponse() = WorkResponse(
@@ -40,6 +45,9 @@ fun Work.toResponse() = WorkResponse(
     // "no session" 으로 터진다. 엔티티의 가변 컬렉션을 응답이 그대로 물고 있지 않게 되는
     // 것도 덤이다.
     actors = actors.toList(),
+    addedAt = addedAt,
+    startedAt = startedAt,
+    finishedAt = finishedAt,
 )
 
 /** 완료작 순위·서재 정렬에 쓰는, 평점이 집계된 작품 */
@@ -67,6 +75,9 @@ data class RankedWorkResponse(
     val ratedUserIds: Set<String>,
     val average: Double,
     val voterCount: Int,
+    val addedAt: Instant?,
+    val startedAt: Instant?,
+    val finishedAt: Instant?,
 )
 
 fun Work.toRanked(
@@ -94,6 +105,9 @@ fun Work.toRanked(
     ratedUserIds = ratedUserIds,
     average = average,
     voterCount = publishedRatingUserIds.size,
+    addedAt = addedAt,
+    startedAt = startedAt,
+    finishedAt = finishedAt,
 )
 
 /** 책장 — 후보·읽는 중까지 포함한 전체 작품. 회차 수까지 곁들인다 */
@@ -117,6 +131,9 @@ data class LibraryEntryResponse(
     val average: Double,
     val voterCount: Int,
     val sessionCount: Int,
+    val addedAt: Instant?,
+    val startedAt: Instant?,
+    val finishedAt: Instant?,
 )
 
 fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
@@ -139,10 +156,33 @@ fun RankedWorkResponse.toLibraryEntry(sessionCount: Int) = LibraryEntryResponse(
     average = average,
     voterCount = voterCount,
     sessionCount = sessionCount,
+    addedAt = addedAt,
+    startedAt = startedAt,
+    finishedAt = finishedAt,
 )
 
 /** 작품 상세 화면 — 순위 정보 곁들인 작품 + 걸린 회차들 */
 data class WorkDetailResponse(
     val work: RankedWorkResponse,
     val sessions: List<SessionResponse>,
+)
+
+/**
+ * 공개된 한줄평 하나 — 누가, 어느 작품에, 몇 점과 함께 남겼는지.
+ *
+ * 작성자 정보는 id 만 준다. 화면이 이미 스터디 멤버 목록을 들고 있어서 거기서 이름·아바타를
+ * 찾으면 되고, 여기서 유저를 통째로 실으면 목록 하나에 같은 사람이 여러 번 복사된다.
+ */
+data class BlurbResponse(
+    val workId: UUID,
+    val userId: UUID,
+    val kind: WorkKind,
+    val title: String,
+    val author: String,
+    val coverUrl: String?,
+    /** 이 사람이 매긴 점수 */
+    val rating: Double,
+    /** 그 작품의 공개 평점 평균 — 한줄평 옆에 함께 보여준다 */
+    val average: Double,
+    val text: String,
 )

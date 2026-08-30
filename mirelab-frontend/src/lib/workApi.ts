@@ -16,8 +16,27 @@ export interface LibraryEntry extends RankedWork {
   sessionCount: number
 }
 
+/** 공개된 한줄평 하나 — 작성자는 id 로만 오므로 멤버 목록에서 찾아 쓴다 */
+export interface Blurb {
+  workId: string
+  userId: string
+  kind: WorkKind
+  title: string
+  author: string
+  coverUrl?: string
+  /** 이 사람이 매긴 점수 */
+  rating: number
+  /** 그 작품의 공개 평점 평균 */
+  average: number
+  text: string
+}
+
 export function getHallOfFame(slug: string): Promise<RankedWork[]> {
   return api.get(`/studies/${slug}/hall-of-fame`)
+}
+
+export function getBlurbs(slug: string): Promise<Blurb[]> {
+  return api.get(`/studies/${slug}/blurbs`)
 }
 
 export function getLibrary(slug: string): Promise<LibraryEntry[]> {
