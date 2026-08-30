@@ -1,12 +1,22 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Link, NavLink, Outlet, ScrollRestoration, useNavigate, useParams } from 'react-router'
+import {
+  Link,
+  NavLink,
+  Outlet,
+  ScrollRestoration,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import ThisSessionBanner from '@/components/ThisSessionBanner'
+import ThisSessionAd from '@/components/ThisSessionAd'
 import { FloatingStack } from '@/components/layout/FloatingStack'
 import NotificationsMenu from '@/components/layout/NotificationsMenu'
 import UserMenu from '@/components/layout/UserMenu'
+import QuickNote from '@/components/work/QuickNote'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
+import { writeLastPage } from '@/lib/lastPageStore'
 import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
@@ -25,6 +35,18 @@ export default function RootLayout() {
   const { user } = useCurrentUser()
   const { studySlug } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  /**
+   * 보던 자리를 적어 둔다 — 다시 로그인하면 홈이 아니라 여기로 돌아온다([AuthCallbackPage]).
+   *
+   * 로그인 화면들은 이 레이아웃 밖이라 애초에 안 걸린다. `/app` 만 따로 빼는데, 그건
+   * 화면이 아니라 갈림길이라([StudyHomeRedirect]) 기억해봤자 다음에 또 갈라질 뿐이다.
+   */
+  useEffect(() => {
+    if (!user || location.pathname === '/app') return
+    writeLastPage(user.id, `${location.pathname}${location.search}`)
+  }, [user, location.pathname, location.search])
   const [recordDrawerOpen, setRecordDrawerOpen] = useState(false)
   const recordDrawer: RecordDrawerContext = {
     open: recordDrawerOpen,
@@ -152,14 +174,20 @@ export default function RootLayout() {
 
       {/*
         오른쪽 아래에 뜨는 것들을 한 스택에 모은다 — 페이지가 얹는 플로팅 버튼이
-        위, 다음 모임 카드가 아래. 각자 fixed 로 자리를 잡으면 서로 겹친다.
+        위, 빠른 메모가 아래. 각자 fixed 로 자리를 잡으면 서로 겹친다.
 
         "내 메모" 서랍도 이제 오른쪽에서 나오므로, 열려 있는 동안은 이 스택이 그 앞을
         가리지 않게 비켜서야 한다 — 그래서 열림 상태를 넘겨준다.
       */}
       <FloatingStack shifted={recordDrawerOpen}>
-        <ThisSessionBanner study={current} />
+        <QuickNote study={current} />
       </FloatingStack>
+
+      {/*
+        전면 광고는 이 스택 밖이다. 화면을 통째로 덮는 것이라 오른쪽 아래 자리와 겹칠
+        일이 없고, 스택 안에 두면 그 컨테이너의 pointer-events·transform 을 덩달아 쓴다.
+      */}
+      <ThisSessionAd study={current} />
     </div>
   )
 }

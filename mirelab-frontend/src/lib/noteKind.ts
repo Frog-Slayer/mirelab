@@ -1,3 +1,4 @@
+import { CircleHelp, Pencil, Quote } from 'lucide-react'
 import { NoteKind } from '@/types'
 
 /**
@@ -8,6 +9,16 @@ export const noteKindLabel: Record<NoteKind, string> = {
   [NoteKind.MEMO]: '메모',
   [NoteKind.QUESTION]: '질문',
   [NoteKind.QUOTE]: '인용',
+}
+
+/**
+ * 종류를 알아보는 그림. 글자만으로도 읽히지만 칩이 셋 나란히 설 때는 그림이 있는 쪽이
+ * 훑는 속도가 다르다 — [workKind] 의 kindIcon 과 같은 이유로 여기 한 벌만 둔다.
+ */
+export const noteKindIcon: Record<NoteKind, typeof Pencil> = {
+  [NoteKind.MEMO]: Pencil,
+  [NoteKind.QUESTION]: CircleHelp,
+  [NoteKind.QUOTE]: Quote,
 }
 
 /** 비어 있는 칸에 적어 두는 말 — 종류마다 무엇을 적는 자리인지 다르다 */
