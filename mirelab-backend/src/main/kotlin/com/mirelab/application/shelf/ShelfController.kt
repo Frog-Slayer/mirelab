@@ -1,6 +1,7 @@
 package com.mirelab.application.shelf
 
-import com.mirelab.application.slot.SlotValueResponse
+import com.mirelab.application.rating.SaveRatingRequest
+import com.mirelab.application.rating.WorkRatingResponse
 import com.mirelab.application.work.WorkResponse
 import com.mirelab.auth.AuthPrincipal
 import java.util.UUID
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -39,12 +41,12 @@ class ShelfController(private val shelfService: ShelfService) {
         shelfService.addPersonalWork(principal.userId, body)?.let { ResponseEntity.ok(it) }
             ?: ResponseEntity.notFound().build()
 
-    @PostMapping("/{workId}/slot-values")
-    fun saveValue(
+    @PutMapping("/{workId}/rating")
+    fun saveRating(
         @AuthenticationPrincipal principal: AuthPrincipal,
         @PathVariable workId: UUID,
-        @RequestBody body: ShelfSlotValueInput,
-    ): SlotValueResponse = shelfService.saveValue(principal.userId, workId, body)
+        @RequestBody body: SaveRatingRequest,
+    ): WorkRatingResponse = shelfService.saveRating(principal.userId, workId, body)
 
     @PatchMapping("/{workId}/document")
     fun saveDocument(

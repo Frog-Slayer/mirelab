@@ -20,7 +20,12 @@ import { completedYearOf, publishedRatingsOf, topRanksByYear } from '@/lib/workR
 import { getWorkPosts } from '@/lib/postApi'
 import { addSession } from '@/lib/sessionApi'
 import { addWorkNote, getWorkNotes, removeWorkNote, updateWorkNote } from '@/lib/noteApi'
-import { getWorkSlots, openWorkSlotEvents, saveValue, setRatingPublished } from '@/lib/slotApi'
+import {
+  getWorkRatings,
+  openWorkRatingEvents,
+  saveRating as saveRatingApi,
+  setRatingPublished,
+} from '@/lib/ratingApi'
 import {
   addWorkBlock,
   getWorkBlocks,
@@ -37,11 +42,11 @@ import {
   updateWorkInfo,
   updateWorkReason,
 } from '@/lib/workApi'
-import { SlotType, Visibility, WorkStatus } from '@/types'
+import { WorkStatus } from '@/types'
 
 /**
  * 별점 공개의 묘미는 다 같이 "하나, 둘, 셋" 하고 여는 그 순간이라, 그때만큼은 밀리면 안 된다.
- * 그건 서버가 밀어주는 신호(openWorkSlotEvents)가 맡고, 폴링은 그 신호가 끊겼을 때를 위한
+ * 그건 서버가 밀어주는 신호(openWorkRatingEvents)가 맡고, 폴링은 그 신호가 끊겼을 때를 위한
  * 보험이다 — 그래서 스트림이 붙어 있는 동안은 느긋하게만 본다.
  *
  * 보험으로 돌 때도 종일 초당 왕복을 돌릴 수는 없으니(작품 상세 한 번이 서버 쿼리 여러 개다),
@@ -89,10 +94,10 @@ export default function WorkPage() {
   const userId = user?.id
   useEffect(() => {
     if (!userId) return
-    return openWorkSlotEvents(workId, {
+    return openWorkRatingEvents(workId, {
       onEvent: () => {
         void qc.invalidateQueries({ queryKey: ['work', workId] })
-        void qc.invalidateQueries({ queryKey: ['workSlots', workId] })
+        void qc.invalidateQueries({ queryKey: ['workRatings', workId] })
         // 공개된 평점이 늘면 평균이 바뀌고, 그러면 명예의 전당 순위도 따라 바뀐다
         void qc.invalidateQueries({ queryKey: ['hallOfFame'] })
       },
@@ -106,9 +111,9 @@ export default function WorkPage() {
     // 다른 멤버가 평점을 공개하거나 공개 평점을 수정하면 화면 전환 없이 반영한다.
     refetchInterval: (query) => ratingPollMs(query.state.data?.work, live),
   })
-  const { data: workSlots } = useQuery({
-    queryKey: ['workSlots', workId, user?.id],
-    queryFn: () => getWorkSlots(workId),
+  const { data: ratings = [] } = useQuery({
+    queryKey: ['workRatings', workId, user?.id],
+    queryFn: () => getWorkRatings(workId),
     enabled: !!user,
     // 남의 한줄평은 점수와 달리 이쪽 응답에 실려 온다 — 같이 갱신해야 별점만 바뀌고
     // 그 밑 한줄평은 옛것 그대로인 어긋난 카드가 안 나온다.
@@ -218,10 +223,7 @@ export default function WorkPage() {
   if (!data || !study || !user) return <p className="text-sm text-neutral-500">불러오는 중…</p>
 
   const { work } = data
-  const slots = workSlots?.slots ?? []
-  const values = workSlots?.values ?? []
-  const myValueOf = (slotId: string) =>
-    values.find((value) => value.slotDefId === slotId && value.userId === user.id)
+  const myRating = ratings.find((r) => r.userId === user.id)
   const step = nextStep[work.status]
 
   /**
@@ -243,41 +245,19 @@ export default function WorkPage() {
 
   // 평점·한줄평은 스터디에 남는 기록이라 "내 메모" 서랍이 아니라 멤버별 평점의 내 카드를
   // 눌러 입력한다. 서랍에 오는 건 나만 보는 메모뿐이다.
-  const ratingSlot = slots.find((s) => s.type === SlotType.RATING)
-  const blurbSlot = slots.find(
-    (s) => s.type === SlotType.TEXT_SHORT && s.visibility !== Visibility.PRIVATE,
-  )
-  const blurbOf = (userId: string) => {
-    const v = values.find((x) => x.slotDefId === blurbSlot?.id && x.userId === userId)
-    return v && 'text' in v.value ? v.value.text : ''
-  }
+  const blurbOf = (userId: string) => ratings.find((r) => r.userId === userId)?.blurb ?? ''
 
-  // RateDialog 는 저장을 눌러야 한 번에 반영한다. 별점·한줄평은 서로 관계가 없으니
-  // 동시에 보내고, 공개 전환만 별점이 서버에 먼저 있어야 하니 그 뒤에 보낸다.
+  // RateDialog 는 저장을 눌러야 한 번에 반영한다. 별점과 한줄평은 한 요청으로 같이 가고,
+  // 공개 전환만 별점이 서버에 먼저 있어야 하니 그 뒤에 보낸다.
   // useMutation 의 onSuccess(refresh)는 쿼리 전체를 다시 받아오는 무거운 동작이라
   // 그걸 매 단계마다 기다리면(mutateAsync) 유난히 느려진다 — 그래서 여기서는 실제
   // 저장 요청만 기다리고, 화면 갱신은 다 끝난 뒤 한 번만 한다.
   const saveRating = async (input: { rating?: number; blurb?: string; published?: boolean }) => {
     setPublishError(null)
     try {
-      await Promise.all([
-        input.rating !== undefined && ratingSlot
-          ? saveValue({
-              targetId: work.id,
-              slotDefId: ratingSlot.id,
-              value: { n: input.rating },
-              draft: false,
-            })
-          : Promise.resolve(),
-        input.blurb !== undefined && blurbSlot
-          ? saveValue({
-              targetId: work.id,
-              slotDefId: blurbSlot.id,
-              value: { text: input.blurb },
-              draft: false,
-            })
-          : Promise.resolve(),
-      ])
+      if (input.rating !== undefined || input.blurb !== undefined) {
+        await saveRatingApi({ workId: work.id, score: input.rating, blurb: input.blurb })
+      }
       if (input.published !== undefined) {
         await setRatingPublished(workId, input.published)
       }
@@ -436,12 +416,9 @@ export default function WorkPage() {
         창들은 문서 바깥에 둔다. divide-y 가 걸린 칼럼 안에 있으면 열릴 때마다 없던
         가로선이 하나 생긴다 — 화면 어딘가에 그려지는 것도 그 칼럼의 한 칸이기 때문.
       */}
-      {ratingOpen && ratingSlot && (
+      {ratingOpen && (
         <RateDialog
-          ratingSlot={ratingSlot}
-          blurbSlot={blurbSlot}
-          ratingValue={myValueOf(ratingSlot.id)?.value}
-          blurbValue={blurbSlot && myValueOf(blurbSlot.id)?.value}
+          rating={myRating}
           published={work.publishedRatingUserIds.includes(user.id)}
           publishError={publishError}
           onSave={saveRating}

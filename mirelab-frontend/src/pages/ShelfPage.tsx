@@ -9,8 +9,7 @@ import { useStudy } from '@/hooks/useStudy'
 import { parseYearFromPubDate } from '@/lib/bookApi'
 import { addPersonalWork, getShelf, type ShelfEntry } from '@/lib/shelfApi'
 import { formatRating } from '@/lib/format'
-import type { SlotDef } from '@/types'
-import { SlotType, WorkKind, WorkStatus } from '@/types'
+import { WorkKind, WorkStatus } from '@/types'
 
 /**
  * 스터디에서 온 책은 그 스터디의 작품 상세로 보낸다 — 그 책의 기록은 거기 "내 메모"
@@ -78,33 +77,18 @@ export function ShelfContents({
   currentStudySlug,
   onAdd,
 }: {
-  shelf: { slots: SlotDef[]; entries: ShelfEntry[] }
+  shelf: { entries: ShelfEntry[] }
   currentStudySlug?: string
   onAdd?: () => void
 }) {
-  const { slots, entries } = shelf
-  const ratingSlotOf = (entry: ShelfEntry) =>
-    slots.find(
-      (slot) => slot.type === SlotType.RATING && (!entry.study || slot.studyId === entry.study.id),
-    ) ?? slots.find((slot) => slot.type === SlotType.RATING)
-
-  const myRating = (entry: ShelfEntry) => {
-    const v = entry.values.find((x) => x.slotDefId === ratingSlotOf(entry)?.id)
-    return v && 'n' in v.value ? v.value.n : null
-  }
+  const { entries } = shelf
 
   // 내가 매긴 점수 순. 아직 안 매긴 책은 뒤로 민다
-  const sorted = [...entries].sort((a, b) => (myRating(b) ?? -1) - (myRating(a) ?? -1))
+  const sorted = [...entries].sort((a, b) => (b.rating?.score ?? -1) - (a.rating?.score ?? -1))
   const displayEntries = sorted.map((entry) => ({
     entry,
-    rating: myRating(entry),
-    blurb: textValue(
-      entry,
-      slots.find(
-        (slot) =>
-          slot.type === SlotType.TEXT_SHORT && (!entry.study || slot.studyId === entry.study.id),
-      ),
-    ),
+    rating: entry.rating?.score ?? null,
+    blurb: entry.rating?.blurb ?? '',
   }))
 
   const toItem = (item: DisplayEntry): BookcaseItem => ({
@@ -136,7 +120,7 @@ export function ShelfContents({
 
   return (
     <div className="flex flex-col gap-8">
-      <RatingHistogram entries={entries} myRating={myRating} />
+      <RatingHistogram entries={entries} />
       <Bookcase completed={completedItems} others={otherItems} onAdd={onAdd} />
     </div>
   )
@@ -147,19 +131,13 @@ const RATING_STEP = 0.5
 const RATING_BUCKETS = Math.round(5 / RATING_STEP) + 1
 
 /** 권 수 텍스트 대신, 내가 매긴 점수의 분포(0.5점 단위)를 세로 막대로 보여준다 */
-function RatingHistogram({
-  entries,
-  myRating,
-}: {
-  entries: ShelfEntry[]
-  myRating: (entry: ShelfEntry) => number | null
-}) {
+function RatingHistogram({ entries }: { entries: ShelfEntry[] }) {
   const buckets = Array<number>(RATING_BUCKETS).fill(0)
   let rated = 0
   let sum = 0
   for (const entry of entries) {
-    const r = myRating(entry)
-    if (r === null) continue
+    const r = entry.rating?.score
+    if (r == null) continue
     const idx = Math.min(RATING_BUCKETS - 1, Math.max(0, Math.floor(r / RATING_STEP)))
     buckets[idx] += 1
     rated += 1
@@ -214,11 +192,6 @@ interface DisplayEntry {
   entry: ShelfEntry
   rating: number | null
   blurb: string
-}
-
-function textValue(entry: ShelfEntry, slot?: SlotDef) {
-  const value = entry.values.find((item) => item.slotDefId === slot?.id)
-  return value && 'text' in value.value ? value.value.text : ''
 }
 
 export function AddDialog({

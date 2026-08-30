@@ -1,24 +1,20 @@
 package com.mirelab.application.shelf
 
-import com.mirelab.application.slot.SlotValueResponse
-import com.mirelab.application.slot.toResponse
 import com.mirelab.application.post.PostResponse
 import com.mirelab.application.post.PostService
+import com.mirelab.application.rating.RatingService
+import com.mirelab.application.rating.SaveRatingRequest
+import com.mirelab.application.rating.WorkRatingResponse
+import com.mirelab.application.rating.toResponse
 import com.mirelab.application.study.toResponse
 import com.mirelab.application.work.WorkAccessChecker
 import com.mirelab.application.work.WorkResponse
 import com.mirelab.application.work.toResponse
-import com.mirelab.domain.slot.SlotDef
-import com.mirelab.domain.slot.SlotOwner
-import com.mirelab.domain.slot.SlotValue
-import com.mirelab.domain.slot.SlotValueContext
-import com.mirelab.domain.slot.SlotType
-import com.mirelab.domain.slot.Visibility
+import com.mirelab.domain.rating.WorkRating
 import com.mirelab.domain.work.Work
 import com.mirelab.domain.work.WorkKind
 import com.mirelab.domain.work.WorkStatus
-import com.mirelab.infra.slot.SlotDefRepository
-import com.mirelab.infra.slot.SlotValueRepository
+import com.mirelab.infra.rating.WorkRatingRepository
 import com.mirelab.infra.user.UserRepository
 import com.mirelab.infra.work.WorkRepository
 import java.time.Year
@@ -29,16 +25,16 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 /**
- * 내 서재 — 혼자 읽은 책과 스터디 작품을 합친 개인 관점. 스터디에서 온 책은 그
- * 작품 상세("내 기록" 드로어)와 똑같은 기록(SlotValueContext.STUDY)을 그대로 보여준다 —
- * 스터디 책 <-> 서재 책이 같은 작품이면 기록도 같아야 한다. 개인이 혼자 담은 책만
- * 대응하는 스터디가 없어 SlotValueContext.SHELF 로 별도 저장한다.
+ * 내 서재 — 혼자 읽은 책과 스터디 작품을 합친 개인 관점. 스터디에서 온 책은 그 작품
+ * 상세에서 매긴 평가를 그대로 보여준다 — 스터디 책 <-> 서재 책이 같은 작품이면 기록도
+ * 같아야 한다. 평가는 (작품, 사람) 한 쌍에 하나뿐이라 어느 쪽에서 매겼는지를 따로
+ * 구분할 필요가 없다(예전의 SlotValueContext 가 하던 일이다).
  */
 @Service
 class ShelfService(
     private val workRepository: WorkRepository,
-    private val slotDefRepository: SlotDefRepository,
-    private val slotValueRepository: SlotValueRepository,
+    private val workRatingRepository: WorkRatingRepository,
+    private val ratingService: RatingService,
     private val userRepository: UserRepository,
     private val workAccessChecker: WorkAccessChecker,
     private val postService: PostService,
@@ -56,17 +52,16 @@ class ShelfService(
                 .distinctBy { it.id }
                 .filter { hasPublishedRating(it, ownerId) }
         }
-        val allSlotDefs = personalSlotDefs(visibleStudyIds)
-        val slotDefs = if (mine) allSlotDefs else allSlotDefs.filter(::canExposeOnPublicShelf)
-        val slotDefIds = slotDefs.mapNotNull { it.id }.toSet()
+        // 책마다 따로 묻지 않고 한 번에 읽어 온다(N+1 방지)
+        val ratingByWorkId = workRatingRepository
+            .findByUserIdAndWorkIdIn(ownerId, works.mapNotNull { it.id })
+            .associateBy { requireNotNull(it.work.id) }
 
         val entries = works.map { work ->
-            val values = valuesFor(work, ownerId, slotDefIds).let { values ->
-                if (mine) values else values.filter { it.published }
-            }
-            ShelfEntryResponse(work.toResponse(), work.study?.toResponse(), values.map { it.toResponse() })
+            val rating = ratingByWorkId[work.id]?.takeIf { mine || it.published }
+            ShelfEntryResponse(work.toResponse(), work.study?.toResponse(), rating?.toResponse())
         }
-        return ShelfResponse(slotDefs.map { it.toResponse() }, entries)
+        return ShelfResponse(entries)
     }
 
     /**
@@ -82,15 +77,10 @@ class ShelfService(
         val myStudyIds = myStudyIds(userId)
         if (!isMine(work, userId, myStudyIds)) return null
 
-        val slotDefs = slotDefsFor(work, myStudyIds)
-        val slotDefIds = slotDefs.mapNotNull { it.id }.toSet()
-        val values = valuesFor(work, userId, slotDefIds)
-
         return ShelfDetailResponse(
             work.toResponse(),
             work.study?.toResponse(),
-            slotDefs.map { it.toResponse() },
-            values.map { it.toResponse() },
+            workRatingRepository.findByWorkIdAndUserId(workId, userId)?.toResponse(),
             work.personalBodyJson,
             postService.personalWorkPublication(workId, userId),
         )
@@ -147,47 +137,22 @@ class ShelfService(
     }
 
     /**
-     * 개인 책의 기록 저장(upsert).
+     * 개인 책의 평가 저장(upsert).
      *
      * 스터디 책은 여기로 못 쓴다 — 쓰는 곳은 스터디 작품 상세 하나뿐이다([getEntry] 참고).
      * 읽는 문([getEntry])만 닫고 쓰는 문을 열어두면, 화면은 없는데 경로만 살아 있는 상태가
      * 된다.
      */
     @Transactional
-    fun saveValue(userId: UUID, workId: UUID, input: ShelfSlotValueInput): SlotValueResponse {
+    fun saveRating(userId: UUID, workId: UUID, input: SaveRatingRequest): WorkRatingResponse {
         val work = workRepository.findById(workId).orElseThrow()
         if (work.study != null) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "스터디 작품 상세에서 기록하는 책입니다")
         }
-        val myStudyIds = myStudyIds(userId)
-        if (!workAccessChecker.canAccess(work, userId, myStudyIds)) {
+        if (!workAccessChecker.canAccess(work, userId, myStudyIds(userId))) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN, "접근할 수 없는 작품입니다")
         }
-        val allowedSlotIds = slotDefsFor(work, myStudyIds).mapNotNull { it.id }.toSet()
-        if (input.slotDefId !in allowedSlotIds) {
-            throw ResponseStatusException(HttpStatus.BAD_REQUEST, "이 작품에서 사용할 수 없는 기록 항목입니다")
-        }
-        val context = contextFor(work)
-        val existing = slotValueRepository.findByWorkIdAndSlotDefIdAndUserIdAndContext(
-            workId, input.slotDefId, userId, context,
-        )
-        val entity = if (existing != null) {
-            existing.value = input.value
-            input.draft?.let { existing.draft = it }
-            existing
-        } else {
-            val slotDef = slotDefRepository.findById(input.slotDefId).orElseThrow()
-            val user = userRepository.findById(userId).orElseThrow()
-            SlotValue(
-                work = work,
-                slotDef = slotDef,
-                user = user,
-                value = input.value,
-                draft = input.draft ?: true,
-                context = context,
-            )
-        }
-        return slotValueRepository.save(entity).toResponse()
+        return ratingService.save(workId, userId, input)
     }
 
     private fun myStudyIds(userId: UUID): Set<UUID> = workAccessChecker.myStudyIds(userId)
@@ -213,31 +178,11 @@ class ShelfService(
     private fun isMine(work: Work, userId: UUID, myStudyIds: Set<UUID>): Boolean =
         workAccessChecker.canAccess(work, userId, myStudyIds)
 
-    /** 내가 속한 스터디들의 개인 칸 정의 — 목이라 스터디가 여러 개면 전부 합친다. 개인 책의 기록 항목으로 쓴다 */
-    private fun personalSlotDefs(myStudyIds: Set<UUID>): List<SlotDef> =
-        myStudyIds.flatMap { slotDefRepository.findByStudyIdOrderBySortOrder(it) }.filter { !it.hidden }
-
-    /** 스터디 책이면 그 작품 상세와 똑같이 자기 스터디의 칸만(콜아웃은 이 작품 소관일 때만), 개인 책이면 personalSlotDefs */
-    private fun slotDefsFor(work: Work, myStudyIds: Set<UUID>): List<SlotDef> {
-        val studyId = work.study?.id ?: return personalSlotDefs(myStudyIds)
-        return slotDefRepository.findByStudyIdOrderBySortOrder(studyId)
-            .filter { !it.hidden }
-            .filter { it.owner == SlotOwner.STUDY || it.session?.work?.id == work.id }
-    }
-
-    private fun contextFor(work: Work): SlotValueContext =
-        if (work.study != null) SlotValueContext.STUDY else SlotValueContext.SHELF
-
-    private fun valuesFor(work: Work, userId: UUID, slotDefIds: Set<UUID>): List<SlotValue> =
-        slotValueRepository.findByWorkIdAndContext(work.id!!, contextFor(work))
-            .filter { it.user.id == userId && it.slotDef.id in slotDefIds }
-
+    /**
+     * 남의 서재에는 공개한 평가가 있는 책만 꽂힌다. 예전에는 "무엇을 남에게 보여도 되는가"를
+     * 칸 종류로 가려야 했는데(별점과 공개 한줄평만), 지금은 남에게 보일 수 있는 기록이
+     * [WorkRating] 하나뿐이라 그 판정이 통째로 없어졌다 — 메모는 애초에 서재에 안 실린다.
+     */
     private fun hasPublishedRating(work: Work, ownerId: UUID): Boolean =
-        slotValueRepository.findByWorkIdAndContext(requireNotNull(work.id), contextFor(work)).any {
-            it.user.id == ownerId && it.slotDef.type == SlotType.RATING && it.published
-        }
-
-    /** 공개 평가 묶음은 별점과 공개 한줄평뿐이다. PRIVATE 메모는 값뿐 아니라 정의도 내리지 않는다. */
-    private fun canExposeOnPublicShelf(slot: SlotDef): Boolean =
-        slot.type == SlotType.RATING || (slot.type == SlotType.TEXT_SHORT && slot.visibility != Visibility.PRIVATE)
+        workRatingRepository.findByWorkIdAndUserId(requireNotNull(work.id), ownerId)?.published == true
 }

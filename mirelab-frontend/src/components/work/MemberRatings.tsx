@@ -29,7 +29,7 @@ export default function MemberRatings({
   work: RankedWork
   members: User[]
   currentUserId: string
-  /** 그 사람이 남긴 한줄평. 공개 여부는 칸(slot)의 visibility 가 이미 가렸다 */
+  /** 그 사람이 남긴 한줄평. 공개 안 한 것은 서버가 이미 걸러서 빈 문자열로 온다 */
   blurbOf: (userId: string) => string
   onEditMine: () => void
 }) {

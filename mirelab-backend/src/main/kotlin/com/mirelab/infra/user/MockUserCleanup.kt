@@ -48,7 +48,7 @@ class MockUserCleanup(
             *ids,
         )
         jdbcTemplate.update(
-            "delete from slot_values where user_id in ($eligibleUserSubquery)",
+            "delete from work_ratings where user_id in ($eligibleUserSubquery)",
             *ids,
         )
         jdbcTemplate.update(
