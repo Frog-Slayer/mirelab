@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 import Avatar from '@/components/Avatar'
+import KindTag from '@/components/KindTag'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { getBlogProfile, getUserPosts, createPost } from '@/lib/postApi'
 import { addPersonalWork, getUserShelf } from '@/lib/shelfApi'
 import { READING_STUDY_SLUG } from '@/lib/studyApi'
 import { AddDialog, ShelfContents } from '@/pages/ShelfPage'
+import type { PostSummary } from '@/types'
 
 export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
   const { studySlug = '' } = useParams()
@@ -81,33 +83,7 @@ export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
 
       {tab === 'posts' ? (
         posts && posts.length > 0 ? (
-          <div className="divide-y divide-neutral-100">
-            {posts.map((post) => (
-              <article key={post.id} className="py-5 first:pt-0">
-                <Link to={`${base}/posts/${post.id}`} className="group block">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-medium group-hover:underline">
-                      {post.title || '제목 없음'}
-                    </h2>
-                    {!post.published && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-500">
-                        초안
-                      </span>
-                    )}
-                    {own && post.published && (
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
-                        공개 {post.sharedStudyIds.length}곳
-                      </span>
-                    )}
-                  </div>
-                  {post.excerpt && (
-                    <p className="mt-2 line-clamp-2 text-sm text-neutral-600">{post.excerpt}</p>
-                  )}
-                  <p className="mt-2 text-xs text-neutral-500">{formatDate(post.updatedAt)}</p>
-                </Link>
-              </article>
-            ))}
-          </div>
+          <PostCardList posts={posts} base={base} own={own} />
         ) : (
           <p className="py-12 text-center text-sm text-neutral-500">아직 보여줄 글이 없습니다.</p>
         )
@@ -131,6 +107,74 @@ export default function BlogPage({ tab }: { tab: 'posts' | 'books' }) {
       ) : (
         <p className="text-sm text-neutral-500">책장을 불러오는 중…</p>
       )}
+    </div>
+  )
+}
+
+/** 작품 목록과 같은 가로형 카드 목록. 왼쪽 칸에는 글에 연결된 작품의 표지를 쓴다. */
+function PostCardList({
+  posts,
+  base,
+  own,
+}: {
+  posts: PostSummary[]
+  base: string
+  own: boolean
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {posts.map((post) => (
+        <Link
+          key={post.id}
+          to={`${base}/posts/${post.id}`}
+          className="app-tile group flex overflow-hidden hover:ring-emerald-400/60"
+        >
+          <div className="aspect-[4/3] w-40 flex-none overflow-hidden bg-neutral-100 sm:w-52">
+            {post.work?.coverUrl ? (
+              <img
+                src={post.work.coverUrl}
+                alt={post.work.title}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center p-3 text-center text-xs font-medium text-neutral-500">
+                {post.work?.title || post.title || '제목 없음'}
+              </div>
+            )}
+          </div>
+
+          <div className="flex min-w-0 flex-1 flex-col gap-2 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {post.work && <KindTag kind={post.work.kind} />}
+              {!post.published ? (
+                <span className="inline-flex rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500">
+                  초안
+                </span>
+              ) : (
+                own && (
+                  <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                    공개 {post.sharedStudyIds.length}곳
+                  </span>
+                )
+              )}
+            </div>
+
+            <h2 className="text-lg leading-snug font-semibold group-hover:underline">
+              {post.title || '제목 없음'}
+            </h2>
+
+            {post.excerpt && (
+              <p className="line-clamp-2 text-sm leading-relaxed text-neutral-500">
+                {post.excerpt}
+              </p>
+            )}
+
+            <time className="mt-auto pt-1 text-xs text-neutral-500" dateTime={post.updatedAt}>
+              최근 수정 {formatDate(post.updatedAt)}
+            </time>
+          </div>
+        </Link>
+      ))}
     </div>
   )
 }
