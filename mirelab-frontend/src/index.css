@@ -238,6 +238,16 @@ body {
   }
 }
 
+/* 하단 시트가 화면 밖에서 통째로 올라온다 */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 /* 서랍이 오른쪽에서 미끄러져 나온다 */
 @keyframes slide-in {
   from {

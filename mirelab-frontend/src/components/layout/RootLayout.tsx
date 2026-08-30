@@ -9,11 +9,10 @@ import {
   useParams,
 } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import ThisSessionAd from '@/components/ThisSessionAd'
 import { FloatingStack } from '@/components/layout/FloatingStack'
 import NotificationsMenu from '@/components/layout/NotificationsMenu'
 import UserMenu from '@/components/layout/UserMenu'
-import QuickNote from '@/components/work/QuickNote'
+import CurrentBookDock from '@/components/work/CurrentBookDock'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
 import { writeLastPage } from '@/lib/lastPageStore'
@@ -52,6 +51,13 @@ export default function RootLayout() {
     open: recordDrawerOpen,
     setOpen: setRecordDrawerOpen,
   }
+
+  /**
+   * 화면 바닥에 눕는 도크([CurrentBookDock])가 지금 차지하는 높이. 오른쪽 아래 스택이
+   * 그만큼 올라서야 '작품 추가' 버튼이 그 뒤로 숨지 않는다. 도크는 접혔다 펴지면서
+   * 높이가 달라지므로 눈대중으로 못 박아 둘 수 없다.
+   */
+  const [dockHeight, setDockHeight] = useState(0)
 
   // 헤더 높이가 늘었다 줄었다 하므로(스터디 탭 유무 등) 재서 변수로 내려준다 —
   // "내 메모" 드로어가 헤더 바로 아래부터 정확히 시작하게 하려고.
@@ -178,16 +184,18 @@ export default function RootLayout() {
 
         "내 메모" 서랍도 이제 오른쪽에서 나오므로, 열려 있는 동안은 이 스택이 그 앞을
         가리지 않게 비켜서야 한다 — 그래서 열림 상태를 넘겨준다.
-      */}
-      <FloatingStack shifted={recordDrawerOpen}>
-        <QuickNote study={current} />
-      </FloatingStack>
 
-      {/*
-        전면 광고는 이 스택 밖이다. 화면을 통째로 덮는 것이라 오른쪽 아래 자리와 겹칠
-        일이 없고, 스택 안에 두면 그 컨테이너의 pointer-events·transform 을 덩달아 쓴다.
+        광고 띠가 바닥에 누워 있는 동안은 그 높이만큼 올라선다. 띠는 화면 가운데에 서지만
+        폭이 넓어서 오른쪽 끝까지 닿는 화면이 있고, 그러면 '작품 추가' 버튼을 덮는다.
       */}
-      <ThisSessionAd study={current} />
+      <FloatingStack shifted={recordDrawerOpen} liftedBy={dockHeight}>
+        {/*
+          도크는 이 안에서 그린다 — 알약과 넓은 화면의 작성기를 [FloatingAction] 으로
+          이 스택에 끼워 넣어야 '작품 추가' 버튼과 나란히 쌓이기 때문이다. 바닥에 눕는
+          띠는 스스로 fixed 를 잡으므로 스택의 정렬을 타지 않는다.
+        */}
+        <CurrentBookDock study={current} onHeightChange={setDockHeight} />
+      </FloatingStack>
     </div>
   )
 }

@@ -14,10 +14,17 @@ const SlotContext = createContext<HTMLDivElement | null>(null)
 export function FloatingStack({
   children,
   shifted = false,
+  liftedBy = 0,
 }: {
   children: ReactNode
   /** 오른쪽에서 "내 메모" 서랍이 나와 있는 동안 — 그 앞을 가리지 않게 비켜선다 */
   shifted?: boolean
+  /**
+   * 화면 바닥에 뭔가 눕고 있는 동안(광고 띠) 그 높이만큼 위로 올라선다. px 로 받는 이유는
+   * 그 높이가 내용에 따라 달라져서다 — 눈대중으로 `bottom-32` 를 박아두면 띠가 한 줄
+   * 늘어나는 순간 [AllWorksPage] 의 '작품 추가' 버튼이 그 뒤로 숨는다.
+   */
+  liftedBy?: number
 }) {
   // ref 대신 state 로 받는다 — 포털은 붙일 DOM 노드가 생긴 뒤 한 번 더 그려져야 한다.
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
@@ -33,7 +40,8 @@ export function FloatingStack({
         좁은 화면에서는 아예 숨는다 — 거기서는 서랍이 화면을 덮으므로 비켜설 자리가 없다.
       */}
       <div
-        className={`pointer-events-none fixed bottom-4 z-40 flex flex-col items-end gap-3 transition-[right] duration-150 ease-out motion-reduce:transition-none ${
+        style={{ bottom: `calc(1rem + ${liftedBy}px)` }}
+        className={`pointer-events-none fixed z-40 flex flex-col items-end gap-3 transition-[right,bottom] duration-150 ease-out motion-reduce:transition-none ${
           shifted ? 'right-4 max-xl:hidden xl:right-[29rem]' : 'right-4'
         }`}
       >
