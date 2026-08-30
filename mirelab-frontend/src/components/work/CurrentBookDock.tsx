@@ -112,7 +112,11 @@ export default function CurrentBookDock({
       {!adOpen && (
         <FloatingAction>
           {noteOpen ? (
-            <WideComposer work={work} onClose={() => setNoteOpen(false)} />
+            <WideComposer
+              work={work}
+              studySlug={study.slug}
+              onClose={() => setNoteOpen(false)}
+            />
           ) : (
             <Pill work={work} onOpen={() => setNoteOpen(true)} />
           )}
@@ -351,7 +355,16 @@ function WideAd({
  * 카드였을 때는 글 상자가 서랍만큼 좁아서 "빠르게 한 줄" 이 아니라 "좁은 데서 참고 쓰기"
  * 가 됐다.
  */
-function WideComposer({ work, onClose }: { work: Work; onClose: () => void }) {
+function WideComposer({
+  work,
+  studySlug,
+  onClose,
+}: {
+  work: Work
+  studySlug: string
+  onClose: () => void
+}) {
+  const navigate = useNavigate()
   useEscape(onClose)
 
   return (
@@ -366,7 +379,15 @@ function WideComposer({ work, onClose }: { work: Work; onClose: () => void }) {
       </button>
 
       <div className="flex items-stretch gap-5 p-5">
-        <div className="flex flex-none items-center gap-5">
+        <button
+          type="button"
+          onClick={() => {
+            onClose()
+            navigate(`/${studySlug}/books/${work.id}`)
+          }}
+          aria-label={`${work.title} 작품으로 이동`}
+          className="group flex flex-none cursor-pointer items-center gap-5 rounded-2xl text-left outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/25"
+        >
           <div className="w-28">
             <Cover work={work} size="lg" />
           </div>
@@ -375,7 +396,7 @@ function WideComposer({ work, onClose }: { work: Work; onClose: () => void }) {
             <h2 className="truncate text-xl font-semibold tracking-tight">{work.title}</h2>
             <p className="mt-0.5 truncate text-sm text-neutral-500">{work.author}</p>
           </div>
-        </div>
+        </button>
 
         <NoteForm work={work} />
       </div>
