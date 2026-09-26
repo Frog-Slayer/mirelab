@@ -5,10 +5,12 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 /**
  * 아직 실제 백엔드로 안 옮긴 작품은 workId가 목이 만든 문자열(w1 등)이라 UUID가
- * 아니다 — 그런 workId로 블록 API를 부르면 Spring이 400으로 거절한다. 호출 전에
- * 걸러서, 아직 안 옮긴 작품에서는 블록 기능 자체를 조용히 꺼둔다.
+ * 아니다 — 그런 workId로 실제 API를 부르면 Spring이 400으로 거절한다. 호출 전에
+ * 걸러서, 아직 안 옮긴 작품에서는 그 기능 자체를 조용히 꺼둔다.
+ *
+ * 블록만의 사정이 아니라 메모("내 메모" 서랍)도 같은 관문을 쓴다.
  */
-export function isWorkBlockApiReady(workId: string): boolean {
+export function isRealWorkId(workId: string): boolean {
   return UUID_RE.test(workId)
 }
 

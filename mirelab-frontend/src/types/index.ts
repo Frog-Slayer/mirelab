@@ -11,29 +11,6 @@ export const WorkStatus = {
 } as const
 export type WorkStatus = (typeof WorkStatus)[keyof typeof WorkStatus]
 
-export const SlotType = {
-  RATING: 'RATING',
-  TEXT_SHORT: 'TEXT_SHORT',
-  TEXT_LONG: 'TEXT_LONG',
-  LIST: 'LIST',
-} as const
-export type SlotType = (typeof SlotType)[keyof typeof SlotType]
-
-/** 개인별 = 사람마다 하나씩, 공동 = 회차에 하나 */
-export const SlotScope = { PERSONAL: 'PERSONAL', SHARED: 'SHARED' } as const
-export type SlotScope = (typeof SlotScope)[keyof typeof SlotScope]
-
-export const Visibility = {
-  ALWAYS: 'ALWAYS',
-  AFTER_DEADLINE: 'AFTER_DEADLINE',
-  PRIVATE: 'PRIVATE',
-} as const
-export type Visibility = (typeof Visibility)[keyof typeof Visibility]
-
-/** 스터디 = 매번 등장, 회차 = 그때뿐 (노션의 콜아웃 자리) */
-export const SlotOwner = { STUDY: 'STUDY', SESSION: 'SESSION' } as const
-export type SlotOwner = (typeof SlotOwner)[keyof typeof SlotOwner]
-
 /** 일정 후보에 대한 각자의 표시 */
 export const Availability = { YES: 'YES', MAYBE: 'MAYBE', NO: 'NO' } as const
 export type Availability = (typeof Availability)[keyof typeof Availability]
@@ -142,19 +119,6 @@ export interface Work {
   finishedAt?: string | null
 }
 
-export interface SlotDef {
-  id: string
-  studyId: string
-  name: string
-  type: SlotType
-  scope: SlotScope
-  visibility: Visibility
-  owner: SlotOwner
-  order: number
-  hidden: boolean
-  sessionId?: string
-}
-
 /**
  * 모임 — 만나는 일정 하나. 장 구분·순번은 두지 않는다: 기록은 전부 작품(Work)에
  * 쌓이므로, 모임은 "언제 만나는가"만 안다.
@@ -185,23 +149,42 @@ export interface WorkBlock {
   createdAt: string
 }
 
-export type SlotValueData =
-  | { n: number }
-  | { text: string }
-  | { items: string[] }
-  /** BlockNote 리치 텍스트 — 블록 JSON을 그대로 담는다(예: 내 요약) */
-  | { blocks: unknown[] }
+/**
+ * 메모의 종류. 저장되는 모양은 셋 다 글 한 덩이로 같고, 다른 건 나중에 이 글을 무엇으로
+ * 대하느냐다 — 그래서 종류를 스터디가 미리 정하지 않고 메모마다 들고 다닌다.
+ */
+export const NoteKind = { MEMO: 'MEMO', QUESTION: 'QUESTION', QUOTE: 'QUOTE' } as const
+export type NoteKind = (typeof NoteKind)[keyof typeof NoteKind]
 
-export interface SlotValue {
-  /** 붙는 대상의 id — 항상 작품(Work) id 다 */
-  targetId: string
-  slotDefId: string
-  /** 공동 칸은 작성자가 없다 */
-  userId: string | null
-  value: SlotValueData
-  draft: boolean
-  /** 개인 평점 공개 여부. 평점이 아닌 값에서는 사용하지 않는다 */
-  published?: boolean
+/**
+ * 작품을 읽으면서 혼자 남기는 메모 한 장 — "내 메모" 서랍에 쌓인다. 쓴 사람만 보므로
+ * 작성자 id 가 없다: 서버가 부른 사람 것만 내려준다.
+ */
+export interface WorkNote {
+  id: string
+  workId: string
+  kind: NoteKind
+  body: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** BlockNote 리치 텍스트 — 블록 JSON을 그대로 담는다(개인 노트·블로그 글) */
+export interface BlockDocument {
+  blocks: unknown[]
+}
+
+/**
+ * 한 사람이 한 작품에 남긴 평가 — 별점과 한줄평. 둘은 공개 토글 하나로 함께 여닫힌다.
+ * 남의 평가는 공개한 것만 실려 오므로, 받은 목록을 다시 거를 필요가 없다.
+ */
+export interface WorkRating {
+  workId: string
+  userId: string
+  /** 아직 안 매겼으면 null — 한줄평만 먼저 써 둔 경우 */
+  score: number | null
+  blurb: string | null
+  published: boolean
 }
 
 /** 모임 날짜 조율. 확정된 뒤에도 다시 열 수 있다 */

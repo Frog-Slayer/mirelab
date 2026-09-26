@@ -1,4 +1,4 @@
-package com.mirelab.application.slot
+package com.mirelab.application.rating
 
 import jakarta.annotation.PreDestroy
 import java.time.Duration
@@ -10,24 +10,24 @@ import org.springframework.stereotype.Component
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
 /**
- * "이 작품의 칸 값이 바뀌었다"를 보고 있는 사람들에게 즉시 밀어주는 곳.
+ * "이 작품의 평가가 바뀌었다"를 보고 있는 사람들에게 즉시 밀어주는 곳.
  *
  * 별점 공개는 다 같이 "하나, 둘, 셋" 하고 여는 순간이 전부라, 폴링으로 몇 초씩 밀리면
  * 그 순간이 통째로 흐트러진다.
  *
- * 신호에는 값을 싣지 않는다 — 무엇이 보이는지는 보는 사람마다 다르고([SlotService] 의
- * visibility·published 판정), 그 판정을 여기서 한 번 더 하면 두 곳이 어긋난다. 그래서
+ * 신호에는 값을 싣지 않는다 — 무엇이 보이는지는 보는 사람마다 다르고
+ * ([RatingService.visibleFor] 의 판정), 그 판정을 여기서 한 번 더 하면 두 곳이 어긋난다. 그래서
  * "바뀌었으니 다시 받아가라"만 보내고 실제 내용은 각자 평소 경로로 받아가게 둔다.
  *
  * 구독자는 이 JVM 의 메모리에만 있다. 백엔드를 여러 대로 늘리면 인스턴스 간 전파가
  * 따로 필요하다 — 지금은 한 대라 여기서 끝난다.
  */
 @Component
-class WorkSlotEventPublisher {
+class WorkRatingEventPublisher {
     private val rooms = ConcurrentHashMap<UUID, MutableSet<SseEmitter>>()
 
     private val keepAlive = Executors.newSingleThreadScheduledExecutor { runnable ->
-        Thread(runnable, "work-slot-events-keep-alive").apply { isDaemon = true }
+        Thread(runnable, "work-rating-events-keep-alive").apply { isDaemon = true }
     }
 
     init {
@@ -99,7 +99,7 @@ class WorkSlotEventPublisher {
     }
 
     private companion object {
-        const val EVENT_NAME = "slots-changed"
+        const val EVENT_NAME = "ratings-changed"
         val HEARTBEAT: Duration = Duration.ofSeconds(20)
 
         /** 무한정 열어두지는 않는다 — 새는 접속이 있어도 결국 정리되고, 브라우저는 다시 붙는다 */

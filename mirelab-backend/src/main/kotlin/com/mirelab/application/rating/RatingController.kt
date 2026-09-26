@@ -1,4 +1,4 @@
-package com.mirelab.application.slot
+package com.mirelab.application.rating
 
 import com.mirelab.application.study.StudyMembershipGuard
 import com.mirelab.auth.AuthPrincipal
@@ -8,41 +8,40 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PatchMapping
-import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 
 @RestController
-class SlotController(
-    private val slotService: SlotService,
+class RatingController(
+    private val ratingService: RatingService,
     private val membershipGuard: StudyMembershipGuard,
-    private val eventPublisher: WorkSlotEventPublisher,
+    private val eventPublisher: WorkRatingEventPublisher,
 ) {
 
-    /** 보는 사람이 누구냐에 따라 비공개·마감 전 칸 값이 걸러진다 — 그래서 주체를 토큰에서 받는다 */
-    @GetMapping("/api/works/{workId}/slots")
-    fun getSlots(
+    /** 보는 사람이 누구냐에 따라 비공개 평가가 걸러진다 — 그래서 주체를 토큰에서 받는다 */
+    @GetMapping("/api/works/{workId}/ratings")
+    fun list(
         @PathVariable workId: UUID,
         @AuthenticationPrincipal principal: AuthPrincipal,
-    ): ResponseEntity<WorkSlotsResponse> {
+    ): List<WorkRatingResponse> {
         membershipGuard.requireWork(workId, principal.userId)
-        return slotService.getWorkSlots(workId, principal.userId)?.let { ResponseEntity.ok(it) }
-            ?: ResponseEntity.notFound().build()
+        return ratingService.listVisible(workId, principal.userId)
     }
 
     /**
-     * 이 작품의 칸 값이 바뀔 때마다 신호를 받는 스트림. 보내는 건 "다시 받아가라"는 신호뿐이고,
-     * 무엇이 보이는지는 구독자가 [getSlots] 로 각자 다시 받아간다.
+     * 이 작품의 평가가 바뀔 때마다 신호를 받는 스트림. 보내는 건 "다시 받아가라"는 신호뿐이고,
+     * 무엇이 보이는지는 구독자가 [list] 로 각자 다시 받아간다.
      *
      * 브라우저의 EventSource 는 헤더를 못 실어서 못 쓴다 — access token 을 메모리에만 두고
      * Authorization 헤더로만 보내는 구조라(`lib/api.ts`), 프론트는 fetch 스트림으로 읽는다.
      * 덕분에 이 경로도 다른 API 와 똑같은 인증을 그대로 탄다.
      */
-    @GetMapping("/api/works/{workId}/slot-events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
-    fun slotEvents(
+    @GetMapping("/api/works/{workId}/rating-events", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    fun events(
         @PathVariable workId: UUID,
         @AuthenticationPrincipal principal: AuthPrincipal,
         response: HttpServletResponse,
@@ -53,32 +52,30 @@ class SlotController(
         return eventPublisher.subscribe(workId)
     }
 
-    @PostMapping("/api/works/{workId}/slot-values")
-    fun saveValue(
+    @PutMapping("/api/works/{workId}/rating")
+    fun save(
         @PathVariable workId: UUID,
         @AuthenticationPrincipal principal: AuthPrincipal,
-        @RequestBody body: SlotValueInput,
-    ): SlotValueResponse {
+        @RequestBody body: SaveRatingRequest,
+    ): WorkRatingResponse {
         membershipGuard.requireWork(workId, principal.userId)
-        val saved = slotService.saveValue(workId, principal.userId, body)
+        val saved = ratingService.save(workId, principal.userId, body)
         // 커밋이 끝난 뒤에 알린다 — 서비스 안에서 보내면 아직 안 보이는 값을 보라고 깨우게 된다.
         eventPublisher.publish(workId)
         return saved
     }
 
     @PatchMapping("/api/works/{workId}/rating-visibility")
-    fun setRatingVisibility(
+    fun setVisibility(
         @PathVariable workId: UUID,
         @AuthenticationPrincipal principal: AuthPrincipal,
         @RequestBody body: RatingVisibilityInput,
     ): ResponseEntity<Void> {
         membershipGuard.requireWork(workId, principal.userId)
-        if (!slotService.setRatingPublished(workId, principal.userId, body.published)) {
+        if (!ratingService.setPublished(workId, principal.userId, body.published)) {
             return ResponseEntity.notFound().build()
         }
         eventPublisher.publish(workId)
         return ResponseEntity.noContent().build()
     }
 }
-
-data class RatingVisibilityInput(val published: Boolean)

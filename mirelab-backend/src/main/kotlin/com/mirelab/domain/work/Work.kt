@@ -80,7 +80,7 @@ class Work(
 
     /**
      * 스터디에 속하지 않은 개인 책의 자유 형식 노트(BlockNote 블록 배열 JSON).
-     * 개인 책만 사용하고 스터디 작품은 기존 SlotValue·WorkBlock 기록 흐름을 유지한다.
+     * 개인 책만 사용하고 스터디 작품은 WorkNote·WorkBlock 기록 흐름을 유지한다.
     */
     @JdbcTypeCode(SqlTypes.LONGVARCHAR)
     @Column(name = "personal_body_json", columnDefinition = "text")

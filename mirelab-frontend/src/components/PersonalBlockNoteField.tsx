@@ -3,27 +3,23 @@ import { useCreateBlockNote } from '@blocknote/react'
 import type { PartialBlock } from '@blocknote/core'
 import { BlockNoteView } from '@blocknote/shadcn'
 import '@blocknote/shadcn/style.css'
-import type { SlotValueData } from '@/types'
+import type { BlockDocument } from '@/types'
 
 /**
- * 개인 칸(예: 내 요약)용 리치 텍스트 에디터. 협업이 아니라 나만 쓰는 칸이라
- * Yjs 없이 BlockNote만 로컬로 붙인다 — 블록 JSON을 그대로 칸 값에 담는다.
+ * 혼자 쓰는 긴 글용 리치 텍스트 에디터(내 서재의 개인 노트, 블로그 글). 협업이 아니라
+ * 나만 쓰는 자리라 Yjs 없이 BlockNote만 로컬로 붙인다 — 블록 JSON을 그대로 담는다.
+ *
+ * 서랍의 짧은 메모는 이걸 안 쓴다. 448px 안에서 슬래시 메뉴·드래그 핸들·서식 도구까지
+ * 딸려 오는 건 과해서, 거기는 글 상자 하나다([NoteBody]).
  */
 export default function PersonalBlockNoteField({
   value,
   onSave,
 }: {
-  value?: SlotValueData
-  onSave: (value: SlotValueData) => void
+  value?: BlockDocument
+  onSave: (value: BlockDocument) => void
 }) {
-  // 예전 UI는 이 칸을 { text } 로 저장했다 — 그대로 두면 조용히 버려지고 빈 에디터로
-  // 시작한 뒤 다음 편집 때 덮어써 사라지므로, 문단 하나짜리 블록으로 옮겨 담는다.
-  const initialBlocks: PartialBlock[] | undefined =
-    value && 'blocks' in value
-      ? (value.blocks as PartialBlock[])
-      : value && 'text' in value && value.text
-        ? [{ type: 'paragraph', content: value.text }]
-        : undefined
+  const initialBlocks = value?.blocks as PartialBlock[] | undefined
 
   const editor = useCreateBlockNote({
     initialContent: initialBlocks && initialBlocks.length > 0 ? initialBlocks : undefined,

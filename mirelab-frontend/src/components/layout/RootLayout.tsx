@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import { Link, NavLink, Outlet, ScrollRestoration, useNavigate, useParams } from 'react-router'
+import {
+  Link,
+  NavLink,
+  Outlet,
+  ScrollRestoration,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import ThisSessionBanner from '@/components/ThisSessionBanner'
 import { FloatingStack } from '@/components/layout/FloatingStack'
 import NotificationsMenu from '@/components/layout/NotificationsMenu'
 import UserMenu from '@/components/layout/UserMenu'
+import CurrentBookDock from '@/components/work/CurrentBookDock'
 import { useCurrentUser } from '@/hooks/currentUser'
 import type { RecordDrawerContext } from '@/hooks/useRecordDrawer'
+import { writeLastPage } from '@/lib/lastPageStore'
 import { getMyStudies } from '@/lib/studyApi'
 import type { Study } from '@/types'
 
@@ -25,14 +34,33 @@ export default function RootLayout() {
   const { user } = useCurrentUser()
   const { studySlug } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  /**
+   * 보던 자리를 적어 둔다 — 다시 로그인하면 홈이 아니라 여기로 돌아온다([AuthCallbackPage]).
+   *
+   * 로그인 화면들은 이 레이아웃 밖이라 애초에 안 걸린다. `/app` 만 따로 빼는데, 그건
+   * 화면이 아니라 갈림길이라([StudyHomeRedirect]) 기억해봤자 다음에 또 갈라질 뿐이다.
+   */
+  useEffect(() => {
+    if (!user || location.pathname === '/app') return
+    writeLastPage(user.id, `${location.pathname}${location.search}`)
+  }, [user, location.pathname, location.search])
   const [recordDrawerOpen, setRecordDrawerOpen] = useState(false)
   const recordDrawer: RecordDrawerContext = {
     open: recordDrawerOpen,
     setOpen: setRecordDrawerOpen,
   }
 
+  /**
+   * 화면 바닥에 눕는 도크([CurrentBookDock])가 지금 차지하는 높이. 오른쪽 아래 스택이
+   * 그만큼 올라서야 '작품 추가' 버튼이 그 뒤로 숨지 않는다. 도크는 접혔다 펴지면서
+   * 높이가 달라지므로 눈대중으로 못 박아 둘 수 없다.
+   */
+  const [dockHeight, setDockHeight] = useState(0)
+
   // 헤더 높이가 늘었다 줄었다 하므로(스터디 탭 유무 등) 재서 변수로 내려준다 —
-  // "내 기록" 드로어가 헤더 바로 아래부터 정확히 시작하게 하려고.
+  // "내 메모" 드로어가 헤더 바로 아래부터 정확히 시작하게 하려고.
   const headerRef = useRef<HTMLElement>(null)
   const [headerHeight, setHeaderHeight] = useState(0)
   useEffect(() => {
@@ -121,16 +149,6 @@ export default function RootLayout() {
       </header>
 
       <div className="flex flex-1">
-        {/*
-          "내 기록" 드로어(WorkPage)는 항상 뷰포트 왼쪽 끝에 고정으로 붙는다.
-          여기서는 실제로 아무것도 그리지 않고, 화면이 넓을 때(xl 이상) 그
-          너비만큼 자리를 미리 비워둬서 <main> 이 오른쪽으로 밀리게 한다.
-        */}
-        <div
-          className={`w-0 flex-none transition-[width] duration-150 ease-out motion-reduce:transition-none ${
-            recordDrawerOpen ? 'xl:w-[28rem]' : ''
-          }`}
-        />
         <main className={`${CONTENT_COLUMN} flex-1 py-8 sm:py-10`}>
           {/*
             화면을 옮기면 맨 위에서 시작하고, 뒤로 가기로 돌아오면 보던 자리로 되돌린다.
@@ -143,6 +161,17 @@ export default function RootLayout() {
           <ScrollRestoration />
           <Outlet context={recordDrawer} />
         </main>
+
+        {/*
+          "내 메모" 드로어(WorkPage)는 항상 뷰포트 오른쪽 끝에 고정으로 붙는다.
+          여기서는 실제로 아무것도 그리지 않고, 화면이 넓을 때(xl 이상) 그
+          너비만큼 자리를 미리 비워둬서 <main> 이 왼쪽으로 밀리게 한다.
+        */}
+        <div
+          className={`w-0 flex-none transition-[width] duration-150 ease-out motion-reduce:transition-none ${
+            recordDrawerOpen ? 'xl:w-[28rem]' : ''
+          }`}
+        />
       </div>
 
       <footer className="py-7">
@@ -151,10 +180,21 @@ export default function RootLayout() {
 
       {/*
         오른쪽 아래에 뜨는 것들을 한 스택에 모은다 — 페이지가 얹는 플로팅 버튼이
-        위, 다음 모임 카드가 아래. 각자 fixed 로 자리를 잡으면 서로 겹친다.
+        위, 빠른 메모가 아래. 각자 fixed 로 자리를 잡으면 서로 겹친다.
+
+        "내 메모" 서랍도 이제 오른쪽에서 나오므로, 열려 있는 동안은 이 스택이 그 앞을
+        가리지 않게 비켜서야 한다 — 그래서 열림 상태를 넘겨준다.
+
+        광고 띠가 바닥에 누워 있는 동안은 그 높이만큼 올라선다. 띠는 화면 가운데에 서지만
+        폭이 넓어서 오른쪽 끝까지 닿는 화면이 있고, 그러면 '작품 추가' 버튼을 덮는다.
       */}
-      <FloatingStack>
-        <ThisSessionBanner study={current} />
+      <FloatingStack shifted={recordDrawerOpen} liftedBy={dockHeight}>
+        {/*
+          도크는 이 안에서 그린다 — 알약과 넓은 화면의 작성기를 [FloatingAction] 으로
+          이 스택에 끼워 넣어야 '작품 추가' 버튼과 나란히 쌓이기 때문이다. 바닥에 눕는
+          띠는 스스로 fixed 를 잡으므로 스택의 정렬을 타지 않는다.
+        */}
+        <CurrentBookDock study={current} onHeightChange={setDockHeight} />
       </FloatingStack>
     </div>
   )

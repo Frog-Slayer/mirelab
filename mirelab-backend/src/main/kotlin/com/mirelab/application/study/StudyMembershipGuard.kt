@@ -1,5 +1,6 @@
 package com.mirelab.application.study
 
+import com.mirelab.infra.note.WorkNoteRepository
 import com.mirelab.infra.study.StudyMemberRepository
 import com.mirelab.infra.study.StudyRepository
 import com.mirelab.infra.work.WorkBlockRepository
@@ -19,6 +20,7 @@ class StudyMembershipGuard(
     private val studyMemberRepository: StudyMemberRepository,
     private val workRepository: WorkRepository,
     private val workBlockRepository: WorkBlockRepository,
+    private val workNoteRepository: WorkNoteRepository,
     private val userRepository: UserRepository,
 ) {
     @Transactional(readOnly = true)
@@ -35,6 +37,20 @@ class StudyMembershipGuard(
         }
         val studyId = work.study?.id
             ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "스터디 작품이 아닙니다")
+        requireMembership(studyId, userId)
+    }
+
+    /**
+     * 메모는 여기서 "이 스터디 사람인가"까지만 본다 — "내 메모인가"는 [WorkNoteService] 가
+     * 따로 가린다. 멤버라도 남의 메모는 못 보는 게 그쪽 규칙이라 관문 하나로는 안 된다.
+     */
+    @Transactional(readOnly = true)
+    fun requireNote(noteId: UUID, userId: UUID) {
+        val note = workNoteRepository.findById(noteId).orElseThrow {
+            ResponseStatusException(HttpStatus.NOT_FOUND, "없는 메모입니다")
+        }
+        val studyId = note.work.study?.id
+            ?: throw ResponseStatusException(HttpStatus.NOT_FOUND, "스터디 작품의 메모가 아닙니다")
         requireMembership(studyId, userId)
     }
 

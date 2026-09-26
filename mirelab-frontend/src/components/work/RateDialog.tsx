@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Stars from '@/components/Stars'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
-import type { SlotDef, SlotValue } from '@/types'
+import type { WorkRating } from '@/types'
 
 /**
  * 멤버별 평점의 내 카드를 누르면 뜬다 — 평점·한줄평·공개 여부를 한 곳에서 입력한다.
@@ -9,19 +9,14 @@ import type { SlotDef, SlotValue } from '@/types'
  * 매 순간을 저장하려 들면 요청이 쌓여 저장이 꼬인다.
  */
 export default function RateDialog({
-  ratingSlot,
-  blurbSlot,
-  ratingValue,
-  blurbValue,
+  rating: mine,
   published,
   publishError,
   onSave,
   onClose,
 }: {
-  ratingSlot: SlotDef
-  blurbSlot?: SlotDef
-  ratingValue?: SlotValue['value']
-  blurbValue?: SlotValue['value']
+  /** 아직 아무것도 안 남겼으면 없다 */
+  rating?: WorkRating
   published: boolean
   /** 공개 전환이 실패했을 때의 안내 — 저장이 왜 안 먹혔는지 알려준다 */
   publishError?: string | null
@@ -34,8 +29,8 @@ export default function RateDialog({
   }, [])
   useLockBodyScroll()
 
-  const initialRating = ratingValue && 'n' in ratingValue ? ratingValue.n : 0
-  const initialBlurb = blurbValue && 'text' in blurbValue ? blurbValue.text : ''
+  const initialRating = mine?.score ?? 0
+  const initialBlurb = mine?.blurb ?? ''
   const [rating, setRating] = useState(initialRating)
   const [blurb, setBlurb] = useState(initialBlurb)
   const [publishedLocal, setPublishedLocal] = useState(published)
@@ -96,7 +91,7 @@ export default function RateDialog({
         </div>
 
         <div className="flex items-center justify-between gap-4">
-          <span className="text-sm font-semibold">{ratingSlot.name}</span>
+          <span className="text-sm font-semibold">별점</span>
           <Stars value={rating} size="lg" onChange={setRating} />
         </div>
 
@@ -134,17 +129,15 @@ export default function RateDialog({
           )}
         </div>
 
-        {blurbSlot && (
-          <div className="flex flex-col gap-2 border-t border-neutral-100 pt-4">
-            <span className="text-sm font-semibold">{blurbSlot.name}</span>
-            <input
-              value={blurb}
-              onChange={(e) => setBlurb(e.target.value)}
-              placeholder="한 줄로"
-              className="app-input w-full leading-relaxed"
-            />
-          </div>
-        )}
+        <div className="flex flex-col gap-2 border-t border-neutral-100 pt-4">
+          <span className="text-sm font-semibold">한줄평</span>
+          <input
+            value={blurb}
+            onChange={(e) => setBlurb(e.target.value)}
+            placeholder="한 줄로"
+            className="app-input w-full leading-relaxed"
+          />
+        </div>
 
         <div className="flex justify-end gap-2 border-t border-neutral-100 pt-4">
           <button

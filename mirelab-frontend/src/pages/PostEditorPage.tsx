@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router'
-import PersonalBlockNoteField from '@/components/slots/PersonalBlockNoteField'
+import PersonalBlockNoteField from '@/components/PersonalBlockNoteField'
 import { useCurrentUser } from '@/hooks/currentUser'
 import { deletePost, getPost, updatePost } from '@/lib/postApi'
 import { getMyStudies } from '@/lib/studyApi'
-import type { Post, SlotValueData } from '@/types'
+import type { BlockDocument, Post } from '@/types'
 
 interface Draft {
   title: string
@@ -151,9 +151,9 @@ function Editor({ post, username }: { post: Post; username: string }) {
       <div className="mt-8 min-h-80">
         <PersonalBlockNoteField
           value={{ blocks }}
-          onSave={(value: SlotValueData) => {
-            if ('blocks' in value) change({ bodyJson: JSON.stringify(value.blocks) }, true)
-          }}
+          onSave={(value: BlockDocument) =>
+            change({ bodyJson: JSON.stringify(value.blocks) }, true)
+          }
         />
       </div>
 

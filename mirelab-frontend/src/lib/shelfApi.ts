@@ -1,25 +1,23 @@
 import { ApiError, api } from '@/lib/api'
-import { toSlotDef, toSlotValue, type SlotDefResponse, type SlotValueResponse } from '@/lib/slotApi'
 import { toStudy, type StudyResponse } from '@/lib/studyApi'
-import type { Post, SlotDef, SlotValue, Study, Work, WorkKind } from '@/types'
+import type { Post, Study, Work, WorkKind, WorkRating } from '@/types'
 
 export interface ShelfEntry {
   work: Work
   /** 이 책이 스터디에서 온 것이면 그 스터디 */
   study: Study | null
-  values: SlotValue[]
+  /** 서재 주인의 평가. 안 남겼거나(남의 서재라면) 공개 안 했으면 null */
+  rating: WorkRating | null
 }
 
 export interface Shelf {
-  slots: SlotDef[]
   entries: ShelfEntry[]
 }
 
 export interface ShelfDetail {
   work: Work
   study: Study | null
-  slots: SlotDef[]
-  values: SlotValue[]
+  rating: WorkRating | null
   personalBodyJson: string | null
   publication: Post | null
 }
@@ -27,39 +25,33 @@ export interface ShelfDetail {
 interface ShelfEntryResponse {
   work: Work
   study: StudyResponse | null
-  values: SlotValueResponse[]
+  rating: WorkRating | null
 }
 
 interface ShelfResponse {
-  slots: SlotDefResponse[]
   entries: ShelfEntryResponse[]
 }
 
 interface ShelfDetailResponse {
   work: Work
   study: StudyResponse | null
-  slots: SlotDefResponse[]
-  values: SlotValueResponse[]
+  rating: WorkRating | null
   personalBodyJson: string | null
   publication: Post | null
 }
 
 function toShelfEntry(r: ShelfEntryResponse): ShelfEntry {
-  return {
-    work: r.work,
-    study: r.study ? toStudy(r.study) : null,
-    values: r.values.map(toSlotValue),
-  }
+  return { work: r.work, study: r.study ? toStudy(r.study) : null, rating: r.rating }
 }
 
 export async function getShelf(): Promise<Shelf> {
   const res = await api.get<ShelfResponse>('/me/shelf')
-  return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
+  return { entries: res.entries.map(toShelfEntry) }
 }
 
 export async function getUserShelf(username: string): Promise<Shelf> {
   const res = await api.get<ShelfResponse>(`/users/${encodeURIComponent(username)}/shelf`)
-  return { slots: res.slots.map(toSlotDef), entries: res.entries.map(toShelfEntry) }
+  return { entries: res.entries.map(toShelfEntry) }
 }
 
 export async function getShelfEntry(workId: string): Promise<ShelfDetail | null> {
@@ -68,8 +60,7 @@ export async function getShelfEntry(workId: string): Promise<ShelfDetail | null>
     return {
       work: res.work,
       study: res.study ? toStudy(res.study) : null,
-      slots: res.slots.map(toSlotDef),
-      values: res.values.map(toSlotValue),
+      rating: res.rating,
       personalBodyJson: res.personalBodyJson,
       publication: res.publication,
     }
@@ -113,18 +104,14 @@ export function addPersonalWork(input: {
   })
 }
 
-/** 내 서재 쪽 저장 — 스터디 작품 상세의 saveValue 와 달리 targetId 에 접두어 안 붙인다 */
-export function saveShelfValue(input: {
-  targetId: string
-  slotDefId: string
-  value: SlotValue['value']
-  draft?: boolean
-}): Promise<SlotValue> {
-  return api
-    .post<SlotValueResponse>(`/me/shelf/${input.targetId}/slot-values`, {
-      slotDefId: input.slotDefId,
-      value: input.value,
-      draft: input.draft,
-    })
-    .then(toSlotValue)
+/**
+ * 개인 책의 평가 저장. 스터디 책은 이 경로로 못 쓴다 — 그 책의 평가는 작품 상세
+ * 한 곳에서만 매긴다(`lib/ratingApi.ts`).
+ */
+export function saveShelfRating(input: {
+  workId: string
+  score?: number
+  blurb?: string
+}): Promise<WorkRating> {
+  return api.put(`/me/shelf/${input.workId}/rating`, { score: input.score, blurb: input.blurb })
 }
